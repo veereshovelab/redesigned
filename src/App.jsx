@@ -14,6 +14,7 @@ import {
   updateProfile,
   sendPasswordResetEmail
 } from './firebaseConfig';
+import { supabase } from './supabaseClient';
 
 // ==========================================
 // Friendly Error Message Helper
@@ -148,7 +149,67 @@ export default function App() {
   const [selectedCategory, setSelectedCategory] = useState("All");
 
   // App Dynamic Project Database State
-  const [projects, setProjects] = useState(INITIAL_PROJECTS);
+  const [projects, setProjects] = useState([]);
+
+  const fetchProjects = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('projects')
+        .select('*, rewards(*), comments(*), updates(*)');
+
+      if (error) throw error;
+
+      const mapped = data.map(p => {
+        const rewards = (p.rewards || []).sort((a, b) => a.pledge_amount - b.pledge_amount);
+        const comments = (p.comments || []).sort((a, b) => new Date(b.created_at || 0) - new Date(a.created_at || 0));
+        const updates = (p.updates || []).sort((a, b) => new Date(b.created_at || 0) - new Date(a.created_at || 0));
+
+        return {
+          id: p.id,
+          title: p.title,
+          subtitle: p.subtitle,
+          description: p.description,
+          category: p.category,
+          image: p.image,
+          creator: {
+            name: p.creator_name,
+            avatar: p.creator_avatar,
+            verified: !!p.creator_verified
+          },
+          goalAmount: Number(p.goal_amount),
+          raisedAmount: Number(p.raised_amount),
+          backerCount: Number(p.backer_count),
+          daysLeft: Number(p.days_left),
+          trending: !!p.trending,
+          rewards: rewards.map(r => ({
+            id: r.id,
+            pledgeAmount: Number(r.pledge_amount),
+            title: r.title,
+            desc: r.desc,
+            limit: r.limit,
+            claimed: Number(r.claimed)
+          })),
+          comments: comments.map(c => ({
+            id: c.id,
+            username: c.username,
+            body: c.body,
+            timestamp: c.timestamp
+          })),
+          updates: updates.map(u => ({
+            id: u.id,
+            title: u.title,
+            body: u.body,
+            date: u.date
+          }))
+        };
+      });
+
+      setProjects(mapped);
+    } catch (err) {
+      console.error("Error fetching projects:", err);
+      showToast("Error loading campaigns from database.");
+    }
+  };
 
   // Modals & Flows
   const [authOpen, setAuthOpen] = useState(false);
@@ -179,8 +240,9 @@ export default function App() {
       }
     }
 
-    const unsubscribe = auth.onAuthStateChanged((currentUser) => {
+    const unsubscribe = auth.onAuthStateChanged(async (currentUser) => {
       setUser(currentUser);
+      await fetchProjects();
       setLoading(false);
       if (currentUser) {
         setAuthOpen(false); // Close sign-in popup if completed successfully
@@ -305,20 +367,26 @@ export default function App() {
                 setCheckoutOpen(true);
               });
             }}
-            onAddComment={(body) => {
+            onAddComment={async (body) => {
+              const username = user?.displayName || user?.email?.split('@')[0] || "Anonymous";
               const newComment = {
                 id: `c_${Date.now()}`,
-                username: user?.displayName || user?.email?.split('@')[0] || "Anonymous",
+                project_id: activeProject.id,
+                username,
                 body,
                 timestamp: "Just now"
               };
-              setProjects(prev => prev.map(p => {
-                if (p.id === activeProject.id) {
-                  return { ...p, comments: [newComment, ...p.comments] };
-                }
-                return p;
-              }));
-              showToast("Comment posted!");
+              try {
+                const { error } = await supabase
+                  .from('comments')
+                  .insert([newComment]);
+                if (error) throw error;
+                await fetchProjects();
+                showToast("Comment posted!");
+              } catch (err) {
+                console.error("Error adding comment:", err);
+                showToast("Failed to post comment to database.");
+              }
             }}
           />
         )}
@@ -326,10 +394,52 @@ export default function App() {
         {view === "create" && (
           <CreateProjectWizard
             onBack={() => setView("home")}
-            onSubmit={(newProj) => {
-              setProjects([newProj, ...projects]);
-              setView("home");
-              showToast("Your campaign has been successfully launched on Vorynx!");
+            onSubmit={async (newProj) => {
+              try {
+                const { error: projErr } = await supabase
+                  .from('projects')
+                  .insert([{
+                    id: newProj.id,
+                    title: newProj.title,
+                    subtitle: newProj.subtitle,
+                    description: newProj.description,
+                    category: newProj.category,
+                    image: newProj.image,
+                    creator_name: newProj.creator.name,
+                    creator_avatar: newProj.creator.avatar,
+                    creator_verified: newProj.creator.verified,
+                    goal_amount: newProj.goalAmount,
+                    raised_amount: newProj.raisedAmount,
+                    backer_count: newProj.backerCount,
+                    days_left: newProj.daysLeft,
+                    trending: newProj.trending
+                  }]);
+
+                if (projErr) throw projErr;
+
+                const rewardRows = newProj.rewards.map(r => ({
+                  id: r.id,
+                  project_id: newProj.id,
+                  pledge_amount: r.pledgeAmount,
+                  title: r.title,
+                  desc: r.desc,
+                  limit: r.limit,
+                  claimed: r.claimed
+                }));
+
+                const { error: rewErr } = await supabase
+                  .from('rewards')
+                  .insert(rewardRows);
+
+                if (rewErr) throw rewErr;
+
+                await fetchProjects();
+                setView("home");
+                showToast("Your campaign has been successfully launched on Vorynx!");
+              } catch (err) {
+                console.error("Error creating project:", err);
+                showToast("Failed to launch campaign to database.");
+              }
             }}
             user={user}
           />
@@ -388,27 +498,33 @@ export default function App() {
           project={activeProject}
           reward={selectedReward}
           onClose={() => { setCheckoutOpen(false); setSelectedReward(null); }}
-          onSubmit={(pledgeAmt) => {
-            setProjects(prev => prev.map(p => {
-              if (p.id === activeProject.id) {
-                const updatedRewards = p.rewards.map(r => {
-                  if (r.id === selectedReward.id) {
-                    return { ...r, claimed: r.claimed + 1 };
-                  }
-                  return r;
-                });
-                return {
-                  ...p,
-                  raisedAmount: p.raisedAmount + pledgeAmt,
-                  backerCount: p.backerCount + 1,
-                  rewards: updatedRewards
-                };
-              }
-              return p;
-            }));
-            setCheckoutOpen(false);
-            setSelectedReward(null);
-            showToast(`Pledge of $${pledgeAmt} recorded! Thank you for supporting ${activeProject.title}!`);
+          onSubmit={async (pledgeAmt) => {
+            try {
+              const { error: rewErr } = await supabase
+                .from('rewards')
+                .update({ claimed: selectedReward.claimed + 1 })
+                .eq('id', selectedReward.id);
+
+              if (rewErr) throw rewErr;
+
+              const { error: projErr } = await supabase
+                .from('projects')
+                .update({
+                  raised_amount: activeProject.raisedAmount + pledgeAmt,
+                  backer_count: activeProject.backerCount + 1
+                })
+                .eq('id', activeProject.id);
+
+              if (projErr) throw projErr;
+
+              await fetchProjects();
+              setCheckoutOpen(false);
+              setSelectedReward(null);
+              showToast(`Pledge of $${pledgeAmt} recorded! Thank you for supporting ${activeProject.title}!`);
+            } catch (err) {
+              console.error("Error recording pledge:", err);
+              showToast("Failed to register pledge in database.");
+            }
           }}
         />
       )}
