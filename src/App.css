@@ -1,6 +1,7 @@
 /* Montserrat font already imported in index.css */
 
 .auth-page-wrapper {
+    display: flex;
     align-items: center;
     justify-content: center;
     flex-direction: column;
@@ -8,6 +9,12 @@
     width: 100%;
     padding: 2rem 1rem;
 }
+
+
+
+
+
+
 
 .container {
     background-color: #111827;
