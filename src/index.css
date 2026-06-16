@@ -1908,3 +1908,123 @@ select.form-input {
 .download-btn-group button {
     flex: 1;
 }
+
+/* Premium UPI Card Layout */
+.upi-payment-card {
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 24px;
+    padding: 2rem 1.5rem;
+    box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.08);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    max-width: 320px;
+    width: 100%;
+    margin: 1.5rem auto;
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    color: #0f172a;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.upi-payment-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 15px 35px -8px rgba(0, 0, 0, 0.1);
+}
+
+.upi-card-merchant {
+    font-size: 1.25rem;
+    font-weight: 750;
+    color: #0f172a;
+    text-align: center;
+    margin-bottom: 1.25rem;
+    letter-spacing: -0.5px;
+    line-height: 1.2;
+    max-width: 90%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.upi-card-qr-box {
+    background: #ffffff;
+    padding: 0.75rem;
+    border-radius: 16px;
+    border: 1px solid #f1f5f9;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03);
+    margin-bottom: 0.85rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.upi-card-vpa {
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: #475569;
+    margin-bottom: 0.25rem;
+    text-align: center;
+    word-break: break-all;
+    max-width: 90%;
+}
+
+.upi-card-instruction {
+    font-size: 0.725rem;
+    color: #94a3b8;
+    margin-bottom: 1.25rem;
+    text-align: center;
+    font-weight: 500;
+}
+
+.upi-card-divider {
+    width: 100%;
+    height: 1px;
+    background: #f1f5f9;
+    margin-bottom: 1rem;
+}
+
+.upi-card-logos-container {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.65rem;
+}
+
+.upi-card-logos-row-1 {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 1.25rem;
+    opacity: 0.85;
+}
+
+.upi-card-logos-row-2 {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.85rem;
+    opacity: 0.85;
+}
+
+.upi-card-logo-item {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: auto;
+}
+
+/* Custom CSS brand adjustments */
+.upi-logo-pe {
+    background: #5f259f;
+    color: #ffffff;
+    border-radius: 50%;
+    width: 16px;
+    height: 16px;
+    font-size: 9px;
+    font-weight: 800;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: sans-serif;
+}

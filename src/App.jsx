@@ -1421,6 +1421,96 @@ function ProjectDetailView({ project, onBack, user, onPledge, onAddComment, onDe
 }
 
 // ============================================================================
+// BRAND-AUTHENTIC UPI PAYMENT CARD COMPONENT
+// ============================================================================
+function UpiPaymentCard({ merchantName, upiId, canvasRef }) {
+  return (
+    <div className="upi-payment-card">
+      <h4 className="upi-card-merchant">{merchantName || "Merchant Name"}</h4>
+
+      <div className="upi-card-qr-box">
+        <canvas ref={canvasRef} style={{ display: 'block', maxWidth: '100%', height: 'auto', borderRadius: '8px' }} />
+      </div>
+
+      <div className="upi-card-vpa">{upiId || "merchant@upi"}</div>
+
+      <div className="upi-card-instruction">Scan & pay using any UPI app</div>
+
+      <div className="upi-card-divider"></div>
+
+      <div className="upi-card-logos-container">
+        {/* Row 1: BHIM & UPI with subtext */}
+        <div className="upi-card-logos-row-1" style={{ gap: '2rem' }}>
+          {/* BHIM SVG logo */}
+          <div className="upi-card-logo-item" title="BHIM">
+            <svg width="60" height="22" viewBox="0 0 60 22" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <text x="2" y="13" fill="#334155" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-weight="900" font-style="italic" font-size="12" letter-spacing="-0.3">BHIM</text>
+              <path d="M34,3 L38.5,9 L34,15 L36.5,15 L41,9 L36.5,3 Z" fill="#5c6f84" />
+              <path d="M39,3 L43.5,9 L39,15 L41.5,15 L46,9 L41.5,3 Z" fill="#e05b26" />
+              <text x="2" y="20" fill="#94a3b8" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="3.2" font-weight="700" letter-spacing="0.1">BHARAT INTERFACE FOR MONEY</text>
+            </svg>
+          </div>
+          {/* UPI SVG logo */}
+          <div className="upi-card-logo-item" title="UPI">
+            <svg width="55" height="22" viewBox="0 0 55 22" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <text x="2" y="13" fill="#334155" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-weight="900" font-style="italic" font-size="12.5" letter-spacing="-0.3">UPI</text>
+              <path d="M26,3 L30.5,9 L26,15 L28.5,15 L33,9 L28.5,3 Z" fill="#097939" />
+              <path d="M31,3 L35.5,9 L31,15 L33.5,15 L38,9 L33.5,3 Z" fill="#e05b26" />
+              <text x="2" y="20" fill="#94a3b8" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="3.2" font-weight="700" letter-spacing="0.1">UNIFIED PAYMENTS INTERFACE</text>
+            </svg>
+          </div>
+        </div>
+
+        {/* Row 2: GPay, PhonePe, Paytm, Amazon Pay */}
+        <div className="upi-card-logos-row-2">
+          {/* GPay */}
+          <div className="upi-card-logo-item" title="Google Pay">
+            <svg width="45" height="15" viewBox="0 0 45 15" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M12 7.5c0-.4-.04-.8-.11-1.2H7v2.3h2.8c-.12.64-.48 1.18-.98 1.53v1.28h1.58c.92-.85 1.46-2.11 1.46-3.61z" fill="#4285F4" />
+              <path d="M7 12.5c1.49 0 2.74-.49 3.66-1.33l-1.58-1.28c-.44.29-1 .47-2.08.47-1.6 0-2.96-1.08-3.44-2.53H2.03v1.32C2.95 11.09 4.8 12.5 7 12.5z" fill="#34A853" />
+              <path d="M3.56 7.86c-.12-.37-.19-.76-.19-1.17s.07-.8.19-1.17V4.2H2.03C1.37 5.16 1 6.29 1 7.5s.37 2.34 1.03 3.3l1.53-1.3v-1.64z" fill="#FBBC05" />
+              <path d="M7 2.5c1.21 0 2.3.42 3.15 1.22l1.77-1.77C10.74 1.1 9.01.5 7 .5 4.8.5 2.95 1.91 2.03 4.2l1.53 1.3c.48-1.45 1.84-2.5 3.44-2.5z" fill="#EA4335" />
+              <text x="14" y="10.5" fill="#5f6368" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-weight="600" font-size="11.5" letter-spacing="-0.3">Pay</text>
+            </svg>
+          </div>
+
+          {/* PhonePe */}
+          <div className="upi-card-logo-item" title="PhonePe">
+            <svg width="65" height="15" viewBox="0 0 65 15" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <circle cx="7.5" cy="7.5" r="6.5" fill="#5f259f" />
+              <text x="7.5" y="10.5" fill="#ffffff" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-weight="900" font-size="8.5" text-anchor="middle">पे</text>
+              <text x="16.5" y="11" fill="#5f259f" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-weight="800" font-size="11.5" letter-spacing="-0.3">PhonePe</text>
+            </svg>
+          </div>
+
+          {/* Paytm */}
+          <div className="upi-card-logo-item" title="Paytm">
+            <svg width="45" height="15" viewBox="0 0 45 15" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <text x="2" y="11.5" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-weight="900" font-size="13" letter-spacing="-0.6">
+                <tspan fill="#002e6e">pay</tspan>
+                <tspan fill="#00baf2">tm</tspan>
+              </text>
+            </svg>
+          </div>
+
+          {/* Amazon Pay */}
+          <div className="upi-card-logo-item" title="Amazon Pay">
+            <svg width="65" height="15" viewBox="0 0 65 15" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <text x="2" y="11" fill="#000000" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-weight="700" font-size="9.5" letter-spacing="-0.3">amazon</text>
+              <path d="M4 12c4 1.8 14 1.8 18 .2" stroke="#ff9900" stroke-width="0.8" fill="none" stroke-linecap="round" />
+              <g transform="translate(36, 1.5) rotate(5)">
+                <rect x="0" y="0" width="23" height="11" rx="2" fill="#ff9900" stroke="#ffffff" stroke-width="0.5" />
+                <text x="11.5" y="8.5" fill="#ffffff" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-weight="800" font-size="7.5" text-anchor="middle" letter-spacing="-0.2">pay</text>
+              </g>
+            </svg>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ============================================================================
 // CHECKOUT MODAL SIMULATOR
 // ============================================================================
 function CheckoutModal({ project, reward, onClose, onSubmit }) {
@@ -1605,15 +1695,11 @@ function CheckoutModal({ project, reward, onClose, onSubmit }) {
               <>
                 {!upiPaid ? (
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                    <div className="upi-qr-wrapper">
-                      <div className="upi-qr-image-container">
-                        <div className="upi-qr-scanner-line"></div>
-                        <canvas ref={qrCanvasRef} style={{ width: '100%', height: '100%', display: 'block', borderRadius: '8px' }} />
-                      </div>
-                      <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', fontWeight: 600, textAlign: 'center' }}>
-                        Scan QR code to pay <strong>${pledgeAmt}</strong> to <strong>{project.upi_id}</strong>
-                      </span>
-                    </div>
+                    <UpiPaymentCard
+                      merchantName={project.title}
+                      upiId={project.upi_id}
+                      canvasRef={qrCanvasRef}
+                    />
 
                     <button
                       type="button"
@@ -1696,10 +1782,10 @@ function CreateProjectWizard({ onBack, onSubmit, user }) {
   const [bankIfsc, setBankIfsc] = useState("");
   const [payeeName, setPayeeName] = useState("");
 
-  // Customization
-  const [qrSize, setQrSize] = useState("150");
-  const [fgColor, setFgColor] = useState("#000000");
-  const [bgColor, setBgColor] = useState("#ffffff");
+  // Customization (Internal defaults)
+  const qrSize = "180";
+  const fgColor = "#000000";
+  const bgColor = "#ffffff";
 
   // Reward Creation State
   const [rewardTitle, setRewardTitle] = useState("Standard Backer Pack");
@@ -2042,39 +2128,15 @@ function CreateProjectWizard({ onBack, onSubmit, user }) {
 
             {/* Universal QR Code Preview Box with Customization and Downloads */}
             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', marginTop: '0.5rem', padding: '1.25rem', background: 'var(--bg-main)', border: '1px dashed var(--border-standard)', borderRadius: '16px' }}>
-              <span style={{ fontSize: '0.85rem', color: 'var(--text-primary)', fontWeight: 700, textAlign: 'center', display: 'block' }}>Universal UPI QR Code Preview</span>
+              <span style={{ fontSize: '0.85rem', color: 'var(--text-primary)', fontWeight: 700, textAlign: 'center', display: 'block' }}>Universal UPI QR Code Card</span>
               
-              <div style={{ display: 'flex', justifyContent: 'center', margin: '0.5rem 0' }}>
-                <div style={{ background: '#ffffff', padding: '0.75rem', borderRadius: '12px', border: '1px solid var(--border-standard)', boxShadow: 'var(--shadow-sm)' }}>
-                  <canvas ref={qrCanvasRef} style={{ display: 'block', maxWidth: '100%' }} />
-                </div>
-              </div>
+              <UpiPaymentCard
+                merchantName={payeeName || title || "Campaign Payout"}
+                upiId={payeeType === 'vpa' ? upiVpa : (bankAccount && bankIfsc ? `${bankAccount}@${bankIfsc}.ifsc.npci` : '')}
+                canvasRef={qrCanvasRef}
+              />
 
-              <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', textAlign: 'center' }}>
-                Payee Routing: <strong style={{ color: 'var(--accent-brand)' }}>{payeeType === 'vpa' ? upiVpa : (bankAccount && bankIfsc ? `${bankAccount}@${bankIfsc}.ifsc.npci` : 'Fill Bank Info')}</strong>
-              </span>
 
-              {/* QR Customization inside wizard */}
-              <div style={{ borderTop: '1px solid var(--border-standard)', paddingTop: '0.75rem', marginTop: '0.25rem' }}>
-                <div className="form-group-row" style={{ gap: '0.5rem' }}>
-                  <div className="form-field" style={{ flex: 1 }}>
-                    <label className="form-label" style={{ fontSize: '0.75rem' }}>Foreground</label>
-                    <input type="color" className="form-input" style={{ padding: '0', height: '28px', cursor: 'pointer' }} value={fgColor} onChange={(e) => setFgColor(e.target.value)} />
-                  </div>
-                  <div className="form-field" style={{ flex: 1 }}>
-                    <label className="form-label" style={{ fontSize: '0.75rem' }}>Background</label>
-                    <input type="color" className="form-input" style={{ padding: '0', height: '28px', cursor: 'pointer' }} value={bgColor} onChange={(e) => setBgColor(e.target.value)} />
-                  </div>
-                  <div className="form-field" style={{ flex: 1.5 }}>
-                    <label className="form-label" style={{ fontSize: '0.75rem' }}>QR Size</label>
-                    <select className="form-input" style={{ height: '28px', padding: '0 0.5rem', fontSize: '0.75rem' }} value={qrSize} onChange={(e) => setQrSize(e.target.value)}>
-                      <option value="120">Small (120)</option>
-                      <option value="150">Medium (150)</option>
-                      <option value="200">Standard (200)</option>
-                    </select>
-                  </div>
-                </div>
-              </div>
 
               {/* Download buttons */}
               <div style={{ display: 'flex', gap: '0.5rem', marginTop: '0.25rem' }}>
@@ -2750,10 +2812,10 @@ function UpiQrGenerator({ setView }) {
   const [amount, setAmount] = useState("");
   const [note, setNote] = useState("Invoice Settlement");
   
-  // Customization
-  const [qrSize, setQrSize] = useState("300");
-  const [fgColor, setFgColor] = useState("#000000");
-  const [bgColor, setBgColor] = useState("#ffffff");
+  // Customization (Internal defaults)
+  const qrSize = "180";
+  const fgColor = "#000000";
+  const bgColor = "#ffffff";
   
   const canvasRef = useRef(null);
 
@@ -2842,9 +2904,7 @@ function UpiQrGenerator({ setView }) {
     });
   };
 
-  // Color presets helper
-  const fgPresets = ["#000000", "#4f46e5", "#10b981", "#6d28d9", "#0369a1"];
-  const bgPresets = ["#ffffff", "#f8fafc", "#f5f3ff", "#ecfdf5", "#fef2f2"];
+
 
   return (
     <div className="qr-generator-wrapper" style={{ animation: 'fadeIn 0.3s ease' }}>
@@ -2955,62 +3015,7 @@ function UpiQrGenerator({ setView }) {
               </div>
             </div>
 
-            {/* Customization Details */}
-            <div style={{ borderTop: '1px solid var(--border-standard)', paddingTop: '1.25rem', marginTop: '0.5rem' }}>
-              <h3 style={{ fontFamily: 'var(--font-heading)', fontSize: '1.05rem', fontWeight: 800, color: 'var(--text-primary)', marginBottom: '1rem' }}>QR Code Customization</h3>
-              
-              <div className="form-group-row" style={{ marginBottom: '1.25rem' }}>
-                <div className="form-field">
-                  <label className="form-label">QR Size (pixels)</label>
-                  <select className="form-input" value={qrSize} onChange={(e) => setQrSize(e.target.value)}>
-                    <option value="200">Small (200x200)</option>
-                    <option value="250">Medium (250x250)</option>
-                    <option value="300">Standard (300x300)</option>
-                    <option value="400">Large (400x400)</option>
-                  </select>
-                </div>
-                <div className="form-field" style={{ display: 'flex', gap: '0.5rem', alignItems: 'flex-end' }}>
-                  <div style={{ flex: 1 }}>
-                    <label className="form-label">Custom Foreground</label>
-                    <input type="color" className="form-input" style={{ padding: '0.1rem 0.5rem', height: '38px', cursor: 'pointer' }} value={fgColor} onChange={(e) => setFgColor(e.target.value)} />
-                  </div>
-                  <div style={{ flex: 1 }}>
-                    <label className="form-label">Custom Background</label>
-                    <input type="color" className="form-input" style={{ padding: '0.1rem 0.5rem', height: '38px', cursor: 'pointer' }} value={bgColor} onChange={(e) => setBgColor(e.target.value)} />
-                  </div>
-                </div>
-              </div>
 
-              {/* Presets */}
-              <div className="form-field" style={{ marginBottom: '1rem' }}>
-                <label className="form-label">Foreground Color Presets</label>
-                <div className="color-swatch-picker">
-                  {fgPresets.map(c => (
-                    <div 
-                      key={c} 
-                      className={`color-swatch ${fgColor === c ? 'active' : ''}`} 
-                      style={{ backgroundColor: c }}
-                      onClick={() => setFgColor(c)}
-                    />
-                  ))}
-                </div>
-              </div>
-
-              <div className="form-field">
-                <label className="form-label">Background Color Presets</label>
-                <div className="color-swatch-picker">
-                  {bgPresets.map(c => (
-                    <div 
-                      key={c} 
-                      className={`color-swatch ${bgColor === c ? 'active' : ''}`} 
-                      style={{ backgroundColor: c }}
-                      onClick={() => setBgColor(c)}
-                    />
-                  ))}
-                </div>
-              </div>
-
-            </div>
           </form>
         </div>
 
@@ -3018,20 +3023,11 @@ function UpiQrGenerator({ setView }) {
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
           <h3 style={{ fontFamily: 'var(--font-heading)', fontSize: '1.25rem', fontWeight: 800, color: 'var(--text-primary)', marginBottom: '1.5rem', alignSelf: 'flex-start' }}>Real-time QR Preview</h3>
           
-          <div className="qr-preview-pane">
-            <div className="qr-canvas-wrapper">
-              <canvas ref={canvasRef} style={{ maxWidth: '100%', height: 'auto', display: 'block', borderRadius: '8px' }} />
-            </div>
-
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', alignItems: 'center' }}>
-              <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', color: 'var(--accent-success)', fontSize: '0.85rem', fontWeight: 700 }}>
-                <i className="fa-solid fa-shield-halved"></i> Universal NPCI Format VPA
-              </div>
-              <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', margin: 0, maxWidth: '250px' }}>
-                Works natively with BHIM, GPay, PhonePe, Paytm, and all banking apps. No account logins or server uploads.
-              </p>
-            </div>
-          </div>
+          <UpiPaymentCard
+            merchantName={payeeName || "Merchant Name"}
+            upiId={payeeType === 'vpa' ? upiId : (accountNo && ifscCode ? `${accountNo}@${ifscCode}.ifsc.npci` : "")}
+            canvasRef={canvasRef}
+          />
 
           <div className="download-btn-group">
             <button 
