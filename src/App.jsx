@@ -144,13 +144,17 @@ export default function App() {
   const [initialError, setInitialError] = useState("");
 
   // Navigation & Browsing States
-  const [view, setView] = useState("home"); // 'home' | 'details' | 'create'
+  const [view, setView] = useState("home"); // 'home' | 'details' | 'create' | 'creator-dashboard' | 'admin-panel'
   const [selectedProjectId, setSelectedProjectId] = useState(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("All");
 
   // App Dynamic Project Database State
   const [projects, setProjects] = useState([]);
+  
+  // Sandbox Modes
+  const [simMode, setSimMode] = useState("funder"); // 'funder' | 'creator' | 'admin'
+  const [donations, setDonations] = useState([]);
 
   // Alerts
   const [toastMessage, setToastMessage] = useState("");
@@ -192,6 +196,8 @@ export default function App() {
           backerCount: Number(p.backer_count),
           daysLeft: Number(p.days_left),
           trending: !!p.trending,
+          upi_id: p.upi_id || "payment@vorynx",
+          status: p.status || "pending",
           rewards: rewards.map(r => ({
             id: r.id,
             pledgeAmount: Number(r.pledge_amount),
@@ -220,6 +226,24 @@ export default function App() {
       console.error("Error fetching projects:", err);
       showToast("Error loading campaigns from database.");
     }
+  };
+
+  const fetchDonations = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('donations')
+        .select('*');
+
+      if (error) throw error;
+      setDonations(data || []);
+    } catch (err) {
+      console.error("Error fetching donations:", err);
+    }
+  };
+
+  const refreshData = async () => {
+    await fetchProjects();
+    await fetchDonations();
   };
 
   // Modals & Flows
@@ -252,7 +276,7 @@ export default function App() {
 
     const unsubscribe = auth.onAuthStateChanged(async (currentUser) => {
       setUser(currentUser);
-      await fetchProjects();
+      await refreshData();
       setLoading(false);
       if (currentUser) {
         setAuthOpen(false); // Close sign-in popup if completed successfully
@@ -294,6 +318,38 @@ export default function App() {
 
   return (
     <div className="vorynx-app">
+      {/* Sandbox Simulation Toolbar */}
+      <div className="sim-toolbar">
+        <div className="sim-toolbar-container">
+          <div className="sim-title">
+            <i className="fa-solid fa-flask"></i> Vorynx Sandbox Simulator
+          </div>
+          <div className="sim-role-badges">
+            <button 
+              className={`sim-role-btn ${simMode === 'funder' ? 'active' : ''}`}
+              onClick={() => { setSimMode('funder'); setView('home'); setSelectedProjectId(null); }}
+            >
+              <i className="fa-solid fa-wallet"></i> Funder View
+            </button>
+            <button 
+              className={`sim-role-btn ${simMode === 'creator' ? 'active' : ''}`}
+              onClick={() => { 
+                setSimMode('creator'); 
+                protectAction(() => setView('creator-dashboard'));
+              }}
+            >
+              <i className="fa-solid fa-chart-line"></i> Creator Mode
+            </button>
+            <button 
+              className={`sim-role-btn ${simMode === 'admin' ? 'active' : ''}`}
+              onClick={() => { setSimMode('admin'); setView('admin-panel'); }}
+            >
+              <i className="fa-solid fa-user-shield"></i> Admin Mode
+            </button>
+          </div>
+        </div>
+      </div>
+
       {/* Toast Alert */}
       {toastMessage && (
         <div style={{ position: 'fixed', bottom: '2rem', right: '2rem', background: 'rgba(17, 24, 39, 0.95)', border: '1px solid #00f59b', color: '#fff', padding: '1rem 2rem', borderRadius: '12px', zIndex: 10000, boxShadow: '0 5px 25px rgba(0, 245, 155, 0.15)', display: 'flex', alignItems: 'center', gap: '0.8rem', animation: 'slideUp 0.3s ease-out' }}>
@@ -305,7 +361,7 @@ export default function App() {
       {/* Header */}
       <header className="vorynx-header">
         <div className="header-container">
-          <div className="logo-section" onClick={() => { setView("home"); setSelectedProjectId(null); }}>
+          <div className="logo-section" id="brand-logo-btn" onClick={() => { setView("home"); setSelectedProjectId(null); }}>
             <span className="logo-icon">V</span>
             <span className="logo-text">VORYNX</span>
           </div>
@@ -314,6 +370,7 @@ export default function App() {
             <i className="fa-solid fa-magnifying-glass search-icon"></i>
             <input
               type="text"
+              id="search-campaigns-input"
               placeholder="Search campaigns..."
               className="search-input"
               value={searchQuery}
@@ -322,25 +379,35 @@ export default function App() {
           </div>
 
           <div className="nav-actions">
-            <button className="btn-text" style={{ fontSize: '0.9rem' }} onClick={() => protectAction(() => setView("create"))}>
+            {(simMode === "creator" || simMode === "admin") && (
+              <button className="btn-text" onClick={() => protectAction(() => setView("creator-dashboard"))}>
+                Creator Dashboard
+              </button>
+            )}
+            {simMode === "admin" && (
+              <button className="btn-text" onClick={() => setView("admin-panel")}>
+                Admin Panel
+              </button>
+            )}
+            <button className="btn-text" id="nav-start-campaign-btn" onClick={() => protectAction(() => setView("create"))}>
               Start a Campaign
             </button>
             {user ? (
               <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                  <div className="creator-avatar" style={{ width: '28px', height: '28px', fontSize: '0.75rem' }}>
+                  <div className="creator-avatar">
                     {(user.displayName || user.email || "U")[0].toUpperCase()}
                   </div>
-                  <span style={{ fontSize: '0.85rem', fontWeight: 600, maxWidth: '100px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                  <span style={{ fontSize: '0.875rem', fontWeight: 600, color: 'var(--text-primary)', maxWidth: '120px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                     {user.displayName || user.email.split('@')[0]}
                   </span>
                 </div>
-                <button className="btn-secondary" style={{ padding: '0.4rem 1rem', fontSize: '0.8rem' }} onClick={handleLogout}>
+                <button className="btn-secondary" id="nav-logout-btn" onClick={handleLogout}>
                   Log Out
                 </button>
               </div>
             ) : (
-              <button className="btn-primary" style={{ padding: '0.4rem 1.2rem', borderRadius: '20px' }} onClick={() => setAuthOpen(true)}>
+              <button className="btn-primary" id="nav-sign-in-btn" onClick={() => setAuthOpen(true)}>
                 Sign In
               </button>
             )}
@@ -457,7 +524,9 @@ export default function App() {
                     raised_amount: newProj.raisedAmount,
                     backer_count: newProj.backerCount,
                     days_left: newProj.daysLeft,
-                    trending: newProj.trending
+                    trending: newProj.trending,
+                    upi_id: newProj.upi_id,
+                    status: 'pending'
                   }]);
 
                 if (projErr) throw projErr;
@@ -478,15 +547,35 @@ export default function App() {
 
                 if (rewErr) throw rewErr;
 
-                await fetchProjects();
+                await refreshData();
                 setView("home");
-                showToast("Your campaign has been successfully launched on Vorynx!");
+                showToast("Your campaign proposal has been submitted and is awaiting Admin approval.");
               } catch (err) {
                 console.error("Error creating project:", err);
                 showToast("Failed to launch campaign to database.");
               }
             }}
             user={user}
+          />
+        )}
+
+        {view === "creator-dashboard" && (
+          <CreatorDashboardView
+            projects={projects}
+            donations={donations}
+            user={user}
+            setView={setView}
+            onSelectProject={(id) => { setSelectedProjectId(id); setView("details"); }}
+          />
+        )}
+
+        {view === "admin-panel" && (
+          <AdminPanelView
+            projects={projects}
+            donations={donations}
+            setView={setView}
+            refreshData={refreshData}
+            showToast={showToast}
           />
         )}
       </main>
@@ -543,29 +632,69 @@ export default function App() {
           project={activeProject}
           reward={selectedReward}
           onClose={() => { setCheckoutOpen(false); setSelectedReward(null); }}
-          onSubmit={async (pledgeAmt) => {
+          onSubmit={async (pledgeAmt, paymentMethod, transactionId) => {
             try {
-              const { error: rewErr } = await supabase
-                .from('rewards')
-                .update({ claimed: selectedReward.claimed + 1 })
-                .eq('id', selectedReward.id);
+              if (paymentMethod === "card") {
+                const { error: rewErr } = await supabase
+                  .from('rewards')
+                  .update({ claimed: selectedReward.claimed + 1 })
+                  .eq('id', selectedReward.id);
 
-              if (rewErr) throw rewErr;
+                if (rewErr) throw rewErr;
 
-              const { error: projErr } = await supabase
-                .from('projects')
-                .update({
-                  raised_amount: activeProject.raisedAmount + pledgeAmt,
-                  backer_count: activeProject.backerCount + 1
-                })
-                .eq('id', activeProject.id);
+                // Log a successful donation record
+                const { error: donErr } = await supabase
+                  .from('donations')
+                  .insert([{
+                    project_id: activeProject.id,
+                    amount: pledgeAmt,
+                    utr_id: transactionId || `card_${Date.now()}`,
+                    username: user?.displayName || user?.email?.split('@')[0] || "Anonymous Funder",
+                    status: 'successful'
+                  }]);
 
-              if (projErr) throw projErr;
+                if (donErr) throw donErr;
 
-              await fetchProjects();
-              setCheckoutOpen(false);
-              setSelectedReward(null);
-              showToast(`Pledge of $${pledgeAmt} recorded! Thank you for supporting ${activeProject.title}!`);
+                const { error: projErr } = await supabase
+                  .from('projects')
+                  .update({
+                    raised_amount: activeProject.raisedAmount + pledgeAmt,
+                    backer_count: activeProject.backerCount + 1
+                  })
+                  .eq('id', activeProject.id);
+
+                if (projErr) throw projErr;
+
+                await refreshData();
+                setCheckoutOpen(false);
+                setSelectedReward(null);
+                showToast(`Card pledge of $${pledgeAmt} authorized successfully!`);
+              } else {
+                // UPI transaction flow - insert pending donation
+                const { error: donErr } = await supabase
+                  .from('donations')
+                  .insert([{
+                    project_id: activeProject.id,
+                    amount: pledgeAmt,
+                    utr_id: transactionId,
+                    username: user?.displayName || user?.email?.split('@')[0] || "Anonymous Funder",
+                    status: 'pending'
+                  }]);
+
+                if (donErr) throw donErr;
+
+                const { error: rewErr } = await supabase
+                  .from('rewards')
+                  .update({ claimed: selectedReward.claimed + 1 })
+                  .eq('id', selectedReward.id);
+
+                if (rewErr) throw rewErr;
+
+                await refreshData();
+                setCheckoutOpen(false);
+                setSelectedReward(null);
+                showToast(`Pledge submitted. UTR: ${transactionId} is pending Admin verification.`);
+              }
             } catch (err) {
               console.error("Error recording pledge:", err);
               showToast("Failed to register pledge in database.");
@@ -589,17 +718,56 @@ function HomepageView({ projects, searchQuery, selectedCategory, setSelectedCate
       proj.description.toLowerCase().includes(searchQuery.toLowerCase());
 
     const matchesCategory = selectedCategory === "All" || proj.category === selectedCategory;
+    const isApproved = proj.status === 'approved' || proj.status === 'live';
 
-    return matchesSearch && matchesCategory;
+    return matchesSearch && matchesCategory && isApproved;
   });
 
   // Spotlight is the first trending project
-  const spotlightProj = projects.find(p => p.trending) || projects[0];
+  const spotlightProj = projects.find(p => p.trending && (p.status === 'approved' || p.status === 'live')) || projects.find(p => p.status === 'approved' || p.status === 'live');
+
+  const handleExploreClick = () => {
+    document.getElementById("discover-section")?.scrollIntoView({ behavior: "smooth" });
+  };
 
   return (
     <div>
-      {/* Category Selection Tabs */}
-      <div className="category-filter-bar">
+      {/* 1. HERO SECTION */}
+      <section className="hero-section" style={{ textAlign: 'center', padding: '3.5rem 1rem 3rem', maxWidth: '800px', margin: '0 auto' }}>
+        <div style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem', background: 'var(--accent-brand-light)', color: 'var(--accent-brand)', padding: '0.35rem 1rem', borderRadius: '9999px', fontSize: '0.85rem', fontWeight: 700, marginBottom: '1.5rem' }}>
+          <i className="fa-solid fa-circle-check"></i> Zero-Barrier Crowdfunding Platform
+        </div>
+        <h1 style={{ fontFamily: 'var(--font-heading)', fontSize: '3.2rem', fontWeight: 800, color: 'var(--text-primary)', lineHeight: 1.15, letterSpacing: '-1.2px', marginBottom: '1.25rem' }}>
+          Bring your creative ideas to life.
+        </h1>
+        <p style={{ fontSize: '1.1rem', color: 'var(--text-secondary)', lineHeight: 1.6, marginBottom: '2.25rem', maxWidth: '650px', margin: '0 auto 2.25rem' }}>
+          Vorynx is the trusted platform for designers, engineers, and creators. Back vetted, high-integrity campaigns or launch your own to a global community.
+        </p>
+        <div style={{ display: 'flex', justifyContent: 'center', gap: '1rem', flexWrap: 'wrap' }}>
+          <button className="btn-primary" style={{ padding: '0.75rem 2rem', fontSize: '0.95rem' }} onClick={() => protectAction(() => setView("create"))}>
+            Start a Campaign <i className="fa-solid fa-arrow-right"></i>
+          </button>
+          <button className="btn-secondary" style={{ padding: '0.75rem 2rem', fontSize: '0.95rem' }} onClick={handleExploreClick}>
+            Explore Campaigns
+          </button>
+        </div>
+
+        {/* Trust Quick Indicators */}
+        <div style={{ display: 'flex', justifyContent: 'center', gap: '2.5rem', marginTop: '3rem', flexWrap: 'wrap', borderTop: '1px solid var(--border-standard)', paddingTop: '2rem' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.85rem', color: 'var(--text-secondary)', fontWeight: 600 }}>
+            <i className="fa-solid fa-shield-halved text-green"></i> 100% Vetted Creators
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.85rem', color: 'var(--text-secondary)', fontWeight: 600 }}>
+            <i className="fa-solid fa-lock text-green"></i> Secure Encrypted Checkouts
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.85rem', color: 'var(--text-secondary)', fontWeight: 600 }}>
+            <i className="fa-solid fa-circle-dollar-to-slot text-green"></i> All-or-Nothing Guarantee
+          </div>
+        </div>
+      </section>
+
+      {/* 2. CATEGORY TABS */}
+      <div className="category-filter-bar" style={{ borderRadius: '16px', border: '1px solid var(--border-standard)', marginBottom: '3rem' }}>
         {["All", "Tech", "Design", "Games", "Publishing"].map((cat) => (
           <button
             key={cat}
@@ -611,16 +779,18 @@ function HomepageView({ projects, searchQuery, selectedCategory, setSelectedCate
         ))}
       </div>
 
-      {/* Spotlight Campaign Banner */}
+      {/* 3. CURATED FEATURED PROJECT */}
       {spotlightProj && searchQuery === "" && selectedCategory === "All" && (
-        <div>
+        <div style={{ marginBottom: '4rem' }}>
           <div className="section-header">
-            <h2 className="section-title">Spotlight Project</h2>
-            <span className="badge-tag"><i className="fa-solid fa-fire text-orange"></i> Creator Showcase</span>
+            <h2 className="section-title">Curated Featured Project</h2>
+            <span className="badge-tag" style={{ background: 'var(--accent-success-light)', color: 'var(--accent-success)', border: 'none', fontWeight: 700 }}>
+              <i className="fa-solid fa-star"></i> Project We Love
+            </span>
           </div>
           <div className="hero-spotlight">
             <div className="hero-media">
-              <span className="hero-tag">Project We Love</span>
+              <span className="hero-tag">Staff Pick</span>
               <img src={spotlightProj.image} alt={spotlightProj.title} />
             </div>
             <div className="hero-details">
@@ -629,7 +799,7 @@ function HomepageView({ projects, searchQuery, selectedCategory, setSelectedCate
               <p className="hero-desc">{spotlightProj.subtitle}</p>
 
               <div className="hero-stats-panel">
-                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem', marginBottom: '0.4rem', fontWeight: 600 }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.9rem', marginBottom: '0.5rem', fontWeight: 700 }}>
                   <span>${spotlightProj.raisedAmount.toLocaleString()} pledged</span>
                   <span className="text-green">{Math.round((spotlightProj.raisedAmount / spotlightProj.goalAmount) * 100)}%</span>
                 </div>
@@ -641,7 +811,7 @@ function HomepageView({ projects, searchQuery, selectedCategory, setSelectedCate
                 </div>
                 <div className="hero-stats-grid">
                   <div className="stat-item">
-                    <span className="stat-value">{spotlightProj.backerCount}</span>
+                    <span className="stat-value">{spotlightProj.backerCount.toLocaleString()}</span>
                     <span className="stat-label">Backers</span>
                   </div>
                   <div className="stat-item">
@@ -668,21 +838,21 @@ function HomepageView({ projects, searchQuery, selectedCategory, setSelectedCate
         </div>
       )}
 
-      {/* Campaigns Listing */}
-      <div className="section-header">
+      {/* 4. DISCOVER TRENDING CAMPAIGNS GRID */}
+      <div id="discover-section" className="section-header" style={{ paddingTop: '1.5rem', borderTop: '1px solid var(--border-standard)' }}>
         <h2 className="section-title">
           {searchQuery !== "" || selectedCategory !== "All" ? "Search Results" : "Trending Campaigns"}
         </h2>
-        <span style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
+        <span style={{ fontSize: '0.875rem', color: 'var(--text-secondary)', fontWeight: 500 }}>
           Showing {filteredProjects.length} campaigns
         </span>
       </div>
 
       {filteredProjects.length === 0 ? (
-        <div style={{ textAlign: 'center', padding: '4rem 1rem', background: 'var(--bg-surface)', border: '1px solid var(--border-standard)', borderRadius: '16px', color: 'var(--text-secondary)' }}>
-          <i className="fa-solid fa-magnifying-glass" style={{ fontSize: '2.5rem', marginBottom: '1rem', color: 'var(--text-muted)' }}></i>
-          <h3>No Campaigns Found</h3>
-          <p style={{ marginTop: '0.5rem', fontSize: '0.9rem' }}>We couldn't find anything matching your filters. Try clearing search queries or selecting another category.</p>
+        <div style={{ textAlign: 'center', padding: '5rem 1rem', background: 'var(--bg-surface)', border: '1px solid var(--border-standard)', borderRadius: '24px', color: 'var(--text-secondary)', boxShadow: 'var(--shadow-sm)' }}>
+          <i className="fa-solid fa-magnifying-glass" style={{ fontSize: '3rem', marginBottom: '1.25rem', color: 'var(--text-light)' }}></i>
+          <h3 style={{ fontSize: '1.25rem', fontWeight: 700, color: 'var(--text-primary)' }}>No Campaigns Found</h3>
+          <p style={{ marginTop: '0.5rem', fontSize: '0.95rem', maxWidth: '400px', margin: '0.5rem auto 0' }}>We couldn't find any projects matching your search. Try adjusting filters or searching for key words.</p>
         </div>
       ) : (
         <div className="projects-grid">
@@ -691,7 +861,7 @@ function HomepageView({ projects, searchQuery, selectedCategory, setSelectedCate
             return (
               <div key={proj.id} className="project-card" onClick={() => onSelectProject(proj.id)}>
                 <div className="card-media">
-                  {proj.trending && <span className="card-badge"><i className="fa-solid fa-bolt"></i> Trending</span>}
+                  {proj.trending && <span className="card-badge"><i className="fa-solid fa-bolt text-green"></i> Trending</span>}
                   <img src={proj.image} alt={proj.title} />
                 </div>
                 <div className="card-content">
@@ -700,24 +870,20 @@ function HomepageView({ projects, searchQuery, selectedCategory, setSelectedCate
                   <p className="card-desc">{proj.subtitle}</p>
 
                   <div className="card-footer-stats">
-                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem', marginBottom: '0.3rem', fontWeight: 600 }}>
-                      <span>${proj.raisedAmount.toLocaleString()} raised</span>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8rem', marginBottom: '0.4rem', fontWeight: 700 }}>
+                      <span>${proj.raisedAmount.toLocaleString()} raised of ${proj.goalAmount.toLocaleString()}</span>
                       <span className="text-green">{pct}%</span>
                     </div>
-                    <div className="progress-container" style={{ height: '6px' }}>
+                    <div className="progress-container" style={{ height: '6px', marginBottom: '0.8rem' }}>
                       <div
                         className="progress-fill"
                         style={{ width: `${Math.min(100, pct)}%` }}
                       ></div>
                     </div>
-                    <div className="card-stats-row" style={{ marginTop: '0.8rem' }}>
+                    <div className="card-stats-row">
                       <div>
-                        <div className="card-stat-number">{proj.backerCount}</div>
+                        <div className="card-stat-number">{proj.backerCount.toLocaleString()}</div>
                         <div className="card-stat-lbl">Backers</div>
-                      </div>
-                      <div>
-                        <div className="card-stat-number">${proj.goalAmount.toLocaleString()}</div>
-                        <div className="card-stat-lbl">Goal</div>
                       </div>
                       <div>
                         <div className="card-stat-number">{proj.daysLeft}</div>
@@ -731,6 +897,129 @@ function HomepageView({ projects, searchQuery, selectedCategory, setSelectedCate
           })}
         </div>
       )}
+
+      {/* 5. PLATFORM STATISTICS */}
+      <section style={{ background: 'var(--bg-surface)', border: '1px solid var(--border-standard)', borderRadius: '24px', padding: '3rem 2rem', marginBottom: '4rem', boxShadow: 'var(--shadow-sm)' }}>
+        <div style={{ textAlign: 'center', marginBottom: '2.5rem' }}>
+          <h2 style={{ fontFamily: 'var(--font-heading)', fontSize: '1.75rem', fontWeight: 800, color: 'var(--text-primary)' }}>Vorynx by the Numbers</h2>
+          <p style={{ color: 'var(--text-secondary)', fontSize: '0.95rem', marginTop: '0.5rem' }}>Fast, reliable, and transparent fundraising supporting creative minds worldwide.</p>
+        </div>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '2rem', textAlign: 'center' }}>
+          <div>
+            <div style={{ fontSize: '2.5rem', fontWeight: 800, color: 'var(--accent-brand)', fontFamily: 'var(--font-heading)' }}>$18.4M+</div>
+            <div style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', fontWeight: 600, marginTop: '0.5rem' }}>Total Funds Pledged</div>
+          </div>
+          <div>
+            <div style={{ fontSize: '2.5rem', fontWeight: 800, color: 'var(--accent-brand)', fontFamily: 'var(--font-heading)' }}>120,000+</div>
+            <div style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', fontWeight: 600, marginTop: '0.5rem' }}>Global Backers</div>
+          </div>
+          <div>
+            <div style={{ fontSize: '2.5rem', fontWeight: 800, color: 'var(--accent-brand)', fontFamily: 'var(--font-heading)' }}>98.2%</div>
+            <div style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', fontWeight: 600, marginTop: '0.5rem' }}>Successful Project Delivery</div>
+          </div>
+          <div>
+            <div style={{ fontSize: '2.5rem', fontWeight: 800, color: 'var(--accent-brand)', fontFamily: 'var(--font-heading)' }}>0%</div>
+            <div style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', fontWeight: 600, marginTop: '0.5rem' }}>Platform Listing Fees</div>
+          </div>
+        </div>
+      </section>
+
+      {/* 6. SUCCESS STORIES */}
+      <section style={{ marginBottom: '4rem' }}>
+        <div className="section-header">
+          <h2 className="section-title">Success Stories</h2>
+          <span style={{ fontSize: '0.875rem', color: 'var(--text-secondary)', fontWeight: 500 }}>Visions made physical</span>
+        </div>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(350px, 1fr))', gap: '2.5rem' }}>
+          <div style={{ background: 'var(--bg-surface)', border: '1px solid var(--border-standard)', borderRadius: '20px', overflow: 'hidden', display: 'flex', flexDirection: 'column', boxShadow: 'var(--shadow-sm)' }}>
+            <img src="https://images.unsplash.com/photo-1546868871-7041f2a55e12?auto=format&fit=crop&w=800&q=80" alt="Smart Wearables" style={{ width: '100%', height: '200px', objectFit: 'cover' }} />
+            <div style={{ padding: '1.5rem', flex: 1, display: 'flex', flexDirection: 'column' }}>
+              <span style={{ color: 'var(--accent-success)', fontSize: '0.75rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '1px' }}>Technology</span>
+              <h3 style={{ fontFamily: 'var(--font-heading)', fontSize: '1.25rem', fontWeight: 800, margin: '0.5rem 0' }}>Zenith Smart Watch</h3>
+              <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', lineHeight: 1.5, marginBottom: '1.5rem' }}>"Vorynx helped us raise 320% of our initial funding goal. Their creator support and all-or-nothing transparent payout structure gave our backers the absolute trust needed to fund our development phase."</p>
+              <div style={{ marginTop: 'auto', display: 'flex', justifyContent: 'space-between', fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-muted)' }}>
+                <span>Raised $148,200</span>
+                <span style={{ color: 'var(--accent-success)' }}>1,120 Backers</span>
+              </div>
+            </div>
+          </div>
+
+          <div style={{ background: 'var(--bg-surface)', border: '1px solid var(--border-standard)', borderRadius: '20px', overflow: 'hidden', display: 'flex', flexDirection: 'column', boxShadow: 'var(--shadow-sm)' }}>
+            <img src="https://images.unsplash.com/photo-1505740420928-5e560c06d30e?auto=format&fit=crop&w=800&q=80" alt="Acoustics" style={{ width: '100%', height: '200px', objectFit: 'cover' }} />
+            <div style={{ padding: '1.5rem', flex: 1, display: 'flex', flexDirection: 'column' }}>
+              <span style={{ color: 'var(--accent-success)', fontSize: '0.75rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '1px' }}>Design</span>
+              <h3 style={{ fontFamily: 'var(--font-heading)', fontSize: '1.25rem', fontWeight: 800, margin: '0.5rem 0' }}>EchoWood Speakers</h3>
+              <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', lineHeight: 1.5, marginBottom: '1.5rem' }}>"We launched our eco-friendly studio monitors on Vorynx. The zero platform listing fee allowed us to direct all support into procuring local walnut timber, keeping prices highly affordable for our core users."</p>
+              <div style={{ marginTop: 'auto', display: 'flex', justifyContent: 'space-between', fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-muted)' }}>
+                <span>Raised $64,500</span>
+                <span style={{ color: 'var(--accent-success)' }}>480 Backers</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* 7. TESTIMONIALS */}
+      <section style={{ marginBottom: '4rem' }}>
+        <div className="section-header">
+          <h2 className="section-title">Backer & Creator Feedback</h2>
+          <span style={{ fontSize: '0.875rem', color: 'var(--text-secondary)', fontWeight: 500 }}>Vetted testimonials</span>
+        </div>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '2rem' }}>
+          <div style={{ background: 'var(--bg-surface)', border: '1px solid var(--border-standard)', borderRadius: '16px', padding: '1.5rem', boxShadow: 'var(--shadow-sm)' }}>
+            <div style={{ display: 'flex', gap: '0.25rem', color: '#fbbf24', marginBottom: '0.8rem' }}>
+              <i className="fa-solid fa-star"></i><i className="fa-solid fa-star"></i><i className="fa-solid fa-star"></i><i className="fa-solid fa-star"></i><i className="fa-solid fa-star"></i>
+            </div>
+            <p style={{ color: 'var(--text-secondary)', fontSize: '0.875rem', lineHeight: 1.5, fontStyle: 'italic', marginBottom: '1rem' }}>
+              "The design is incredibly clean. I've backed four campaigns on Vorynx now, and the updates timeline keeping me informed of shipping speeds has made this the only platform I fully trust."
+            </p>
+            <div style={{ fontWeight: 700, fontSize: '0.85rem', color: 'var(--text-primary)' }}>Rohan Mehta</div>
+            <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Technology Backer</div>
+          </div>
+
+          <div style={{ background: 'var(--bg-surface)', border: '1px solid var(--border-standard)', borderRadius: '16px', padding: '1.5rem', boxShadow: 'var(--shadow-sm)' }}>
+            <div style={{ display: 'flex', gap: '0.25rem', color: '#fbbf24', marginBottom: '0.8rem' }}>
+              <i className="fa-solid fa-star"></i><i className="fa-solid fa-star"></i><i className="fa-solid fa-star"></i><i className="fa-solid fa-star"></i><i className="fa-solid fa-star"></i>
+            </div>
+            <p style={{ color: 'var(--text-secondary)', fontSize: '0.875rem', lineHeight: 1.5, fontStyle: 'italic', marginBottom: '1rem' }}>
+              "Vorynx is the best. The team actually vetted our product design prototype before allowing us to go live. This filtration ensures backing high-quality stuff, reducing the risks commonly seen elsewhere."
+            </p>
+            <div style={{ fontWeight: 700, fontSize: '0.85rem', color: 'var(--text-primary)' }}>Sarah Connor</div>
+            <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Industrial Designer</div>
+          </div>
+
+          <div style={{ background: 'var(--bg-surface)', border: '1px solid var(--border-standard)', borderRadius: '16px', padding: '1.5rem', boxShadow: 'var(--shadow-sm)' }}>
+            <div style={{ display: 'flex', gap: '0.25rem', color: '#fbbf24', marginBottom: '0.8rem' }}>
+              <i className="fa-solid fa-star"></i><i className="fa-solid fa-star"></i><i className="fa-solid fa-star"></i><i className="fa-solid fa-star"></i><i className="fa-solid fa-star"></i>
+            </div>
+            <p style={{ color: 'var(--text-secondary)', fontSize: '0.875rem', lineHeight: 1.5, fontStyle: 'italic', marginBottom: '1rem' }}>
+              "As a developer launching a smart hub, the developer API tools and easy integration with Supabase made shipping comments and updates completely smooth. Backers loved the transparent story layout."
+            </p>
+            <div style={{ fontWeight: 700, fontSize: '0.85rem', color: 'var(--text-primary)' }}>David Vance</div>
+            <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Smart Home Creator</div>
+          </div>
+        </div>
+      </section>
+
+      {/* 8. TRUST AND SECURITY INDICATORS */}
+      <section style={{ background: 'linear-gradient(135deg, rgba(79, 70, 229, 0.02) 0%, rgba(16, 185, 129, 0.02) 100%)', border: '1px solid var(--border-standard)', borderRadius: '24px', padding: '2.5rem', display: 'flex', flexWrap: 'wrap', alignItems: 'center', justifycontent: 'space-between', gap: '2rem', boxShadow: 'var(--shadow-sm)' }}>
+        <div style={{ maxWidth: '600px' }}>
+          <h3 style={{ fontFamily: 'var(--font-heading)', fontSize: '1.5rem', fontWeight: 800, color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+            <i className="fa-solid fa-shield-halved text-green"></i> Secure Crowdfunding Guaranteed
+          </h3>
+          <p style={{ color: 'var(--text-secondary)', fontSize: '0.95rem', marginTop: '0.5rem', lineHeight: 1.6 }}>
+            Our security framework protects both donors and creators. We verify campaign identity, secure checkout tokens using PCI-compliant processors, and enforce the strict All-or-Nothing model to guarantee financial safety.
+          </p>
+        </div>
+        <div style={{ display: 'flex', gap: '1.5rem', flexWrap: 'wrap' }}>
+          <div style={{ background: 'var(--bg-surface)', border: '1px solid var(--border-standard)', padding: '0.8rem 1.2rem', borderRadius: '12px', display: 'flex', alignItems: 'center', gap: '0.6rem', fontSize: '0.85rem', fontWeight: 700 }}>
+            <i className="fa-brands fa-cc-stripe" style={{ fontSize: '1.5rem', color: '#635bff' }}></i> Stripe Payments
+          </div>
+          <div style={{ background: 'var(--bg-surface)', border: '1px solid var(--border-standard)', padding: '0.8rem 1.2rem', borderRadius: '12px', display: 'flex', alignItems: 'center', gap: '0.6rem', fontSize: '0.85rem', fontWeight: 700 }}>
+            <i className="fa-solid fa-circle-check text-green" style={{ fontSize: '1.25rem' }}></i> KYC Verified
+          </div>
+        </div>
+      </section>
     </div>
   );
 }
@@ -738,6 +1027,41 @@ function HomepageView({ projects, searchQuery, selectedCategory, setSelectedCate
 // ============================================================================
 // PROJECT DETAIL VIEW COMPONENT
 // ============================================================================
+// Helper to fetch customized specifications/materials per category
+const getCategoryDetails = (category) => {
+  const cat = (category || "").toLowerCase();
+  if (cat === "tech") {
+    return {
+      specsTitle: "Technical & Device Specifications",
+      specsBody: "Our PCB routing design is complete and custom voice recognition algorithms are fully optimized. Aura Hub runs a custom lightweight neural network model locally to keep execution entirely offline, and uses low-energy radio transmitters.",
+      materialsTitle: "System Architecture & Security",
+      materialsBody: "The housing uses premium anodized aluminum with double-shot glassmorphic lenses. The internals feature cryptographic coprocessors for secure on-device token storage and local database hashing via custom SQLite pipelines."
+    };
+  } else if (cat === "design") {
+    return {
+      specsTitle: "Ergonomics & Design Schematics",
+      specsBody: "We have finalized our mechanical drafts, custom keyboard switches, and mold files. Everything is optimized for premium acoustic resonance, hot-swappable keycap tolerances, and custom gasket dampening systems.",
+      materialsTitle: "Materials & Tactile Craftsmanship",
+      materialsBody: "Each frame is milled from a single block of aerospace-grade aluminum or hand-polished American walnut timber. We verify wood grain quality individually to ensure a gorgeous finish and lifelong structural durability."
+    };
+  } else if (cat === "games") {
+    return {
+      specsTitle: "Game Engine & Mechanics",
+      specsBody: "Rules have undergone extensive balance playtesting with over 100 beta sessions. Miniature designs are fully optimized for detailed 3D resin printing, ensuring sharp model features and robust peg structures.",
+      materialsTitle: "Asset Quality & Production",
+      materialsBody: "Card sets use premium 350gsm linen-finish paper stocks with scratch-resistant coating. Dice are precision-milled resin with embedded glowing pigments, and modular grid maps are printed on thick, water-resistant boards."
+    };
+  } else {
+    // Publishing / Default
+    return {
+      specsTitle: "Layout & Production Specifications",
+      specsBody: "The manuscript formatting and cover illustrations are completed in high-resolution vector formats. Book binding drafts have been approved by our local printing house, matching optimal margin guidelines.",
+      materialsTitle: "Print Quality & Binding Materials",
+      materialsBody: "We utilize heavy-weight 120gsm acid-free cream paper to ensure pages do not yellow. Covers feature premium cloth-bound hardback materials, custom gold-foil embossing, and highly durable reinforced stitching."
+    };
+  }
+};
+
 function ProjectDetailView({ project, onBack, user, onPledge, onAddComment, onDeleteProject }) {
   const [activeTab, setActiveTab] = useState("story"); // 'story' | 'updates' | 'comments'
   const [commentInput, setCommentInput] = useState("");
@@ -755,6 +1079,8 @@ function ProjectDetailView({ project, onBack, user, onPledge, onAddComment, onDe
     setCommentInput("");
   };
 
+  const catDetails = getCategoryDetails(project.category);
+
   return (
     <div>
       {/* Back button */}
@@ -763,21 +1089,25 @@ function ProjectDetailView({ project, onBack, user, onPledge, onAddComment, onDe
       </span>
 
       <div className="detail-header-full">
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem' }}>
+          <span className="badge-tag" style={{ background: 'var(--accent-brand-light)', color: 'var(--accent-brand)', border: 'none', fontWeight: 700 }}>
+            {project.category}
+          </span>
+          {project.creator.verified && (
+            <span className="creator-tag">
+              <i className="fa-solid fa-circle-check text-green" style={{ marginRight: '4px' }}></i> Trust Vetted Campaign
+            </span>
+          )}
+        </div>
         <h1 className="detail-title">{project.title}</h1>
         <p className="detail-subtitle">{project.subtitle}</p>
         <div className="detail-creator-row">
           <div className="creator-avatar">
             {project.creator.avatar}
           </div>
-          <span style={{ color: 'var(--text-primary)' }}>
-            By <span className="creator-name">{project.creator.name}</span>
+          <span style={{ color: 'var(--text-primary)', fontWeight: 500 }}>
+            Campaign organized by <span className="creator-name" style={{ fontWeight: 700 }}>{project.creator.name}</span>
           </span>
-          {project.creator.verified && (
-            <span className="creator-tag">
-              <i className="fa-solid fa-circle-check text-green" style={{ marginRight: '3px' }}></i> Verified Creator
-            </span>
-          )}
-          <span className="badge-tag">{project.category}</span>
         </div>
       </div>
 
@@ -812,18 +1142,93 @@ function ProjectDetailView({ project, onBack, user, onPledge, onAddComment, onDe
 
             {/* Tab Panes */}
             {activeTab === "story" && (
-              <div className="tab-pane-content">
-                <h3>About This Project</h3>
-                <p>{project.description}</p>
-                <p>Crowdfunding allows creative hardware builders and software teams to directly interface with their initial users. By backing our team, you help support tooling setup, mechanical designs, component procurement, and beta testing. Our team is committed to high-frequency weekly updates to give you full visibility into our design pipeline.</p>
+              <div className="story-cards-container animate-fade-in">
+                {/* Card 1: About This Project (Full Width) */}
+                <div className="story-card-premium brand">
+                  <div className="story-card-header">
+                    <div className="story-card-icon-wrapper icon-wrapper-brand">
+                      <i className="fa-regular fa-compass"></i>
+                    </div>
+                    <h3 className="story-card-title">About This Project</h3>
+                  </div>
+                  <div className="story-card-desc">
+                    <p style={{ fontWeight: 500, fontSize: '1.05rem', color: 'var(--text-primary)', marginBottom: '1rem' }}>
+                      {project.description}
+                    </p>
+                    <p>
+                      Crowdfunding allows creative hardware builders and software teams to directly interface with their initial users. By backing our team, you help support tooling setup, mechanical designs, component procurement, and beta testing. Our team is committed to high-frequency weekly updates to give you full visibility into our design pipeline.
+                    </p>
+                  </div>
+                </div>
 
-                <h3>Prototype Specifications</h3>
-                <p>We have finished our initial mechanical modeling and 3D housing runs. The design integrates premium raw materials, customized localized programming, and heavy physical layout validations. Everything is optimized to deliver peak aesthetics and robust functional capabilities.</p>
+                {/* 2-Column Grid */}
+                <div className="story-grid-2col">
+                  {/* Card 2: Specs */}
+                  <div className="story-card-premium success">
+                    <div className="story-card-header">
+                      <div className="story-card-icon-wrapper icon-wrapper-success">
+                        <i className="fa-solid fa-microchip"></i>
+                      </div>
+                      <h3 className="story-card-title">{catDetails.specsTitle}</h3>
+                    </div>
+                    <div className="story-card-desc">
+                      <p>{catDetails.specsBody}</p>
+                    </div>
+                  </div>
 
-                <h3>Risks & Challenges</h3>
-                <div style={{ background: 'rgba(255, 159, 67, 0.05)', borderLeft: '3px solid #ff9f43', padding: '1rem', borderRadius: '4px', margin: '1rem 0' }}>
-                  <strong style={{ color: '#ff9f43' }}>Required Crowdfunding Notice</strong>
-                  <p style={{ margin: '0.5rem 0 0', fontSize: '0.85rem' }}>Global supply chains, shipping corridors, and raw material procurement are subject to fluctuating lead times. We have already pre-purchased key processing units and structural frames to buffer against delayed launches, but production shifts are always a minor possibility.</p>
+                  {/* Card 3: Materials & Craftsmanship */}
+                  <div className="story-card-premium purple">
+                    <div className="story-card-header">
+                      <div className="story-card-icon-wrapper icon-wrapper-purple">
+                        <i className="fa-solid fa-palette"></i>
+                      </div>
+                      <h3 className="story-card-title">{catDetails.materialsTitle}</h3>
+                    </div>
+                    <div className="story-card-desc">
+                      <p>{catDetails.materialsBody}</p>
+                    </div>
+                  </div>
+
+                  {/* Card 4: Timeline & Weekly Updates */}
+                  <div className="story-card-premium info">
+                    <div className="story-card-header">
+                      <div className="story-card-icon-wrapper icon-wrapper-info">
+                        <i className="fa-regular fa-calendar-check"></i>
+                      </div>
+                      <h3 className="story-card-title">Updates & Timeline</h3>
+                    </div>
+                    <div className="story-card-desc">
+                      <p>We believe in building in public. We commit to weekly progress reports, production photos, and shipping checks to ensure you remain fully aligned with our deployment pipeline.</p>
+                    </div>
+                  </div>
+
+                  {/* Card 5: Safe Escrow / Guarantee */}
+                  <div className="story-card-premium brand">
+                    <div className="story-card-header">
+                      <div className="story-card-icon-wrapper icon-wrapper-brand">
+                        <i className="fa-solid fa-shield-halved"></i>
+                      </div>
+                      <h3 className="story-card-title">Backer Escrow Guarantee</h3>
+                    </div>
+                    <div className="story-card-desc">
+                      <p>With our All-or-Nothing guarantee, your funds are only processed when the project reaches its funding target. All campaigns undergo strict KYC verification prior to listing.</p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Card 6: Risks & Challenges */}
+                <div className="story-card-premium warning warning-theme">
+                  <div className="story-card-header">
+                    <div className="story-card-icon-wrapper icon-wrapper-warning">
+                      <i className="fa-solid fa-triangle-exclamation"></i>
+                    </div>
+                    <h3 className="story-card-title" style={{ color: '#d97706' }}>Risks & Challenges</h3>
+                  </div>
+                  <div className="story-card-desc">
+                    <p>
+                      Global supply chains, shipping corridors, and raw material procurement are subject to fluctuating lead times. We have already pre-purchased key processing units and structural frames to buffer against delayed launches, but production shifts are always a minor possibility.
+                    </p>
+                  </div>
                 </div>
               </div>
             )}
@@ -831,17 +1236,17 @@ function ProjectDetailView({ project, onBack, user, onPledge, onAddComment, onDe
             {activeTab === "updates" && (
               <div className="tab-pane-content">
                 {project.updates.length === 0 ? (
-                  <div style={{ textAlign: 'center', padding: '2rem 1rem', color: 'var(--text-muted)' }}>
+                  <div style={{ textAlign: 'center', padding: '3rem 1rem', color: 'var(--text-muted)' }}>
                     No updates have been posted by the creator yet.
                   </div>
                 ) : (
                   project.updates.map(up => (
-                    <div key={up.id} style={{ background: 'rgba(255,255,255,0.01)', border: '1px solid var(--border-standard)', borderRadius: '12px', padding: '1.5rem', marginBottom: '1.5rem' }}>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.8rem', flexWrap: 'wrap' }}>
-                        <h4 style={{ color: '#fff', fontFamily: 'var(--font-heading)' }}>{up.title}</h4>
-                        <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>{up.date}</span>
+                    <div key={up.id} style={{ background: 'var(--bg-surface)', border: '1px solid var(--border-standard)', borderRadius: '16px', padding: '1.5rem', marginBottom: '1.5rem', boxShadow: 'var(--shadow-sm)' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.8rem', flexWrap: 'wrap', alignItems: 'center' }}>
+                        <h4 style={{ color: 'var(--text-primary)', fontFamily: 'var(--font-heading)', fontSize: '1.15rem', fontWeight: 800 }}>{up.title}</h4>
+                        <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)', fontWeight: 500 }}>{up.date}</span>
                       </div>
-                      <p style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', margin: 0 }}>{up.body}</p>
+                      <p style={{ fontSize: '0.925rem', color: 'var(--text-secondary)', margin: 0, lineHeight: 1.6 }}>{up.body}</p>
                     </div>
                   ))
                 )}
@@ -851,7 +1256,7 @@ function ProjectDetailView({ project, onBack, user, onPledge, onAddComment, onDe
             {activeTab === "comments" && (
               <div className="tab-pane-content">
                 <form onSubmit={handleSubmitComment} className="comment-input-form">
-                  <span style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-primary)' }}>Join the discussion</span>
+                  <span style={{ fontSize: '0.875rem', fontWeight: 700, color: 'var(--text-primary)' }}>Join the discussion</span>
                   <textarea
                     placeholder={user ? "Ask a question or share feedback..." : "Please sign in to write a comment."}
                     className="comment-textarea"
@@ -859,14 +1264,14 @@ function ProjectDetailView({ project, onBack, user, onPledge, onAddComment, onDe
                     onChange={(e) => setCommentInput(e.target.value)}
                     disabled={!user}
                   />
-                  <button type="submit" className="btn-primary" style={{ alignSelf: 'flex-end', padding: '0.4rem 1.2rem', fontSize: '0.8rem' }} disabled={!user}>
+                  <button type="submit" className="btn-primary" style={{ alignSelf: 'flex-end' }} disabled={!user}>
                     Post Comment
                   </button>
                 </form>
 
                 <div className="comments-section">
                   {project.comments.length === 0 ? (
-                    <div style={{ textAlign: 'center', padding: '2rem 1rem', color: 'var(--text-muted)' }}>
+                    <div style={{ textAlign: 'center', padding: '3rem 1rem', color: 'var(--text-muted)' }}>
                       No comments yet. Start the conversation!
                     </div>
                   ) : (
@@ -893,7 +1298,7 @@ function ProjectDetailView({ project, onBack, user, onPledge, onAddComment, onDe
           </div>
         </div>
 
-        {/* Sidebar Left Details */}
+        {/* Sidebar Right Details */}
         <div className="detail-right">
           {/* Funding Stats */}
           <div className="stats-card-side">
@@ -902,27 +1307,32 @@ function ProjectDetailView({ project, onBack, user, onPledge, onAddComment, onDe
               <span className="side-stat-lbl">pledged of ${project.goalAmount.toLocaleString()} goal</span>
             </div>
 
-            <div className="progress-container">
+            <div className="progress-container" style={{ marginBottom: '0.5rem' }}>
               <div className="progress-fill" style={{ width: `${Math.min(100, percentFunded)}%` }}></div>
             </div>
 
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem', borderTop: '1px solid var(--border-standard)', borderBottom: '1px solid var(--border-standard)', padding: '1rem 0' }}>
               <div className="side-stat-block">
-                <span style={{ fontSize: '1.5rem', fontWeight: 700 }}>{project.backerCount}</span>
-                <span className="side-stat-lbl">Backers</span>
+                <span style={{ fontSize: '1.6rem', fontWeight: 800, color: 'var(--text-primary)', fontFamily: 'var(--font-heading)' }}>{project.backerCount.toLocaleString()}</span>
+                <span className="side-stat-lbl" style={{ fontSize: '0.7rem' }}>Backers</span>
               </div>
               <div className="side-stat-block">
-                <span style={{ fontSize: '1.5rem', fontWeight: 700 }}>{project.daysLeft}</span>
-                <span className="side-stat-lbl">Days Left</span>
+                <span style={{ fontSize: '1.6rem', fontWeight: 800, color: 'var(--text-primary)', fontFamily: 'var(--font-heading)' }}>{project.daysLeft}</span>
+                <span className="side-stat-lbl" style={{ fontSize: '0.7rem' }}>Days Left</span>
               </div>
             </div>
 
-            <button className="btn-primary" style={{ justifyContent: 'center', padding: '0.8rem' }} onClick={() => onPledge(project.rewards[0])}>
+            <button className="btn-primary" style={{ padding: '0.8rem 1rem', width: '100%', fontSize: '0.95rem' }} onClick={() => onPledge(project.rewards[0])}>
               Back this project
             </button>
-            <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', textAlign: 'center' }}>
-              All Vorynx projects run on an "All-or-Nothing" model. If goal target isn't reached by closing, zero transactions execute.
-            </span>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.6rem', background: 'var(--bg-main)', border: '1px solid var(--border-standard)', borderRadius: '12px', padding: '1rem', fontSize: '0.8rem', color: 'var(--text-secondary)', lineHeight: 1.4 }}>
+              <div style={{ display: 'flex', gap: '0.4rem', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '0.2rem' }}>
+                <i className="fa-solid fa-circle-check text-green" style={{ marginTop: '0.1rem' }}></i> All-or-Nothing Guarantee
+              </div>
+              <div>If this campaign does not reach its funding goal by its deadline, no backers will be charged and all transactions are voided.</div>
+            </div>
+
             {isCreator && (
               <button
                 className="btn-danger"
@@ -932,13 +1342,10 @@ function ProjectDetailView({ project, onBack, user, onPledge, onAddComment, onDe
                   alignItems: 'center',
                   gap: '0.5rem',
                   padding: '0.8rem',
-                  backgroundColor: '#ff4d4d',
-                  color: '#fff',
                   border: 'none',
                   borderRadius: '12px',
-                  fontWeight: 600,
+                  fontWeight: 700,
                   cursor: 'pointer',
-                  marginTop: '0.8rem',
                   width: '100%',
                   fontSize: '0.9rem',
                   transition: 'background 0.2s'
@@ -948,6 +1355,31 @@ function ProjectDetailView({ project, onBack, user, onPledge, onAddComment, onDe
                 <i className="fa-solid fa-trash-can"></i> Discontinue Campaign
               </button>
             )}
+          </div>
+
+          {/* Organizer Profile Card */}
+          <div style={{ background: 'var(--bg-surface)', border: '1px solid var(--border-standard)', borderRadius: '20px', padding: '1.5rem', boxShadow: 'var(--shadow-sm)' }}>
+            <h3 className="rewards-title" style={{ fontSize: '1.15rem', marginBottom: '1rem' }}>Organizer Profile</h3>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.8rem', marginBottom: '1rem' }}>
+              <div className="creator-avatar" style={{ width: '40px', height: '40px', fontSize: '1.1rem' }}>
+                {project.creator.avatar}
+              </div>
+              <div>
+                <div style={{ fontWeight: 800, color: 'var(--text-primary)', fontSize: '0.95rem' }}>{project.creator.name}</div>
+                <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: 500 }}>Vorynx Creator since 2025</div>
+              </div>
+            </div>
+            <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', lineHeight: 1.5, marginBottom: '1.25rem' }}>
+              We are committed to full design transparency. Our primary manufacturing base is vetted and ready for tooling optimization.
+            </p>
+            <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+              <span className="badge-tag" style={{ background: 'var(--accent-success-light)', color: 'var(--accent-success)', border: 'none', fontWeight: 700 }}>
+                <i className="fa-solid fa-shield-check"></i> Identity Verified
+              </span>
+              <span className="badge-tag" style={{ background: 'rgba(79, 70, 229, 0.08)', color: 'var(--accent-brand)', border: 'none', fontWeight: 700 }}>
+                <i className="fa-solid fa-circle-check"></i> Bank Verified
+              </span>
+            </div>
           </div>
 
           {/* Reward Options */}
@@ -984,10 +1416,19 @@ function ProjectDetailView({ project, onBack, user, onPledge, onAddComment, onDe
 // ============================================================================
 function CheckoutModal({ project, reward, onClose, onSubmit }) {
   const [pledgeAmt, setPledgeAmt] = useState(reward.pledgeAmount);
+  const [paymentMethod, setPaymentMethod] = useState("card"); // 'card' | 'upi'
+
+  // Card States
   const [cardNumber, setCardNumber] = useState("4111 2222 3333 4444");
   const [cardExpiry, setCardExpiry] = useState("12/28");
   const [cardCvc, setCardCvc] = useState("123");
   const [cardholder, setCardholder] = useState("Sandbox Tester");
+
+  // UPI States
+  const [isSimulating, setIsSimulating] = useState(false);
+  const [simulationStatus, setSimulationStatus] = useState("");
+  const [upiPaid, setUpiPaid] = useState(false);
+  const [utrId, setUtrId] = useState("");
 
   const handlePledgeSubmit = (e) => {
     e.preventDefault();
@@ -995,86 +1436,216 @@ function CheckoutModal({ project, reward, onClose, onSubmit }) {
       alert(`Minimum pledge amount for this reward is $${reward.pledgeAmount}`);
       return;
     }
-    onSubmit(Number(pledgeAmt));
+
+    if (paymentMethod === "card") {
+      setIsSimulating(true);
+      setSimulationStatus("Processing credit card transaction...");
+      setTimeout(() => {
+        onSubmit(Number(pledgeAmt), "card", `card_${Date.now()}`);
+        setIsSimulating(false);
+      }, 2000);
+    } else {
+      if (!upiPaid) {
+        alert("Please complete the simulated UPI payment first.");
+        return;
+      }
+      if (!utrId || utrId.length < 6) {
+        alert("Please enter a valid Transaction UTR ID.");
+        return;
+      }
+      onSubmit(Number(pledgeAmt), "upi", utrId);
+    }
   };
 
+  const handleSimulateUpiAppPayment = () => {
+    setIsSimulating(true);
+    setSimulationStatus("Opening GPay/PhonePe intent connection...");
+    setTimeout(() => {
+      setSimulationStatus(`Requesting authorization for $${pledgeAmt} to ${project.upi_id}...`);
+      setTimeout(() => {
+        setSimulationStatus("UPI Payment Completed! Generating Bank UTR ID...");
+        setTimeout(() => {
+          const generatedUtr = `1034${Math.floor(10000000 + Math.random() * 90000000)}`;
+          setUtrId(generatedUtr);
+          setUpiPaid(true);
+          setIsSimulating(false);
+        }, 1200);
+      }, 1500);
+    }, 1200);
+  };
+
+  const upiUri = `upi://pay?pa=${encodeURIComponent(project.upi_id)}&pn=${encodeURIComponent(project.title)}&am=${pledgeAmt}&cu=USD`;
+  const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(upiUri)}&color=4f46e5`;
+
   return (
-    <div className="modal-overlay" onClick={onClose}>
+    <div className="modal-overlay" onClick={isSimulating ? undefined : onClose}>
       <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-        <button className="modal-close-btn" onClick={onClose}>&times;</button>
-        <h2 className="modal-title">Confirm Pledge Reward</h2>
+        {!isSimulating && <button className="modal-close-btn" onClick={onClose}>&times;</button>}
+        <h2 className="modal-title">Confirm Your Pledge</h2>
         <p className="modal-subtitle">Supporting: {project.title}</p>
 
-        <form onSubmit={handlePledgeSubmit} className="credit-card-form">
-          <div style={{ background: 'rgba(255,255,255,0.02)', padding: '1rem', borderRadius: '12px', border: '1px solid var(--border-standard)', marginBottom: '0.5rem' }}>
-            <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Selected Tier:</span>
-            <div style={{ fontWeight: 700, color: 'var(--text-primary)', marginTop: '0.2rem' }}>{reward.title}</div>
-            <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Minimum Pledge: ${reward.pledgeAmount}</div>
+        {isSimulating ? (
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '3rem 1rem', textAlign: 'center' }}>
+            <div className="upi-loader"></div>
+            <h3 style={{ fontSize: '1.1rem', fontWeight: 700, color: 'var(--text-primary)', marginTop: '1rem' }}>{simulationStatus}</h3>
+            <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', marginTop: '0.5rem' }}>Please do not close this window or refresh the page.</p>
           </div>
+        ) : (
+          <form onSubmit={handlePledgeSubmit} className="credit-card-form">
+            <div style={{ background: 'var(--bg-main)', padding: '1.25rem', borderRadius: '12px', border: '1px solid var(--border-standard)', marginBottom: '0.25rem' }}>
+              <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)', fontWeight: 600, textTransform: 'uppercase' }}>Selected Reward Tier:</span>
+              <div style={{ fontWeight: 800, color: 'var(--text-primary)', marginTop: '0.25rem', fontSize: '1rem' }}>{reward.title}</div>
+              <div style={{ fontSize: '0.875rem', color: 'var(--accent-brand)', marginTop: '0.2rem', fontWeight: 600 }}>Minimum Pledge: ${reward.pledgeAmount}</div>
+            </div>
 
-          <div className="form-field">
-            <label className="form-label">Pledge Amount ($)</label>
-            <input
-              type="number"
-              className="form-input"
-              value={pledgeAmt}
-              onChange={(e) => setPledgeAmt(Math.max(1, Number(e.target.value)))}
-              min={reward.pledgeAmount}
-              required
-            />
-          </div>
-
-          <div className="form-field">
-            <label className="form-label">Cardholder Name</label>
-            <input
-              type="text"
-              className="form-input"
-              value={cardholder}
-              onChange={(e) => setCardholder(e.target.value)}
-              required
-            />
-          </div>
-
-          <div className="form-field">
-            <label className="form-label">Card Number</label>
-            <input
-              type="text"
-              className="form-input"
-              value={cardNumber}
-              onChange={(e) => setCardNumber(e.target.value)}
-              required
-            />
-          </div>
-
-          <div className="form-group-row">
             <div className="form-field">
-              <label className="form-label">Expiration Date</label>
+              <label className="form-label">Pledge Amount ($)</label>
               <input
-                type="text"
-                placeholder="MM/YY"
+                type="number"
                 className="form-input"
-                value={cardExpiry}
-                onChange={(e) => setCardExpiry(e.target.value)}
+                value={pledgeAmt}
+                onChange={(e) => setPledgeAmt(Math.max(1, Number(e.target.value)))}
+                min={reward.pledgeAmount}
                 required
               />
             </div>
-            <div className="form-field">
-              <label className="form-label">CVC</label>
-              <input
-                type="text"
-                placeholder="123"
-                className="form-input"
-                value={cardCvc}
-                onChange={(e) => setCardCvc(e.target.value)}
-                required
-              />
-            </div>
-          </div>
 
-          <button type="submit" className="btn-primary" style={{ marginTop: '1rem', padding: '0.8rem', justifyContent: 'center' }}>
-            Authorize Simulated Pledge of ${pledgeAmt}
-          </button>
-        </form>
+            {/* Payment Method Tabs */}
+            <div className="payment-tabs-container">
+              <button
+                type="button"
+                className={`payment-method-tab ${paymentMethod === 'card' ? 'active' : ''}`}
+                onClick={() => { setPaymentMethod('card'); setUpiPaid(false); }}
+              >
+                <i className="fa-regular fa-credit-card"></i> Credit Card
+              </button>
+              <button
+                type="button"
+                className={`payment-method-tab ${paymentMethod === 'upi' ? 'active' : ''}`}
+                onClick={() => setPaymentMethod('upi')}
+              >
+                <i className="fa-solid fa-mobile-screen-button"></i> UPI / QR Code
+              </button>
+            </div>
+
+            {paymentMethod === 'card' ? (
+              <>
+                <div className="form-field">
+                  <label className="form-label">Cardholder Name</label>
+                  <input
+                    type="text"
+                    className="form-input"
+                    value={cardholder}
+                    onChange={(e) => setCardholder(e.target.value)}
+                    required
+                  />
+                </div>
+
+                <div className="form-field">
+                  <label className="form-label">Card Number</label>
+                  <input
+                    type="text"
+                    className="form-input"
+                    value={cardNumber}
+                    onChange={(e) => setCardNumber(e.target.value)}
+                    required
+                  />
+                </div>
+
+                <div className="form-group-row">
+                  <div className="form-field">
+                    <label className="form-label">Expiration Date</label>
+                    <input
+                      type="text"
+                      placeholder="MM/YY"
+                      className="form-input"
+                      value={cardExpiry}
+                      onChange={(e) => setCardExpiry(e.target.value)}
+                      required
+                    />
+                  </div>
+                  <div className="form-field">
+                    <label className="form-label">CVC</label>
+                    <input
+                      type="text"
+                      placeholder="123"
+                      className="form-input"
+                      value={cardCvc}
+                      onChange={(e) => setCardCvc(e.target.value)}
+                      required
+                    />
+                  </div>
+                </div>
+              </>
+            ) : (
+              <>
+                {!upiPaid ? (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                    <div className="upi-qr-wrapper">
+                      <div className="upi-qr-image-container">
+                        <div className="upi-qr-scanner-line"></div>
+                        <img src={qrCodeUrl} alt="UPI QR Code" style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
+                      </div>
+                      <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', fontWeight: 600, textAlign: 'center' }}>
+                        Scan QR code to pay <strong>${pledgeAmt}</strong> to <strong>{project.upi_id}</strong>
+                      </span>
+                    </div>
+
+                    <button
+                      type="button"
+                      className="btn-primary"
+                      style={{ background: 'var(--accent-success)', borderColor: 'var(--accent-success)', padding: '0.8rem', width: '100%', fontSize: '0.9rem' }}
+                      onClick={handleSimulateUpiAppPayment}
+                    >
+                      <i className="fa-solid fa-mobile-screen-button"></i> Simulate Payment via GPay/PhonePe
+                    </button>
+                  </div>
+                ) : (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', background: 'var(--bg-main)', border: '1px solid var(--border-standard)', padding: '1.25rem', borderRadius: '12px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--accent-success)', fontWeight: 700, fontSize: '0.95rem' }}>
+                      <i className="fa-solid fa-circle-check"></i> Simulated Payment Successful
+                    </div>
+                    <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', margin: 0 }}>
+                      The simulated transfer of ${pledgeAmt} to creator UPI ID ({project.upi_id}) has completed.
+                    </p>
+
+                    <div className="form-field" style={{ marginTop: '0.5rem' }}>
+                      <label className="form-label" style={{ fontWeight: 700 }}>Bank UTR / Transaction ID</label>
+                      <input
+                        type="text"
+                        className="form-input"
+                        value={utrId}
+                        onChange={(e) => setUtrId(e.target.value)}
+                        placeholder="Enter 12-digit UTR ID"
+                        required
+                        style={{ fontFamily: 'monospace' }}
+                      />
+                      <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>
+                        Confirm or input the 12-digit UTR reference ID from your UPI app receipt to log escrow pending verification.
+                      </span>
+                    </div>
+                  </div>
+                )}
+              </>
+            )}
+
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', background: 'var(--accent-success-light)', padding: '0.8rem', borderRadius: '8px', border: '1px solid rgba(16, 185, 129, 0.1)', margin: '0.5rem 0' }}>
+              <i className="fa-solid fa-lock text-green" style={{ fontSize: '0.9rem' }}></i>
+              <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', fontWeight: 500 }}>
+                Secure Escrow. Funds only distributed when campaign goal is fully verified.
+              </span>
+            </div>
+
+            <button
+              type="submit"
+              className="btn-primary"
+              style={{ padding: '0.8rem', width: '100%', fontSize: '0.95rem' }}
+              disabled={paymentMethod === 'upi' && !upiPaid}
+            >
+              {paymentMethod === 'card' ? `Authorize Card Pledge of $${pledgeAmt}` : `Submit UTR & Register Pledge`}
+            </button>
+          </form>
+        )}
       </div>
     </div>
   );
@@ -1093,6 +1664,7 @@ function CreateProjectWizard({ onBack, onSubmit, user }) {
   const [imageOpt, setImageOpt] = useState("tech"); // tech | design | games | publishing (presetted unsplash options)
   const [goal, setGoal] = useState(10000);
   const [duration, setDuration] = useState(30);
+  const [upiId, setUpiId] = useState("startup@upi");
 
   // Reward Creation State
   const [rewardTitle, setRewardTitle] = useState("Standard Backer Pack");
@@ -1131,6 +1703,8 @@ function CreateProjectWizard({ onBack, onSubmit, user }) {
       backerCount: 0,
       daysLeft: Number(duration),
       trending: false,
+      upi_id: upiId || "payment@vorynx",
+      status: 'pending',
       rewards: [
         { id: `r_${Date.now()}_1`, pledgeAmount: 5, title: "Support Creator", desc: "Digital backer access and platform dashboard verification badge.", limit: null, claimed: 0 },
         { id: `r_${Date.now()}_2`, pledgeAmount: Number(rewardCost), title: rewardTitle, desc: rewardDesc, limit: null, claimed: 0 }
@@ -1143,7 +1717,7 @@ function CreateProjectWizard({ onBack, onSubmit, user }) {
   };
 
   return (
-    <div style={{ maxWidth: '600px', margin: '1.5rem auto 3rem', background: 'var(--bg-surface)', border: '1px solid var(--border-standard)', borderRadius: '20px', padding: '2rem', boxShadow: '0 10px 30px rgba(0,0,0,0.4)' }}>
+    <div style={{ maxWidth: '600px', margin: '2rem auto 4rem', background: 'var(--bg-surface)', border: '1px solid var(--border-standard)', borderRadius: '24px', padding: '2.5rem', boxShadow: 'var(--shadow-lg)' }}>
 
       {/* Back link */}
       <span className="back-link" onClick={onBack}>
@@ -1151,8 +1725,8 @@ function CreateProjectWizard({ onBack, onSubmit, user }) {
       </span>
 
       <div style={{ margin: '1rem 0 2rem' }}>
-        <h1 style={{ fontFamily: 'var(--font-heading)', fontSize: '1.8rem', fontWeight: 800, color: '#fff' }}>Start Your Vorynx Campaign</h1>
-        <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>Launch your creative project to the community in 3 simple steps.</p>
+        <h1 style={{ fontFamily: 'var(--font-heading)', fontSize: '1.85rem', fontWeight: 800, color: 'var(--text-primary)', letterSpacing: '-0.5px' }}>Start Your Vorynx Campaign</h1>
+        <p style={{ fontSize: '0.9rem', color: 'var(--text-secondary)' }}>Launch your creative project to the community in 3 simple steps.</p>
       </div>
 
       {/* Progress indicators */}
@@ -1166,8 +1740,8 @@ function CreateProjectWizard({ onBack, onSubmit, user }) {
 
         {/* Step 1: Basics */}
         {step === 1 && (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '1.2rem', animation: 'fadeIn 0.3s ease' }}>
-            <h3 style={{ color: '#fff', fontSize: '1.1rem', fontWeight: 600 }}>Step 1: Campaign Basics</h3>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem', animation: 'fadeIn 0.3s ease' }}>
+            <h3 style={{ color: 'var(--text-primary)', fontSize: '1.15rem', fontWeight: 800, fontFamily: 'var(--font-heading)' }}>Step 1: Campaign Basics</h3>
 
             <div className="form-field">
               <label className="form-label">Project Title</label>
@@ -1219,8 +1793,8 @@ function CreateProjectWizard({ onBack, onSubmit, user }) {
 
         {/* Step 2: Goal and Targets */}
         {step === 2 && (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '1.2rem', animation: 'fadeIn 0.3s ease' }}>
-            <h3 style={{ color: '#fff', fontSize: '1.1rem', fontWeight: 600 }}>Step 2: Funding & Duration</h3>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem', animation: 'fadeIn 0.3s ease' }}>
+            <h3 style={{ color: 'var(--text-primary)', fontSize: '1.15rem', fontWeight: 800, fontFamily: 'var(--font-heading)' }}>Step 2: Funding & Duration</h3>
 
             <div className="form-field">
               <label className="form-label">Funding Goal ($)</label>
@@ -1250,13 +1824,26 @@ function CreateProjectWizard({ onBack, onSubmit, user }) {
               />
               <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Specify the duration of campaign (Between 5 and 60 days).</span>
             </div>
+
+            <div className="form-field">
+              <label className="form-label">UPI ID for Escrow Payments</label>
+              <input
+                type="text"
+                placeholder="e.g. startup@upi"
+                className="form-input"
+                value={upiId}
+                onChange={(e) => setUpiId(e.target.value)}
+                required
+              />
+              <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Provide the UPI address where backers will send fund pledges via UPI apps.</span>
+            </div>
           </div>
         )}
 
         {/* Step 3: Rewards setup */}
         {step === 3 && (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '1.2rem', animation: 'fadeIn 0.3s ease' }}>
-            <h3 style={{ color: '#fff', fontSize: '1.1rem', fontWeight: 600 }}>Step 3: Core Reward Tier</h3>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem', animation: 'fadeIn 0.3s ease' }}>
+            <h3 style={{ color: 'var(--text-primary)', fontSize: '1.15rem', fontWeight: 800, fontFamily: 'var(--font-heading)' }}>Step 3: Core Reward Tier</h3>
 
             <div className="form-field">
               <label className="form-label">Reward Tier Title</label>
@@ -1285,7 +1872,7 @@ function CreateProjectWizard({ onBack, onSubmit, user }) {
               <label className="form-label">Reward Description</label>
               <textarea
                 className="form-input"
-                style={{ minHeight: '80px', fontFamily: 'inherit', resize: 'vertical' }}
+                style={{ minHeight: '90px', fontFamily: 'inherit', resize: 'vertical' }}
                 value={rewardDesc}
                 onChange={(e) => setRewardDesc(e.target.value)}
                 required
@@ -1407,29 +1994,29 @@ function AuthPanel({ initialError }) {
     }
   };
 
-      //  handler: Google 0auth 
-      const handleGooglelogin = async (e) =>{
-        e.preventdefault();
-        setError("");
-        setInfoMessage("");
-        try{
-          await signInWithPopup(auth, googleProvider);
-        }  catch (err) {
-          setError(getFriendlyErrorMessage(err));
-        }
-      };
+  //  handler: Google oauth 
+  const handleGoogleLogin = async (e) => {
+    e.preventDefault();
+    setError("");
+    setInfoMessage("");
+    try {
+      await signInWithPopup(auth, googleProvider);
+    } catch (err) {
+      setError(getFriendlyErrorMessage(err));
+    }
+  };
 
-      //  handler; github oauth 
-      const handleGithubLogin = async (e) => {
-        e.preventDefault();
-        setError("");
-        setInfoMessage("");
-        try{
-          await signInWithPopup(auth, githubProvider);
-        }  catch (err) {
-          setError(getfriendlyErrorMessage(err));
-        }
-      };
+  //  handler; github oauth 
+  const handleGithubLogin = async (e) => {
+    e.preventDefault();
+    setError("");
+    setInfoMessage("");
+    try {
+      await signInWithPopup(auth, githubProvider);
+    } catch (err) {
+      setError(getFriendlyErrorMessage(err));
+    }
+  };
 
   return (
     <div className={`container ${isActive ? 'active' : ''}`} id="container">
@@ -1445,7 +2032,7 @@ function AuthPanel({ initialError }) {
 
           <div className="social-buttons-column">
             <button type="button" className="btn-social google" onClick={handleGoogleLogin}>
-              <i className="fa-brands fa-google"></i> Continue with Google
+              <i className="fa-brands fa-google text-orange"></i> Continue with Google
             </button>
             <button type="button" className="btn-social github" onClick={handleGithubLogin}>
               <i className="fa-brands fa-github"></i> Continue with GitHub
@@ -1458,8 +2045,8 @@ function AuthPanel({ initialError }) {
             <span></span>
           </div>
 
-          {isActive && error && <p style={{ color: '#ff4d4d', fontSize: '13px', margin: '5px 0', fontWeight: 500 }}>{error}</p>}
-          {isActive && infoMessage && <p style={{ color: '#00f59b', fontSize: '13px', margin: '5px 0', fontWeight: 500 }}>{infoMessage}</p>}
+          {isActive && error && <p style={{ color: '#ef4444', fontSize: '13px', margin: '5px 0', fontWeight: 500 }}>{error}</p>}
+          {isActive && infoMessage && <p style={{ color: 'var(--accent-success)', fontSize: '13px', margin: '5px 0', fontWeight: 500 }}>{infoMessage}</p>}
 
           <label className="auth-input-label">Full Name</label>
           <input type="text" placeholder="e.g. John Doe" value={signUpName} onChange={(e) => setSignUpName(e.target.value)} />
@@ -1488,7 +2075,7 @@ function AuthPanel({ initialError }) {
 
           <div className="social-buttons-column">
             <button type="button" className="btn-social google" onClick={handleGoogleLogin}>
-              <i className="fa-brands fa-google"></i> Continue with Google
+              <i className="fa-brands fa-google text-orange"></i> Continue with Google
             </button>
             <button type="button" className="btn-social github" onClick={handleGithubLogin}>
               <i className="fa-brands fa-github"></i> Continue with GitHub
@@ -1501,8 +2088,8 @@ function AuthPanel({ initialError }) {
             <span></span>
           </div>
 
-          {!isActive && error && <p style={{ color: '#ff4d4d', fontSize: '13px', margin: '5px 0', fontWeight: 500 }}>{error}</p>}
-          {!isActive && infoMessage && <p style={{ color: '#00f59b', fontSize: '13px', margin: '5px 0', fontWeight: 500 }}>{infoMessage}</p>}
+          {!isActive && error && <p style={{ color: '#ef4444', fontSize: '13px', margin: '5px 0', fontWeight: 500 }}>{error}</p>}
+          {!isActive && infoMessage && <p style={{ color: 'var(--accent-success)', fontSize: '13px', margin: '5px 0', fontWeight: 500 }}>{infoMessage}</p>}
 
           <label className="auth-input-label">Email Address</label>
           <input type="email" placeholder="e.g. you@example.com" value={signInEmail} onChange={(e) => setSignInEmail(e.target.value)} required />
@@ -1512,7 +2099,7 @@ function AuthPanel({ initialError }) {
 
           <div style={{ display: 'flex', justifyContent: 'space-between', width: '100%', fontSize: '12px', margin: '10px 0 5px' }}>
             <a href="#" onClick={handleForgotPassword}>Forgot Password?</a>
-            <a href="#" onClick={handleSendEmailLink} style={{ color: '#00f59b', fontWeight: '600' }}>Passwordless Link</a>
+            <a href="#" onClick={handleSendEmailLink} style={{ color: 'var(--accent-brand)', fontWeight: '600' }}>Passwordless Link</a>
           </div>
 
           <button type="submit">Sign In</button>
@@ -1546,6 +2133,344 @@ function AuthPanel({ initialError }) {
         </div>
       </div>
 
+    </div>
+  );
+}
+
+// ============================================================================
+// CREATOR DASHBOARD VIEW
+// ============================================================================
+function CreatorDashboardView({ projects, donations, user, setView, onSelectProject }) {
+  const creatorName = user?.displayName || user?.email?.split('@')[0] || "";
+  const myProjects = projects.filter(p => p.creator.name === creatorName);
+
+  return (
+    <div className="creator-dashboard-container" style={{ animation: 'fadeIn 0.3s ease' }}>
+      <div className="dashboard-title-bar">
+        <div>
+          <h1 className="dashboard-heading">Creator Campaign Console</h1>
+          <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>Monitor your campaign status, platform fees, and funding transactions.</p>
+        </div>
+        <button className="btn-secondary" onClick={() => setView("home")}>
+          <i className="fa-solid fa-arrow-left"></i> Back to discovery
+        </button>
+      </div>
+
+      {myProjects.length === 0 ? (
+        <div style={{ textAlign: 'center', padding: '4rem 2rem', background: 'var(--bg-surface)', border: '1px solid var(--border-standard)', borderRadius: '24px', color: 'var(--text-secondary)' }}>
+          <i className="fa-solid fa-chart-line" style={{ fontSize: '3rem', marginBottom: '1rem', color: 'var(--text-light)' }}></i>
+          <h3 style={{ fontSize: '1.25rem', fontWeight: 700, color: 'var(--text-primary)' }}>No Campaigns Found</h3>
+          <p style={{ marginTop: '0.5rem', marginBottom: '1.5rem' }}>You haven't launched any campaigns yet. Start a campaign to begin crowdfunding!</p>
+          <button className="btn-primary" onClick={() => setView("create")}>
+            Start a Campaign <i className="fa-solid fa-plus"></i>
+          </button>
+        </div>
+      ) : (
+        <div className="dashboard-grid">
+          {myProjects.map(project => {
+            const projectDonations = donations.filter(d => d.project_id === project.id);
+
+            return (
+              <div key={project.id} style={{ background: 'var(--bg-surface)', border: '1px solid var(--border-standard)', borderRadius: '24px', padding: '2rem', marginBottom: '2rem', boxShadow: 'var(--shadow-md)' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem', marginBottom: '1.5rem', borderBottom: '1px solid var(--border-standard)', paddingBottom: '1rem' }}>
+                  <div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                      <span className="badge-tag" style={{ background: 'var(--accent-brand-light)', color: 'var(--accent-brand)', border: 'none', fontWeight: 700 }}>
+                        {project.category}
+                      </span>
+                      <span className={`status-badge ${project.status}`}>
+                        {project.status === 'approved' ? 'Live & Active' : 'Pending Admin Approval'}
+                      </span>
+                    </div>
+                    <h2 style={{ fontFamily: 'var(--font-heading)', fontSize: '1.5rem', fontWeight: 800, color: 'var(--text-primary)', marginTop: '0.5rem' }}>{project.title}</h2>
+                  </div>
+                  <button className="btn-secondary" style={{ fontSize: '0.85rem' }} onClick={() => onSelectProject(project.id)}>
+                    View Live Page <i className="fa-solid fa-arrow-up-right-from-square"></i>
+                  </button>
+                </div>
+
+                {/* Metrics */}
+                <div className="stats-grid-3col">
+                  <div className="metric-card gross">
+                    <span className="metric-label">Gross Raised</span>
+                    <span className="metric-value">${project.raisedAmount.toLocaleString()}</span>
+                    <span className="metric-sub">Pledged by {project.backerCount} backers</span>
+                  </div>
+                  <div className="metric-card fee">
+                    <span className="metric-label">Platform Fee (20%)</span>
+                    <span className="metric-value">${(project.raisedAmount * 0.20).toLocaleString()}</span>
+                    <span className="metric-sub">Dedicated to platform maintenance</span>
+                  </div>
+                  <div className="metric-card net">
+                    <span className="metric-label">Net Proceeds (80%)</span>
+                    <span className="metric-value">${(project.raisedAmount * 0.80).toLocaleString()}</span>
+                    <span className="metric-sub">Payout amount to startup wallet</span>
+                  </div>
+                </div>
+
+                {/* Donation list */}
+                <div className="table-container" style={{ margin: 0 }}>
+                  <div className="table-header-title">
+                    Transaction & Escrow History
+                  </div>
+                  <div style={{ overflowX: 'auto' }}>
+                    {projectDonations.length === 0 ? (
+                      <div style={{ padding: '2rem', textAlign: 'center', color: 'var(--text-muted)' }}>
+                        No donations have been registered for this campaign yet.
+                      </div>
+                    ) : (
+                      <table className="admin-table">
+                        <thead>
+                          <tr>
+                            <th className="admin-th">Funder</th>
+                            <th className="admin-th">Amount</th>
+                            <th className="admin-th">UTR / Transaction ID</th>
+                            <th className="admin-th">Date</th>
+                            <th className="admin-th">Status</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {projectDonations.map(donation => (
+                            <tr key={donation.id} className="admin-tr">
+                              <td className="admin-td" style={{ fontWeight: 600, color: 'var(--text-primary)' }}>{donation.username}</td>
+                              <td className="admin-td" style={{ fontWeight: 700, color: 'var(--accent-success)' }}>${Number(donation.amount).toLocaleString()}</td>
+                              <td className="admin-td" style={{ fontFamily: 'monospace', fontSize: '0.85rem' }}>{donation.utr_id}</td>
+                              <td className="admin-td">{new Date(donation.created_at).toLocaleDateString()}</td>
+                              <td className="admin-td">
+                                <span className={`status-badge ${donation.status}`}>
+                                  {donation.status}
+                                </span>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    )}
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ============================================================================
+// ADMIN PANEL VIEW
+// ============================================================================
+function AdminPanelView({ projects, donations, setView, refreshData, showToast }) {
+  const [activeSubTab, setActiveSubTab] = useState("campaigns"); // 'campaigns' | 'transactions'
+
+  const pendingProjects = projects.filter(p => p.status === 'pending');
+  const pendingDonations = donations.filter(d => d.status === 'pending');
+
+  const handleApproveProject = async (id) => {
+    try {
+      const { error } = await supabase
+        .from('projects')
+        .update({ status: 'approved' })
+        .eq('id', id);
+
+      if (error) throw error;
+      showToast("Campaign approved! It is now live for backing.");
+      await refreshData();
+    } catch (err) {
+      console.error(err);
+      showToast("Failed to approve campaign.");
+    }
+  };
+
+  const handleRejectProject = async (id) => {
+    try {
+      const { error } = await supabase
+        .from('projects')
+        .delete()
+        .eq('id', id);
+
+      if (error) throw error;
+      showToast("Campaign proposal rejected.");
+      await refreshData();
+    } catch (err) {
+      console.error(err);
+      showToast("Failed to reject campaign.");
+    }
+  };
+
+  const handleVerifyDonation = async (donation) => {
+    try {
+      // Find corresponding project
+      const proj = projects.find(p => p.id === donation.project_id);
+      if (!proj) {
+        throw new Error("Project not found.");
+      }
+
+      // Update donation status to successful
+      const { error: donErr } = await supabase
+        .from('donations')
+        .update({ status: 'successful' })
+        .eq('id', donation.id);
+
+      if (donErr) throw donErr;
+
+      // Update project funding raised amount and backer count
+      const { error: projErr } = await supabase
+        .from('projects')
+        .update({
+          raised_amount: proj.raisedAmount + Number(donation.amount),
+          backer_count: proj.backerCount + 1
+        })
+        .eq('id', proj.id);
+
+      if (projErr) throw projErr;
+
+      showToast(`Donation of $${donation.amount} verified! Project raised amount updated.`);
+      await refreshData();
+    } catch (err) {
+      console.error(err);
+      showToast(err.message || "Failed to verify donation.");
+    }
+  };
+
+  const handleRejectDonation = async (donationId) => {
+    try {
+      const { error } = await supabase
+        .from('donations')
+        .update({ status: 'rejected' })
+        .eq('id', donationId);
+
+      if (error) throw error;
+      showToast("Transaction rejected (invalid UTR).");
+      await refreshData();
+    } catch (err) {
+      console.error(err);
+      showToast("Failed to reject transaction.");
+    }
+  };
+
+  return (
+    <div className="admin-panel-container" style={{ animation: 'fadeIn 0.3s ease' }}>
+      <div className="dashboard-title-bar">
+        <div>
+          <h1 className="dashboard-heading">Platform Administration Console</h1>
+          <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>Approve campaign proposals and verify transaction receipts.</p>
+        </div>
+        <button className="btn-secondary" onClick={() => setView("home")}>
+          <i className="fa-solid fa-arrow-left"></i> Back to discovery
+        </button>
+      </div>
+
+      {/* Subtabs */}
+      <div className="detail-tabs-bar" style={{ marginBottom: '2rem' }}>
+        <button
+          className={`detail-tab-btn ${activeSubTab === 'campaigns' ? 'active' : ''}`}
+          onClick={() => setActiveSubTab("campaigns")}
+        >
+          Pending Proposals ({pendingProjects.length})
+        </button>
+        <button
+          className={`detail-tab-btn ${activeSubTab === 'transactions' ? 'active' : ''}`}
+          onClick={() => setActiveSubTab("transactions")}
+        >
+          UTR Transaction Approvals ({pendingDonations.length})
+        </button>
+      </div>
+
+      {/* Proposals Queue */}
+      {activeSubTab === "campaigns" && (
+        <div>
+          {pendingProjects.length === 0 ? (
+            <div style={{ textAlign: 'center', padding: '4rem 2rem', background: 'var(--bg-surface)', border: '1px solid var(--border-standard)', borderRadius: '24px', color: 'var(--text-secondary)' }}>
+              <i className="fa-solid fa-clipboard-check" style={{ fontSize: '3rem', marginBottom: '1rem', color: 'var(--text-light)' }}></i>
+              <h3 style={{ fontSize: '1.25rem', fontWeight: 700, color: 'var(--text-primary)' }}>Clear Approval Queue</h3>
+              <p style={{ marginTop: '0.5rem' }}>No campaign proposals are currently awaiting approval.</p>
+            </div>
+          ) : (
+            <div className="approval-queue-grid">
+              {pendingProjects.map(proj => (
+                <div key={proj.id} className="approval-card">
+                  <div className="approval-card-info">
+                    <span className="badge-tag" style={{ background: 'var(--accent-brand-light)', color: 'var(--accent-brand)', border: 'none', fontWeight: 700, width: 'fit-content' }}>
+                      {proj.category}
+                    </span>
+                    <span className="approval-card-title">{proj.title}</span>
+                    <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', margin: '0.2rem 0' }}>{proj.subtitle}</p>
+                    <div className="approval-card-meta">
+                      <span>Goal: <strong>${proj.goalAmount.toLocaleString()}</strong></span>
+                      <span>Creator: <strong>{proj.creator.name}</strong></span>
+                      <span>UPI ID: <strong style={{ color: 'var(--accent-brand)' }}>{proj.upi_id}</strong></span>
+                    </div>
+                  </div>
+                  <div className="approval-actions">
+                    <button className="btn-primary" style={{ padding: '0.5rem 1rem', fontSize: '0.8rem' }} onClick={() => handleApproveProject(proj.id)}>
+                      Approve Proposal
+                    </button>
+                    <button className="btn-secondary" style={{ padding: '0.5rem 1rem', fontSize: '0.8rem', borderColor: '#ef4444', color: '#ef4444' }} onClick={() => handleRejectProject(proj.id)}>
+                      Reject
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Transactions Queue */}
+      {activeSubTab === "transactions" && (
+        <div className="table-container" style={{ margin: 0 }}>
+          <div className="table-header-title">
+            Pending UTR Receipts Queue
+          </div>
+          <div style={{ overflowX: 'auto' }}>
+            {pendingDonations.length === 0 ? (
+              <div style={{ padding: '4rem 2rem', textAlign: 'center', color: 'var(--text-muted)' }}>
+                <i className="fa-solid fa-receipt" style={{ fontSize: '3rem', marginBottom: '1rem', color: 'var(--text-light)' }}></i>
+                <h3 style={{ fontSize: '1.25rem', fontWeight: 700, color: 'var(--text-primary)' }}>No Pending Receipts</h3>
+                <p style={{ marginTop: '0.5rem' }}>All transaction UTR entries have been successfully processed.</p>
+              </div>
+            ) : (
+              <table className="admin-table">
+                <thead>
+                  <tr>
+                    <th className="admin-th">Campaign</th>
+                    <th className="admin-th">Funder</th>
+                    <th className="admin-th">Pledge Amount</th>
+                    <th className="admin-th">UTR Transaction ID</th>
+                    <th className="admin-th">Submitted Date</th>
+                    <th className="admin-th">Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {pendingDonations.map(donation => {
+                    const campaign = projects.find(p => p.id === donation.project_id);
+                    return (
+                      <tr key={donation.id} className="admin-tr">
+                        <td className="admin-td" style={{ fontWeight: 600 }}>{campaign?.title || donation.project_id}</td>
+                        <td className="admin-td">{donation.username}</td>
+                        <td className="admin-td" style={{ fontWeight: 700, color: 'var(--accent-success)' }}>${Number(donation.amount).toLocaleString()}</td>
+                        <td className="admin-td" style={{ fontFamily: 'monospace', fontSize: '0.85rem' }}>{donation.utr_id}</td>
+                        <td className="admin-td">{new Date(donation.created_at).toLocaleDateString()}</td>
+                        <td className="admin-td">
+                          <div className="btn-actions-row">
+                            <button className="btn-primary" style={{ padding: '0.35rem 0.75rem', fontSize: '0.75rem' }} onClick={() => handleVerifyDonation(donation)}>
+                              Verify (UTR Valid)
+                            </button>
+                            <button className="btn-secondary" style={{ padding: '0.35rem 0.75rem', fontSize: '0.75rem', borderColor: '#ef4444', color: '#ef4444' }} onClick={() => handleRejectDonation(donation.id)}>
+                              Reject (Invalid)
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
