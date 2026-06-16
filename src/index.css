@@ -1791,3 +1791,120 @@ select.form-input {
     display: flex;
     gap: 0.5rem;
 }
+
+/* UPI QR Generator Layout */
+.qr-generator-container {
+    display: grid;
+    grid-template-columns: 1.1fr 0.9fr;
+    gap: 3rem;
+    background: var(--bg-surface);
+    border: 1px solid var(--border-standard);
+    border-radius: 24px;
+    padding: 2.5rem;
+    box-shadow: var(--shadow-md);
+    animation: fadeIn 0.3s ease;
+}
+
+@media (max-width: 900px) {
+    .qr-generator-container {
+        grid-template-columns: 1fr;
+        gap: 2rem;
+        padding: 1.5rem;
+    }
+}
+
+.qr-preview-pane {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    background: var(--bg-main);
+    border: 1px dashed var(--border-standard);
+    border-radius: 20px;
+    padding: 2.5rem;
+    min-height: 350px;
+    text-align: center;
+}
+
+.qr-canvas-wrapper {
+    background: #ffffff;
+    padding: 1.5rem;
+    border-radius: 16px;
+    box-shadow: var(--shadow-md);
+    margin-bottom: 1.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: transform 0.2s ease;
+}
+
+.qr-canvas-wrapper:hover {
+    transform: scale(1.02);
+}
+
+.color-swatch-picker {
+    display: flex;
+    gap: 0.75rem;
+    align-items: center;
+    margin-top: 0.5rem;
+    flex-wrap: wrap;
+}
+
+.color-swatch {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    border: 2px solid transparent;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.color-swatch.active {
+    border-color: var(--accent-brand);
+    transform: scale(1.1);
+}
+
+.toggle-group-buttons {
+    display: flex;
+    gap: 0.5rem;
+    margin-bottom: 1.25rem;
+}
+
+.toggle-btn {
+    flex: 1;
+    padding: 0.6rem;
+    font-size: 0.85rem;
+    font-weight: 600;
+    border-radius: 8px;
+    border: 1px solid var(--border-standard);
+    background: var(--bg-surface);
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.35rem;
+}
+
+.toggle-btn:hover {
+    background: var(--border-light);
+    color: var(--text-primary);
+}
+
+.toggle-btn.active {
+    background: var(--accent-brand-light);
+    color: var(--accent-brand);
+    border-color: var(--accent-brand);
+}
+
+.download-btn-group {
+    display: flex;
+    gap: 1rem;
+    width: 100%;
+    margin-top: 1rem;
+}
+
+.download-btn-group button {
+    flex: 1;
+}

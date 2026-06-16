@@ -1,4 +1,5 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
+import QRCode from "qrcode";
 import './App.css';
 import {
   auth,
@@ -379,6 +380,9 @@ export default function App() {
           </div>
 
           <div className="nav-actions">
+            <button className="btn-text" onClick={() => { setView("qr-generator"); setSelectedProjectId(null); }}>
+              UPI QR Generator
+            </button>
             {(simMode === "creator" || simMode === "admin") && (
               <button className="btn-text" onClick={() => protectAction(() => setView("creator-dashboard"))}>
                 Creator Dashboard
@@ -576,6 +580,11 @@ export default function App() {
             setView={setView}
             refreshData={refreshData}
             showToast={showToast}
+          />
+        )}
+        {view === "qr-generator" && (
+          <UpiQrGenerator
+            setView={setView}
           />
         )}
       </main>
@@ -1430,6 +1439,24 @@ function CheckoutModal({ project, reward, onClose, onSubmit }) {
   const [upiPaid, setUpiPaid] = useState(false);
   const [utrId, setUtrId] = useState("");
 
+  const qrCanvasRef = useRef(null);
+
+  useEffect(() => {
+    if (paymentMethod === 'upi' && !upiPaid && qrCanvasRef.current && project.upi_id) {
+      const upiUri = `upi://pay?pa=${encodeURIComponent(project.upi_id)}&pn=${encodeURIComponent(project.title)}&am=${encodeURIComponent(pledgeAmt)}&cu=INR`;
+      QRCode.toCanvas(qrCanvasRef.current, upiUri, {
+        width: 180,
+        color: {
+          dark: "#000000",
+          light: "#ffffff"
+        },
+        margin: 1
+      }, (err) => {
+        if (err) console.error("Checkout QR error:", err);
+      });
+    }
+  }, [paymentMethod, upiPaid, pledgeAmt, project.upi_id, project.title]);
+
   const handlePledgeSubmit = (e) => {
     e.preventDefault();
     if (pledgeAmt < reward.pledgeAmount) {
@@ -1473,9 +1500,6 @@ function CheckoutModal({ project, reward, onClose, onSubmit }) {
       }, 1500);
     }, 1200);
   };
-
-  const upiUri = `upi://pay?pa=${encodeURIComponent(project.upi_id)}&pn=${encodeURIComponent(project.title)}&am=${pledgeAmt}&cu=USD`;
-  const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(upiUri)}&color=4f46e5`;
 
   return (
     <div className="modal-overlay" onClick={isSimulating ? undefined : onClose}>
@@ -1584,7 +1608,7 @@ function CheckoutModal({ project, reward, onClose, onSubmit }) {
                     <div className="upi-qr-wrapper">
                       <div className="upi-qr-image-container">
                         <div className="upi-qr-scanner-line"></div>
-                        <img src={qrCodeUrl} alt="UPI QR Code" style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
+                        <canvas ref={qrCanvasRef} style={{ width: '100%', height: '100%', display: 'block', borderRadius: '8px' }} />
                       </div>
                       <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', fontWeight: 600, textAlign: 'center' }}>
                         Scan QR code to pay <strong>${pledgeAmt}</strong> to <strong>{project.upi_id}</strong>
@@ -1664,16 +1688,127 @@ function CreateProjectWizard({ onBack, onSubmit, user }) {
   const [imageOpt, setImageOpt] = useState("tech"); // tech | design | games | publishing (presetted unsplash options)
   const [goal, setGoal] = useState(10000);
   const [duration, setDuration] = useState(30);
-  const [upiId, setUpiId] = useState("startup@upi");
+
+  // UPI configuration states
+  const [payeeType, setPayeeType] = useState("vpa"); // 'vpa' | 'bank'
+  const [upiVpa, setUpiVpa] = useState("startup@upi");
+  const [bankAccount, setBankAccount] = useState("");
+  const [bankIfsc, setBankIfsc] = useState("");
+  const [payeeName, setPayeeName] = useState("");
+
+  // Customization
+  const [qrSize, setQrSize] = useState("150");
+  const [fgColor, setFgColor] = useState("#000000");
+  const [bgColor, setBgColor] = useState("#ffffff");
 
   // Reward Creation State
   const [rewardTitle, setRewardTitle] = useState("Standard Backer Pack");
   const [rewardCost, setRewardCost] = useState(25);
   const [rewardDesc, setRewardDesc] = useState("Includes our core designed product and all digital campaign updates.");
 
+  const qrCanvasRef = useRef(null);
+
+  useEffect(() => {
+    if (step === 2 && qrCanvasRef.current) {
+      let payeeAddress = "";
+      if (payeeType === "vpa") {
+        if (upiVpa && upiVpa.includes("@")) {
+          payeeAddress = upiVpa;
+        }
+      } else {
+        if (bankAccount && bankIfsc) {
+          payeeAddress = `${bankAccount}@${bankIfsc}.ifsc.npci`;
+        }
+      }
+
+      if (!payeeAddress) {
+        // Clear canvas
+        const ctx = qrCanvasRef.current.getContext('2d');
+        ctx.clearRect(0, 0, qrCanvasRef.current.width, qrCanvasRef.current.height);
+        ctx.font = "12px Inter";
+        ctx.fillStyle = "#64748b";
+        ctx.textAlign = "center";
+        ctx.fillText("Fill UPI ID or Bank Info", qrCanvasRef.current.width / 2, qrCanvasRef.current.height / 2);
+        return;
+      }
+
+      const finalPayeeName = payeeName || title || "Campaign Payout";
+      const upiUri = `upi://pay?pa=${encodeURIComponent(payeeAddress)}&pn=${encodeURIComponent(finalPayeeName)}&cu=INR`;
+      QRCode.toCanvas(qrCanvasRef.current, upiUri, {
+        width: Number(qrSize),
+        color: {
+          dark: fgColor,
+          light: bgColor
+        },
+        margin: 1
+      }, (err) => {
+        if (err) console.error("Wizard QR error:", err);
+      });
+    }
+  }, [step, payeeType, upiVpa, bankAccount, bankIfsc, payeeName, title, qrSize, fgColor, bgColor]);
+
+  const handleDownloadPng = () => {
+    if (!qrCanvasRef.current) return;
+    const dataUrl = qrCanvasRef.current.toDataURL("image/png");
+    const link = document.createElement("a");
+    const finalPayeeName = payeeName || title || "Campaign";
+    link.download = `campaign-qr-${finalPayeeName.replace(/\s+/g, '-').toLowerCase() || 'payment'}.png`;
+    link.href = dataUrl;
+    link.click();
+  };
+
+  const handleDownloadSvg = () => {
+    let payeeAddress = "";
+    if (payeeType === "vpa") {
+      payeeAddress = upiVpa;
+    } else {
+      payeeAddress = `${bankAccount}@${bankIfsc}.ifsc.npci`;
+    }
+
+    if (!payeeAddress) return;
+
+    const finalPayeeName = payeeName || title || "Campaign";
+    const upiUri = `upi://pay?pa=${encodeURIComponent(payeeAddress)}&pn=${encodeURIComponent(finalPayeeName)}&cu=INR`;
+
+    QRCode.toString(upiUri, {
+      type: 'svg',
+      width: Number(qrSize),
+      color: {
+        dark: fgColor,
+        light: bgColor
+      },
+      margin: 1
+    }, (error, svgString) => {
+      if (error) {
+        console.error(error);
+        return;
+      }
+      const blob = new Blob([svgString], { type: "image/svg+xml" });
+      const dataUrl = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.download = `campaign-qr-${finalPayeeName.replace(/\s+/g, '-').toLowerCase() || 'payment'}.svg`;
+      link.href = dataUrl;
+      link.click();
+      URL.revokeObjectURL(dataUrl);
+    });
+  };
+
   const handleSubmit = (e) => {
     e.preventDefault();
     if (step < 3) {
+      if (step === 2) {
+        if (payeeType === 'vpa') {
+          if (!upiVpa || !upiVpa.includes("@")) {
+            alert("Please enter a valid UPI VPA Address (must contain @).");
+            return;
+          }
+        } else {
+          if (!bankAccount || !bankIfsc) {
+            alert("Please enter both Bank Account Number and IFSC Code.");
+            return;
+          }
+        }
+      }
       setStep(step + 1);
       return;
     }
@@ -1685,6 +1820,13 @@ function CreateProjectWizard({ onBack, onSubmit, user }) {
       games: "https://images.unsplash.com/photo-1550745165-9bc0b252726f?auto=format&fit=crop&w=800&q=80",
       publishing: "https://images.unsplash.com/photo-1457369804613-52c61a468e7d?auto=format&fit=crop&w=800&q=80"
     };
+
+    let resolvedUpiId = "";
+    if (payeeType === "vpa") {
+      resolvedUpiId = upiVpa;
+    } else {
+      resolvedUpiId = `${bankAccount}@${bankIfsc}.ifsc.npci`;
+    }
 
     const newProj = {
       id: `p_${Date.now()}`,
@@ -1703,7 +1845,7 @@ function CreateProjectWizard({ onBack, onSubmit, user }) {
       backerCount: 0,
       daysLeft: Number(duration),
       trending: false,
-      upi_id: upiId || "payment@vorynx",
+      upi_id: resolvedUpiId || "payment@vorynx",
       status: 'pending',
       rewards: [
         { id: `r_${Date.now()}_1`, pledgeAmount: 5, title: "Support Creator", desc: "Digital backer access and platform dashboard verification badge.", limit: null, claimed: 0 },
@@ -1791,51 +1933,170 @@ function CreateProjectWizard({ onBack, onSubmit, user }) {
           </div>
         )}
 
-        {/* Step 2: Goal and Targets */}
+        {/* Step 2: Goal, Duration & UPI QR Setup */}
         {step === 2 && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem', animation: 'fadeIn 0.3s ease' }}>
-            <h3 style={{ color: 'var(--text-primary)', fontSize: '1.15rem', fontWeight: 800, fontFamily: 'var(--font-heading)' }}>Step 2: Funding & Duration</h3>
+            <h3 style={{ color: 'var(--text-primary)', fontSize: '1.15rem', fontWeight: 800, fontFamily: 'var(--font-heading)' }}>Step 2: Funding, Duration & UPI Setup</h3>
 
-            <div className="form-field">
-              <label className="form-label">Funding Goal ($)</label>
-              <input
-                type="number"
-                placeholder="Minimum $1,000"
-                className="form-input"
-                value={goal}
-                onChange={(e) => setGoal(Math.max(1000, Number(e.target.value)))}
-                min="1000"
-                required
-              />
-              <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Calculate the minimal funding required to complete your production lines.</span>
+            <div className="form-group-row">
+              <div className="form-field">
+                <label className="form-label">Funding Goal ($)</label>
+                <input
+                  type="number"
+                  placeholder="Minimum $1,000"
+                  className="form-input"
+                  value={goal}
+                  onChange={(e) => setGoal(Math.max(1000, Number(e.target.value)))}
+                  min="1000"
+                  required
+                />
+              </div>
+
+              <div className="form-field">
+                <label className="form-label">Campaign Length (Days)</label>
+                <input
+                  type="number"
+                  placeholder="e.g. 30"
+                  className="form-input"
+                  value={duration}
+                  onChange={(e) => setDuration(Math.max(5, Math.min(60, Number(e.target.value))))}
+                  min="5"
+                  max="60"
+                  required
+                />
+              </div>
+            </div>
+
+            {/* Destination Selection */}
+            <div style={{ borderTop: '1px solid var(--border-standard)', paddingTop: '1.25rem' }}>
+              <span style={{ fontSize: '0.85rem', fontWeight: 700, color: 'var(--text-primary)', display: 'block', marginBottom: '0.5rem' }}>UPI Payout Destination</span>
+              <div className="toggle-group-buttons">
+                <button 
+                  type="button" 
+                  className={`toggle-btn ${payeeType === 'vpa' ? 'active' : ''}`}
+                  onClick={() => setPayeeType('vpa')}
+                >
+                  <i className="fa-solid fa-at"></i> UPI ID (VPA)
+                </button>
+                <button 
+                  type="button" 
+                  className={`toggle-btn ${payeeType === 'bank' ? 'active' : ''}`}
+                  onClick={() => setPayeeType('bank')}
+                >
+                  <i className="fa-solid fa-building-columns"></i> Bank Account & IFSC
+                </button>
+              </div>
+
+              {payeeType === "vpa" ? (
+                <div className="form-field">
+                  <label className="form-label">Payee UPI VPA Address</label>
+                  <input
+                    type="text"
+                    className="form-input"
+                    placeholder="e.g. startup@upi"
+                    value={upiVpa}
+                    onChange={(e) => setUpiVpa(e.target.value)}
+                    required
+                  />
+                  <span style={{ fontSize: '0.725rem', color: 'var(--text-muted)' }}>Provide the UPI address where backers will send fund pledges.</span>
+                </div>
+              ) : (
+                <div className="form-group-row">
+                  <div className="form-field">
+                    <label className="form-label">Bank Account Number</label>
+                    <input
+                      type="text"
+                      className="form-input"
+                      placeholder="e.g. 91820491823"
+                      value={bankAccount}
+                      onChange={(e) => setBankAccount(e.target.value)}
+                      required
+                    />
+                  </div>
+                  <div className="form-field">
+                    <label className="form-label">IFSC Code</label>
+                    <input
+                      type="text"
+                      className="form-input"
+                      placeholder="e.g. HDFC0000123"
+                      value={bankIfsc}
+                      onChange={(e) => setBankIfsc(e.target.value)}
+                      required
+                    />
+                  </div>
+                </div>
+              )}
             </div>
 
             <div className="form-field">
-              <label className="form-label">Campaign Length (Days)</label>
-              <input
-                type="number"
-                placeholder="e.g. 30"
-                className="form-input"
-                value={duration}
-                onChange={(e) => setDuration(Math.max(5, Math.min(60, Number(e.target.value))))}
-                min="5"
-                max="60"
-                required
-              />
-              <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Specify the duration of campaign (Between 5 and 60 days).</span>
-            </div>
-
-            <div className="form-field">
-              <label className="form-label">UPI ID for Escrow Payments</label>
+              <label className="form-label">Payee Display Name (Optional)</label>
               <input
                 type="text"
-                placeholder="e.g. startup@upi"
                 className="form-input"
-                value={upiId}
-                onChange={(e) => setUpiId(e.target.value)}
-                required
+                placeholder={title || "Campaign Payout"}
+                value={payeeName}
+                onChange={(e) => setPayeeName(e.target.value)}
               />
-              <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Provide the UPI address where backers will send fund pledges via UPI apps.</span>
+              <span style={{ fontSize: '0.725rem', color: 'var(--text-muted)' }}>Name shown to backers when they scan the payment QR code.</span>
+            </div>
+
+            {/* Universal QR Code Preview Box with Customization and Downloads */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', marginTop: '0.5rem', padding: '1.25rem', background: 'var(--bg-main)', border: '1px dashed var(--border-standard)', borderRadius: '16px' }}>
+              <span style={{ fontSize: '0.85rem', color: 'var(--text-primary)', fontWeight: 700, textAlign: 'center', display: 'block' }}>Universal UPI QR Code Preview</span>
+              
+              <div style={{ display: 'flex', justifyContent: 'center', margin: '0.5rem 0' }}>
+                <div style={{ background: '#ffffff', padding: '0.75rem', borderRadius: '12px', border: '1px solid var(--border-standard)', boxShadow: 'var(--shadow-sm)' }}>
+                  <canvas ref={qrCanvasRef} style={{ display: 'block', maxWidth: '100%' }} />
+                </div>
+              </div>
+
+              <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', textAlign: 'center' }}>
+                Payee Routing: <strong style={{ color: 'var(--accent-brand)' }}>{payeeType === 'vpa' ? upiVpa : (bankAccount && bankIfsc ? `${bankAccount}@${bankIfsc}.ifsc.npci` : 'Fill Bank Info')}</strong>
+              </span>
+
+              {/* QR Customization inside wizard */}
+              <div style={{ borderTop: '1px solid var(--border-standard)', paddingTop: '0.75rem', marginTop: '0.25rem' }}>
+                <div className="form-group-row" style={{ gap: '0.5rem' }}>
+                  <div className="form-field" style={{ flex: 1 }}>
+                    <label className="form-label" style={{ fontSize: '0.75rem' }}>Foreground</label>
+                    <input type="color" className="form-input" style={{ padding: '0', height: '28px', cursor: 'pointer' }} value={fgColor} onChange={(e) => setFgColor(e.target.value)} />
+                  </div>
+                  <div className="form-field" style={{ flex: 1 }}>
+                    <label className="form-label" style={{ fontSize: '0.75rem' }}>Background</label>
+                    <input type="color" className="form-input" style={{ padding: '0', height: '28px', cursor: 'pointer' }} value={bgColor} onChange={(e) => setBgColor(e.target.value)} />
+                  </div>
+                  <div className="form-field" style={{ flex: 1.5 }}>
+                    <label className="form-label" style={{ fontSize: '0.75rem' }}>QR Size</label>
+                    <select className="form-input" style={{ height: '28px', padding: '0 0.5rem', fontSize: '0.75rem' }} value={qrSize} onChange={(e) => setQrSize(e.target.value)}>
+                      <option value="120">Small (120)</option>
+                      <option value="150">Medium (150)</option>
+                      <option value="200">Standard (200)</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+
+              {/* Download buttons */}
+              <div style={{ display: 'flex', gap: '0.5rem', marginTop: '0.25rem' }}>
+                <button
+                  type="button"
+                  className="btn-primary"
+                  style={{ flex: 1, padding: '0.4rem 0.8rem', fontSize: '0.75rem' }}
+                  onClick={handleDownloadPng}
+                  disabled={payeeType === 'bank' && (!bankAccount || !bankIfsc)}
+                >
+                  <i className="fa-solid fa-file-image"></i> Download PNG
+                </button>
+                <button
+                  type="button"
+                  className="btn-secondary"
+                  style={{ flex: 1, padding: '0.4rem 0.8rem', fontSize: '0.75rem' }}
+                  onClick={handleDownloadSvg}
+                  disabled={payeeType === 'bank' && (!bankAccount || !bankIfsc)}
+                >
+                  <i className="fa-solid fa-file-code"></i> Download SVG
+                </button>
+              </div>
             </div>
           </div>
         )}
@@ -2471,6 +2732,326 @@ function AdminPanelView({ projects, donations, setView, refreshData, showToast }
           </div>
         </div>
       )}
+    </div>
+  );
+}
+
+// ============================================================================
+// UNIVERSAL UPI QR CODE GENERATOR
+// ============================================================================
+function UpiQrGenerator({ setView }) {
+  const [payeeType, setPayeeType] = useState("vpa"); // 'vpa' | 'bank'
+  
+  // Form fields
+  const [upiId, setUpiId] = useState("merchant@upi");
+  const [accountNo, setAccountNo] = useState("");
+  const [ifscCode, setIfscCode] = useState("");
+  const [payeeName, setPayeeName] = useState("Alex Mercer");
+  const [amount, setAmount] = useState("");
+  const [note, setNote] = useState("Invoice Settlement");
+  
+  // Customization
+  const [qrSize, setQrSize] = useState("300");
+  const [fgColor, setFgColor] = useState("#000000");
+  const [bgColor, setBgColor] = useState("#ffffff");
+  
+  const canvasRef = useRef(null);
+
+  useEffect(() => {
+    if (!canvasRef.current) return;
+    
+    // NPCI standard UPI URI
+    let payeeAddress = "";
+    if (payeeType === "vpa") {
+      payeeAddress = upiId;
+    } else {
+      if (!accountNo || !ifscCode) {
+        // Clear canvas or show message
+        const ctx = canvasRef.current.getContext('2d');
+        ctx.clearRect(0, 0, canvasRef.current.width, canvasRef.current.height);
+        ctx.font = "14px Inter";
+        ctx.fillStyle = "#64748b";
+        ctx.textAlign = "center";
+        ctx.fillText("Fill Account No. & IFSC", canvasRef.current.width / 2, canvasRef.current.height / 2);
+        return;
+      }
+      payeeAddress = `${accountNo}@${ifscCode}.ifsc.npci`;
+    }
+
+    const nameParam = payeeName ? `&pn=${encodeURIComponent(payeeName)}` : "";
+    const amountParam = amount ? `&am=${encodeURIComponent(amount)}` : "";
+    const noteParam = note ? `&tn=${encodeURIComponent(note)}` : "";
+    
+    // Standard UPI URI
+    const upiUri = `upi://pay?pa=${encodeURIComponent(payeeAddress)}${nameParam}${amountParam}${noteParam}&cu=INR`;
+
+    QRCode.toCanvas(canvasRef.current, upiUri, {
+      width: Number(qrSize),
+      color: {
+        dark: fgColor,
+        light: bgColor
+      },
+      margin: 2
+    }, (error) => {
+      if (error) console.error("QR Code generation error:", error);
+    });
+  }, [payeeType, upiId, accountNo, ifscCode, payeeName, amount, note, qrSize, fgColor, bgColor]);
+
+  const handleDownloadPng = () => {
+    if (!canvasRef.current) return;
+    const dataUrl = canvasRef.current.toDataURL("image/png");
+    const link = document.createElement("a");
+    link.download = `upi-qr-${payeeName.replace(/\s+/g, '-').toLowerCase() || 'payment'}.png`;
+    link.href = dataUrl;
+    link.click();
+  };
+
+  const handleDownloadSvg = () => {
+    let payeeAddress = "";
+    if (payeeType === "vpa") {
+      payeeAddress = upiId;
+    } else {
+      payeeAddress = `${accountNo}@${ifscCode}.ifsc.npci`;
+    }
+
+    const nameParam = payeeName ? `&pn=${encodeURIComponent(payeeName)}` : "";
+    const amountParam = amount ? `&am=${encodeURIComponent(amount)}` : "";
+    const noteParam = note ? `&tn=${encodeURIComponent(note)}` : "";
+    const upiUri = `upi://pay?pa=${encodeURIComponent(payeeAddress)}${nameParam}${amountParam}${noteParam}&cu=INR`;
+
+    QRCode.toString(upiUri, {
+      type: 'svg',
+      width: Number(qrSize),
+      color: {
+        dark: fgColor,
+        light: bgColor
+      },
+      margin: 2
+    }, (error, svgString) => {
+      if (error) {
+        console.error(error);
+        return;
+      }
+      const blob = new Blob([svgString], { type: "image/svg+xml" });
+      const dataUrl = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.download = `upi-qr-${payeeName.replace(/\s+/g, '-').toLowerCase() || 'payment'}.svg`;
+      link.href = dataUrl;
+      link.click();
+      URL.revokeObjectURL(dataUrl);
+    });
+  };
+
+  // Color presets helper
+  const fgPresets = ["#000000", "#4f46e5", "#10b981", "#6d28d9", "#0369a1"];
+  const bgPresets = ["#ffffff", "#f8fafc", "#f5f3ff", "#ecfdf5", "#fef2f2"];
+
+  return (
+    <div className="qr-generator-wrapper" style={{ animation: 'fadeIn 0.3s ease' }}>
+      <div className="dashboard-title-bar">
+        <div>
+          <h1 className="dashboard-heading">Universal UPI QR Generator</h1>
+          <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>Generate NPCI-compliant payment QR codes directly in your browser. Offline-first, secure, zero upload logs.</p>
+        </div>
+        <button className="btn-secondary" onClick={() => setView("home")}>
+          <i className="fa-solid fa-arrow-left"></i> Back to discovery
+        </button>
+      </div>
+
+      <div className="qr-generator-container">
+        {/* Left Side Controls */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+          
+          <span style={{ fontSize: '0.875rem', fontWeight: 700, color: 'var(--text-primary)' }}>Select Destination Type</span>
+          <div className="toggle-group-buttons">
+            <button 
+              type="button" 
+              className={`toggle-btn ${payeeType === 'vpa' ? 'active' : ''}`}
+              onClick={() => setPayeeType('vpa')}
+            >
+              <i className="fa-solid fa-at"></i> UPI ID (VPA)
+            </button>
+            <button 
+              type="button" 
+              className={`toggle-btn ${payeeType === 'bank' ? 'active' : ''}`}
+              onClick={() => setPayeeType('bank')}
+            >
+              <i className="fa-solid fa-building-columns"></i> Bank Account & IFSC
+            </button>
+          </div>
+
+          <form onSubmit={(e) => e.preventDefault()} className="credit-card-form" style={{ gap: '1.25rem', display: 'flex', flexDirection: 'column' }}>
+            {payeeType === "vpa" ? (
+              <div className="form-field">
+                <label className="form-label">Payee UPI VPA Address</label>
+                <input
+                  type="text"
+                  className="form-input"
+                  placeholder="e.g. merchant@upi"
+                  value={upiId}
+                  onChange={(e) => setUpiId(e.target.value)}
+                  required
+                />
+              </div>
+            ) : (
+              <div className="form-group-row">
+                <div className="form-field">
+                  <label className="form-label">Bank Account Number</label>
+                  <input
+                    type="text"
+                    className="form-input"
+                    placeholder="e.g. 91820491823"
+                    value={accountNo}
+                    onChange={(e) => setAccountNo(e.target.value)}
+                    required
+                  />
+                </div>
+                <div className="form-field">
+                  <label className="form-label">IFSC Code</label>
+                  <input
+                    type="text"
+                    className="form-input"
+                    placeholder="e.g. HDFC0000123"
+                    value={ifscCode}
+                    onChange={(e) => setIfscCode(e.target.value)}
+                    required
+                  />
+                </div>
+              </div>
+            )}
+
+            <div className="form-field">
+              <label className="form-label">Payee Display Name</label>
+              <input
+                type="text"
+                className="form-input"
+                placeholder="e.g. Alex Mercer"
+                value={payeeName}
+                onChange={(e) => setPayeeName(e.target.value)}
+                required
+              />
+            </div>
+
+            <div className="form-group-row">
+              <div className="form-field">
+                <label className="form-label">Amount (INR, Optional)</label>
+                <input
+                  type="number"
+                  className="form-input"
+                  placeholder="e.g. 1000"
+                  value={amount}
+                  onChange={(e) => setAmount(e.target.value)}
+                />
+              </div>
+              <div className="form-field">
+                <label className="form-label">Transaction Remarks (Note, Optional)</label>
+                <input
+                  type="text"
+                  className="form-input"
+                  placeholder="e.g. Invoice Settlement"
+                  value={note}
+                  onChange={(e) => setNote(e.target.value)}
+                />
+              </div>
+            </div>
+
+            {/* Customization Details */}
+            <div style={{ borderTop: '1px solid var(--border-standard)', paddingTop: '1.25rem', marginTop: '0.5rem' }}>
+              <h3 style={{ fontFamily: 'var(--font-heading)', fontSize: '1.05rem', fontWeight: 800, color: 'var(--text-primary)', marginBottom: '1rem' }}>QR Code Customization</h3>
+              
+              <div className="form-group-row" style={{ marginBottom: '1.25rem' }}>
+                <div className="form-field">
+                  <label className="form-label">QR Size (pixels)</label>
+                  <select className="form-input" value={qrSize} onChange={(e) => setQrSize(e.target.value)}>
+                    <option value="200">Small (200x200)</option>
+                    <option value="250">Medium (250x250)</option>
+                    <option value="300">Standard (300x300)</option>
+                    <option value="400">Large (400x400)</option>
+                  </select>
+                </div>
+                <div className="form-field" style={{ display: 'flex', gap: '0.5rem', alignItems: 'flex-end' }}>
+                  <div style={{ flex: 1 }}>
+                    <label className="form-label">Custom Foreground</label>
+                    <input type="color" className="form-input" style={{ padding: '0.1rem 0.5rem', height: '38px', cursor: 'pointer' }} value={fgColor} onChange={(e) => setFgColor(e.target.value)} />
+                  </div>
+                  <div style={{ flex: 1 }}>
+                    <label className="form-label">Custom Background</label>
+                    <input type="color" className="form-input" style={{ padding: '0.1rem 0.5rem', height: '38px', cursor: 'pointer' }} value={bgColor} onChange={(e) => setBgColor(e.target.value)} />
+                  </div>
+                </div>
+              </div>
+
+              {/* Presets */}
+              <div className="form-field" style={{ marginBottom: '1rem' }}>
+                <label className="form-label">Foreground Color Presets</label>
+                <div className="color-swatch-picker">
+                  {fgPresets.map(c => (
+                    <div 
+                      key={c} 
+                      className={`color-swatch ${fgColor === c ? 'active' : ''}`} 
+                      style={{ backgroundColor: c }}
+                      onClick={() => setFgColor(c)}
+                    />
+                  ))}
+                </div>
+              </div>
+
+              <div className="form-field">
+                <label className="form-label">Background Color Presets</label>
+                <div className="color-swatch-picker">
+                  {bgPresets.map(c => (
+                    <div 
+                      key={c} 
+                      className={`color-swatch ${bgColor === c ? 'active' : ''}`} 
+                      style={{ backgroundColor: c }}
+                      onClick={() => setBgColor(c)}
+                    />
+                  ))}
+                </div>
+              </div>
+
+            </div>
+          </form>
+        </div>
+
+        {/* Right Side Live Preview */}
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+          <h3 style={{ fontFamily: 'var(--font-heading)', fontSize: '1.25rem', fontWeight: 800, color: 'var(--text-primary)', marginBottom: '1.5rem', alignSelf: 'flex-start' }}>Real-time QR Preview</h3>
+          
+          <div className="qr-preview-pane">
+            <div className="qr-canvas-wrapper">
+              <canvas ref={canvasRef} style={{ maxWidth: '100%', height: 'auto', display: 'block', borderRadius: '8px' }} />
+            </div>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', alignItems: 'center' }}>
+              <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', color: 'var(--accent-success)', fontSize: '0.85rem', fontWeight: 700 }}>
+                <i className="fa-solid fa-shield-halved"></i> Universal NPCI Format VPA
+              </div>
+              <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', margin: 0, maxWidth: '250px' }}>
+                Works natively with BHIM, GPay, PhonePe, Paytm, and all banking apps. No account logins or server uploads.
+              </p>
+            </div>
+          </div>
+
+          <div className="download-btn-group">
+            <button 
+              className="btn-primary" 
+              onClick={handleDownloadPng}
+              disabled={payeeType === 'bank' && (!accountNo || !ifscCode)}
+            >
+              <i className="fa-solid fa-file-image"></i> Download PNG
+            </button>
+            <button 
+              className="btn-secondary" 
+              onClick={handleDownloadSvg}
+              disabled={payeeType === 'bank' && (!accountNo || !ifscCode)}
+            >
+              <i className="fa-solid fa-file-code"></i> Download SVG
+            </button>
+          </div>
+        </div>
+
+      </div>
     </div>
   );
 }
