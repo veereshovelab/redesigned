@@ -40,6 +40,7 @@ const getFriendlyErrorMessage = (error) => {
 };
 
 // Initial Mock Campaign Data
+/* eslint-disable-next-line no-unused-vars */
 const INITIAL_PROJECTS = [
   {
     id: "keyboard",
@@ -151,6 +152,16 @@ export default function App() {
   // App Dynamic Project Database State
   const [projects, setProjects] = useState([]);
 
+  // Alerts
+  const [toastMessage, setToastMessage] = useState("");
+
+  const showToast = (msg) => {
+    setToastMessage(msg);
+    setTimeout(() => {
+      setToastMessage("");
+    }, 4000);
+  };
+
   const fetchProjects = async () => {
     try {
       const { data, error } = await supabase
@@ -216,8 +227,7 @@ export default function App() {
   const [checkoutOpen, setCheckoutOpen] = useState(false);
   const [selectedReward, setSelectedReward] = useState(null);
 
-  // Alerts
-  const [toastMessage, setToastMessage] = useState("");
+
 
   useEffect(() => {
     // Check if the link is a sign-in with email link
@@ -249,6 +259,7 @@ export default function App() {
       }
     });
     return () => unsubscribe();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const handleLogout = () => {
@@ -256,12 +267,7 @@ export default function App() {
     showToast("Logged out successfully.");
   };
 
-  const showToast = (msg) => {
-    setToastMessage(msg);
-    setTimeout(() => {
-      setToastMessage("");
-    }, 4000);
-  };
+
 
   const activeProject = projects.find(p => p.id === selectedProjectId);
 
@@ -386,6 +392,45 @@ export default function App() {
               } catch (err) {
                 console.error("Error adding comment:", err);
                 showToast("Failed to post comment to database.");
+              }
+            }}
+            onDeleteProject={async (projectId) => {
+              if (window.confirm("Are you sure you want to permanently discontinue and delete this campaign? This action cannot be undone.")) {
+                try {
+                  if (!auth.currentUser) {
+                    throw new Error("You must be logged in to delete this campaign.");
+                  }
+                  const token = await auth.currentUser.getIdToken(true);
+                  const response = await fetch('/api/discontinue', {
+                    method: 'POST',
+                    headers: {
+                      'Content-Type': 'application/json',
+                      'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify({ projectId })
+                  });
+
+                  let result = {};
+                  const contentType = response.headers.get("content-type");
+                  if (contentType && contentType.includes("application/json")) {
+                    result = await response.json();
+                  } else {
+                    const errorText = await response.text();
+                    throw new Error(errorText || `Request failed with status ${response.status}`);
+                  }
+
+                  if (!response.ok) {
+                    throw new Error(result.error || "Failed to discontinue campaign");
+                  }
+
+                  await fetchProjects();
+                  setView("home");
+                  setSelectedProjectId(null);
+                  showToast("Campaign has been discontinued and removed.");
+                } catch (err) {
+                  console.error("Error deleting project:", err);
+                  showToast(err.message || "Failed to delete campaign from database.");
+                }
               }
             }}
           />
@@ -693,11 +738,15 @@ function HomepageView({ projects, searchQuery, selectedCategory, setSelectedCate
 // ============================================================================
 // PROJECT DETAIL VIEW COMPONENT
 // ============================================================================
-function ProjectDetailView({ project, onBack, user, onPledge, onAddComment }) {
+function ProjectDetailView({ project, onBack, user, onPledge, onAddComment, onDeleteProject }) {
   const [activeTab, setActiveTab] = useState("story"); // 'story' | 'updates' | 'comments'
   const [commentInput, setCommentInput] = useState("");
 
   const percentFunded = Math.round((project.raisedAmount / project.goalAmount) * 100);
+  const isCreator = user && (
+    user.displayName === project.creator.name ||
+    user.email?.split('@')[0] === project.creator.name
+  );
 
   const handleSubmitComment = (e) => {
     e.preventDefault();
@@ -874,6 +923,31 @@ function ProjectDetailView({ project, onBack, user, onPledge, onAddComment }) {
             <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', textAlign: 'center' }}>
               All Vorynx projects run on an "All-or-Nothing" model. If goal target isn't reached by closing, zero transactions execute.
             </span>
+            {isCreator && (
+              <button
+                className="btn-danger"
+                style={{
+                  display: 'flex',
+                  justifyContent: 'center',
+                  alignItems: 'center',
+                  gap: '0.5rem',
+                  padding: '0.8rem',
+                  backgroundColor: '#ff4d4d',
+                  color: '#fff',
+                  border: 'none',
+                  borderRadius: '12px',
+                  fontWeight: 600,
+                  cursor: 'pointer',
+                  marginTop: '0.8rem',
+                  width: '100%',
+                  fontSize: '0.9rem',
+                  transition: 'background 0.2s'
+                }}
+                onClick={() => onDeleteProject(project.id)}
+              >
+                <i className="fa-solid fa-trash-can"></i> Discontinue Campaign
+              </button>
+            )}
           </div>
 
           {/* Reward Options */}
@@ -1333,29 +1407,29 @@ function AuthPanel({ initialError }) {
     }
   };
 
-  // Handler: Google OAuth
-  const handleGoogleLogin = async (e) => {
-    e.preventDefault();
-    setError("");
-    setInfoMessage("");
-    try {
-      await signInWithPopup(auth, googleProvider);
-    } catch (err) {
-      setError(getFriendlyErrorMessage(err));
-    }
-  };
+      //  handler: Google 0auth 
+      const handleGooglelogin = async (e) =>{
+        e.preventdefault();
+        setError("");
+        setInfoMessage("");
+        try{
+          await signInWithPopup(auth, googleProvider);
+        }  catch (err) {
+          setError(getFriendlyErrorMessage(err));
+        }
+      };
 
-  // Handler: GitHub OAuth
-  const handleGithubLogin = async (e) => {
-    e.preventDefault();
-    setError("");
-    setInfoMessage("");
-    try {
-      await signInWithPopup(auth, githubProvider);
-    } catch (err) {
-      setError(getFriendlyErrorMessage(err));
-    }
-  };
+      //  handler; github oauth 
+      const handleGithubLogin = async (e) => {
+        e.preventDefault();
+        setError("");
+        setInfoMessage("");
+        try{
+          await signInWithPopup(auth, githubProvider);
+        }  catch (err) {
+          setError(getfriendlyErrorMessage(err));
+        }
+      };
 
   return (
     <div className={`container ${isActive ? 'active' : ''}`} id="container">
@@ -1368,7 +1442,7 @@ function AuthPanel({ initialError }) {
             <span className="auth-logo-text">VORYNX</span>
           </div>
           <h1>Create Account</h1>
-          
+
           <div className="social-buttons-column">
             <button type="button" className="btn-social google" onClick={handleGoogleLogin}>
               <i className="fa-brands fa-google"></i> Continue with Google
@@ -1386,16 +1460,16 @@ function AuthPanel({ initialError }) {
 
           {isActive && error && <p style={{ color: '#ff4d4d', fontSize: '13px', margin: '5px 0', fontWeight: 500 }}>{error}</p>}
           {isActive && infoMessage && <p style={{ color: '#00f59b', fontSize: '13px', margin: '5px 0', fontWeight: 500 }}>{infoMessage}</p>}
-          
+
           <label className="auth-input-label">Full Name</label>
           <input type="text" placeholder="e.g. John Doe" value={signUpName} onChange={(e) => setSignUpName(e.target.value)} />
-          
+
           <label className="auth-input-label">Email Address</label>
           <input type="email" placeholder="e.g. you@example.com" value={signUpEmail} onChange={(e) => setSignUpEmail(e.target.value)} required />
-          
+
           <label className="auth-input-label">Password</label>
           <input type="password" placeholder="Min. 6 characters" value={signUpPassword} onChange={(e) => setSignUpPassword(e.target.value)} required />
-          
+
           <button type="submit">Sign Up</button>
           <div className="mobile-toggle-helper">
             Already have an account? <a href="#" onClick={(e) => { e.preventDefault(); setIsActive(false); setError(""); setInfoMessage(""); }}>Sign In</a>
@@ -1411,7 +1485,7 @@ function AuthPanel({ initialError }) {
             <span className="auth-logo-text">VORYNX</span>
           </div>
           <h1>Sign In</h1>
-          
+
           <div className="social-buttons-column">
             <button type="button" className="btn-social google" onClick={handleGoogleLogin}>
               <i className="fa-brands fa-google"></i> Continue with Google
@@ -1429,10 +1503,10 @@ function AuthPanel({ initialError }) {
 
           {!isActive && error && <p style={{ color: '#ff4d4d', fontSize: '13px', margin: '5px 0', fontWeight: 500 }}>{error}</p>}
           {!isActive && infoMessage && <p style={{ color: '#00f59b', fontSize: '13px', margin: '5px 0', fontWeight: 500 }}>{infoMessage}</p>}
-          
+
           <label className="auth-input-label">Email Address</label>
           <input type="email" placeholder="e.g. you@example.com" value={signInEmail} onChange={(e) => setSignInEmail(e.target.value)} required />
-          
+
           <label className="auth-input-label">Password</label>
           <input type="password" placeholder="Enter password" value={signInPassword} onChange={(e) => setSignInPassword(e.target.value)} />
 
