@@ -1546,7 +1546,8 @@ function CheckoutModal({ project, reward, onClose, onSubmit }) {
 
   useEffect(() => {
     if (paymentMethod === 'upi' && !upiPaid && qrCanvasRef.current && project.upi_id) {
-      const upiUri = `upi://pay?pa=${project.upi_id}&pn=${encodeURIComponent(project.title)}&am=${pledgeAmt}&cu=INR`;
+      const pledgeAmtInInr = Math.round(pledgeAmt * 83);
+      const upiUri = `upi://pay?pa=${project.upi_id}&pn=${encodeURIComponent(project.title)}&am=${pledgeAmtInInr}&cu=INR`;
       QRCode.toCanvas(qrCanvasRef.current, upiUri, {
         width: 180,
         color: {
@@ -1591,7 +1592,7 @@ function CheckoutModal({ project, reward, onClose, onSubmit }) {
     setIsSimulating(true);
     setSimulationStatus("Opening GPay/PhonePe intent connection...");
     setTimeout(() => {
-      setSimulationStatus(`Requesting authorization for $${pledgeAmt} to ${project.upi_id}...`);
+      setSimulationStatus(`Requesting authorization for $${pledgeAmt} (₹${Math.round(pledgeAmt * 83)}) to ${project.upi_id}...`);
       setTimeout(() => {
         setSimulationStatus("UPI Payment Completed! Generating Bank UTR ID...");
         setTimeout(() => {
@@ -1729,7 +1730,7 @@ function CheckoutModal({ project, reward, onClose, onSubmit }) {
                       <i className="fa-solid fa-circle-check"></i> Simulated Payment Successful
                     </div>
                     <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', margin: 0 }}>
-                      The simulated transfer of ${pledgeAmt} to creator UPI ID ({project.upi_id}) has completed.
+                      The simulated transfer of ${pledgeAmt} (₹${Math.round(pledgeAmt * 83)}) to creator UPI ID ({project.upi_id}) has completed.
                     </p>
 
                     <div className="form-field" style={{ marginTop: '0.5rem' }}>
@@ -1809,16 +1810,9 @@ function CreateProjectWizard({ onBack, onSubmit, user }) {
 
   useEffect(() => {
     if (step === 2 && qrCanvasRef.current) {
-      let payeeAddress = "";
-      if (payeeType === "vpa") {
-        if (upiVpa && upiVpa.includes("@")) {
-          payeeAddress = upiVpa;
-        }
-      } else {
-        if (bankAccount && bankIfsc) {
-          payeeAddress = `${bankAccount}@${bankIfsc}.ifsc.npci`;
-        }
-      }
+      const payeeAddress = payeeType === "vpa"
+        ? (upiVpa && upiVpa.includes("@") ? upiVpa.trim() : "")
+        : (bankAccount && bankIfsc ? `${bankAccount.trim()}@${bankIfsc.trim().toUpperCase()}.ifsc.npci` : "");
 
       if (!payeeAddress) {
         // Clear canvas
@@ -1858,8 +1852,8 @@ function CreateProjectWizard({ onBack, onSubmit, user }) {
 
   const handleDownloadSvg = () => {
     const payeeAddress = payeeType === "vpa"
-      ? upiVpa
-      : `${bankAccount}@${bankIfsc}.ifsc.npci`;
+      ? (upiVpa ? upiVpa.trim() : "")
+      : (bankAccount && bankIfsc ? `${bankAccount.trim()}@${bankIfsc.trim().toUpperCase()}.ifsc.npci` : "");
 
     if (!payeeAddress) return;
 
@@ -1918,8 +1912,8 @@ function CreateProjectWizard({ onBack, onSubmit, user }) {
     };
 
     const resolvedUpiId = payeeType === "vpa"
-      ? upiVpa
-      : `${bankAccount}@${bankIfsc}.ifsc.npci`;
+      ? (upiVpa ? upiVpa.trim() : "")
+      : (bankAccount && bankIfsc ? `${bankAccount.trim()}@${bankIfsc.trim().toUpperCase()}.ifsc.npci` : "");
 
     const newProj = {
       id: `p_${Date.now()}`,
@@ -2162,7 +2156,11 @@ function CreateProjectWizard({ onBack, onSubmit, user }) {
                   className="btn-primary"
                   style={{ flex: 1, padding: '0.4rem 0.8rem', fontSize: '0.75rem' }}
                   onClick={handleDownloadPng}
-                  disabled={payeeType === 'bank' && (!bankAccount || !bankIfsc)}
+                  disabled={
+                    payeeType === 'bank'
+                      ? (!bankAccount || !bankIfsc)
+                      : (!upiVpa || !upiVpa.includes("@"))
+                  }
                 >
                   <i className="fa-solid fa-file-image"></i> Download PNG
                 </button>
@@ -2171,7 +2169,11 @@ function CreateProjectWizard({ onBack, onSubmit, user }) {
                   className="btn-secondary"
                   style={{ flex: 1, padding: '0.4rem 0.8rem', fontSize: '0.75rem' }}
                   onClick={handleDownloadSvg}
-                  disabled={payeeType === 'bank' && (!bankAccount || !bankIfsc)}
+                  disabled={
+                    payeeType === 'bank'
+                      ? (!bankAccount || !bankIfsc)
+                      : (!upiVpa || !upiVpa.includes("@"))
+                  }
                 >
                   <i className="fa-solid fa-file-code"></i> Download SVG
                 </button>
@@ -2852,8 +2854,8 @@ function UpiQrGenerator({ setView }) {
 
     // NPCI standard UPI URI
     const payeeAddress = payeeType === "vpa"
-      ? upiId
-      : `${accountNo}@${ifscCode}.ifsc.npci`;
+      ? (upiId ? upiId.trim() : "")
+      : `${accountNo.trim()}@${ifscCode.trim().toUpperCase()}.ifsc.npci`;
 
     const nameParam = payeeName ? `&pn=${encodeURIComponent(payeeName)}` : "";
     const amountParam = amount ? `&am=${encodeURIComponent(amount)}` : "";
@@ -2885,8 +2887,8 @@ function UpiQrGenerator({ setView }) {
 
   const handleDownloadSvg = () => {
     const payeeAddress = payeeType === "vpa"
-      ? upiId
-      : `${accountNo}@${ifscCode}.ifsc.npci`;
+      ? (upiId ? upiId.trim() : "")
+      : `${accountNo.trim()}@${ifscCode.trim().toUpperCase()}.ifsc.npci`;
 
     const nameParam = payeeName ? `&pn=${encodeURIComponent(payeeName)}` : "";
     const amountParam = amount ? `&am=${encodeURIComponent(amount)}` : "";
@@ -3045,14 +3047,22 @@ function UpiQrGenerator({ setView }) {
             <button 
               className="btn-primary" 
               onClick={handleDownloadPng}
-              disabled={payeeType === 'bank' && (!accountNo || !ifscCode)}
+              disabled={
+                payeeType === 'bank'
+                  ? (!accountNo || !ifscCode)
+                  : (!upiId || !upiId.includes("@"))
+              }
             >
               <i className="fa-solid fa-file-image"></i> Download PNG
             </button>
             <button 
               className="btn-secondary" 
               onClick={handleDownloadSvg}
-              disabled={payeeType === 'bank' && (!accountNo || !ifscCode)}
+              disabled={
+                payeeType === 'bank'
+                  ? (!accountNo || !ifscCode)
+                  : (!upiId || !upiId.includes("@"))
+              }
             >
               <i className="fa-solid fa-file-code"></i> Download SVG
             </button>
