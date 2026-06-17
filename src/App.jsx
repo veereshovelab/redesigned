@@ -145,7 +145,7 @@ export default function App() {
   const [initialError, setInitialError] = useState("");
 
   // Navigation & Browsing States
-  const [view, setView] = useState("home"); // 'home' | 'details' | 'create' | 'creator-dashboard' | 'admin-panel'
+  const [view, setView] = useState("home"); // 'home' | 'details' | 'create' | 'creator-dashboard' | 'admin-panel' | 'qr-generator'
   const [selectedProjectId, setSelectedProjectId] = useState(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("All");
@@ -582,6 +582,7 @@ export default function App() {
             showToast={showToast}
           />
         )}
+
         {view === "qr-generator" && (
           <UpiQrGenerator
             setView={setView}
@@ -1424,6 +1425,18 @@ function ProjectDetailView({ project, onBack, user, onPledge, onAddComment, onDe
 // BRAND-AUTHENTIC UPI PAYMENT CARD COMPONENT
 // ============================================================================
 function UpiPaymentCard({ merchantName, upiId, canvasRef }) {
+  const isBankRouting = upiId && upiId.includes('.ifsc.npci');
+  let displayAddress = upiId || "merchant@upi";
+  
+  if (isBankRouting) {
+    const parts = upiId.split('@');
+    if (parts.length === 2) {
+      const accountNo = parts[0];
+      const ifsc = parts[1].replace('.ifsc.npci', '');
+      displayAddress = `A/C: ${accountNo} | IFSC: ${ifsc}`;
+    }
+  }
+
   return (
     <div className="upi-payment-card">
       <h4 className="upi-card-merchant">{merchantName || "Merchant Name"}</h4>
@@ -1432,7 +1445,7 @@ function UpiPaymentCard({ merchantName, upiId, canvasRef }) {
         <canvas ref={canvasRef} style={{ display: 'block', maxWidth: '100%', height: 'auto', borderRadius: '8px' }} />
       </div>
 
-      <div className="upi-card-vpa">{upiId || "merchant@upi"}</div>
+      <div className="upi-card-vpa" style={{ fontSize: isBankRouting ? '0.725rem' : '0.9rem' }}>{displayAddress}</div>
 
       <div className="upi-card-instruction">Scan & pay using any UPI app</div>
 
@@ -1533,7 +1546,7 @@ function CheckoutModal({ project, reward, onClose, onSubmit }) {
 
   useEffect(() => {
     if (paymentMethod === 'upi' && !upiPaid && qrCanvasRef.current && project.upi_id) {
-      const upiUri = `upi://pay?pa=${encodeURIComponent(project.upi_id)}&pn=${encodeURIComponent(project.title)}&am=${encodeURIComponent(pledgeAmt)}&cu=INR`;
+      const upiUri = `upi://pay?pa=${project.upi_id}&pn=${encodeURIComponent(project.title)}&am=${pledgeAmt}&cu=INR`;
       QRCode.toCanvas(qrCanvasRef.current, upiUri, {
         width: 180,
         color: {
@@ -1776,8 +1789,8 @@ function CreateProjectWizard({ onBack, onSubmit, user }) {
   const [duration, setDuration] = useState(30);
 
   // UPI configuration states
-  const [payeeType, setPayeeType] = useState("vpa"); // 'vpa' | 'bank'
-  const [upiVpa, setUpiVpa] = useState("startup@upi");
+  const [payeeType, setPayeeType] = useState("bank"); // default to bank account
+  const [upiVpa, setUpiVpa] = useState("");
   const [bankAccount, setBankAccount] = useState("");
   const [bankIfsc, setBankIfsc] = useState("");
   const [payeeName, setPayeeName] = useState("");
@@ -1819,7 +1832,7 @@ function CreateProjectWizard({ onBack, onSubmit, user }) {
       }
 
       const finalPayeeName = payeeName || title || "Campaign Payout";
-      const upiUri = `upi://pay?pa=${encodeURIComponent(payeeAddress)}&pn=${encodeURIComponent(finalPayeeName)}&cu=INR`;
+      const upiUri = `upi://pay?pa=${payeeAddress}&pn=${encodeURIComponent(finalPayeeName)}&cu=INR`;
       QRCode.toCanvas(qrCanvasRef.current, upiUri, {
         width: Number(qrSize),
         color: {
@@ -1844,17 +1857,14 @@ function CreateProjectWizard({ onBack, onSubmit, user }) {
   };
 
   const handleDownloadSvg = () => {
-    let payeeAddress = "";
-    if (payeeType === "vpa") {
-      payeeAddress = upiVpa;
-    } else {
-      payeeAddress = `${bankAccount}@${bankIfsc}.ifsc.npci`;
-    }
+    const payeeAddress = payeeType === "vpa"
+      ? upiVpa
+      : `${bankAccount}@${bankIfsc}.ifsc.npci`;
 
     if (!payeeAddress) return;
 
     const finalPayeeName = payeeName || title || "Campaign";
-    const upiUri = `upi://pay?pa=${encodeURIComponent(payeeAddress)}&pn=${encodeURIComponent(finalPayeeName)}&cu=INR`;
+    const upiUri = `upi://pay?pa=${payeeAddress}&pn=${encodeURIComponent(finalPayeeName)}&cu=INR`;
 
     QRCode.toString(upiUri, {
       type: 'svg',
@@ -1907,12 +1917,9 @@ function CreateProjectWizard({ onBack, onSubmit, user }) {
       publishing: "https://images.unsplash.com/photo-1457369804613-52c61a468e7d?auto=format&fit=crop&w=800&q=80"
     };
 
-    let resolvedUpiId = "";
-    if (payeeType === "vpa") {
-      resolvedUpiId = upiVpa;
-    } else {
-      resolvedUpiId = `${bankAccount}@${bankIfsc}.ifsc.npci`;
-    }
+    const resolvedUpiId = payeeType === "vpa"
+      ? upiVpa
+      : `${bankAccount}@${bankIfsc}.ifsc.npci`;
 
     const newProj = {
       id: `p_${Date.now()}`,
@@ -2054,39 +2061,12 @@ function CreateProjectWizard({ onBack, onSubmit, user }) {
             </div>
 
             {/* Destination Selection */}
-            <div style={{ borderTop: '1px solid var(--border-standard)', paddingTop: '1.25rem' }}>
-              <span style={{ fontSize: '0.85rem', fontWeight: 700, color: 'var(--text-primary)', display: 'block', marginBottom: '0.5rem' }}>UPI Payout Destination</span>
-              <div className="toggle-group-buttons">
-                <button 
-                  type="button" 
-                  className={`toggle-btn ${payeeType === 'vpa' ? 'active' : ''}`}
-                  onClick={() => setPayeeType('vpa')}
-                >
-                  <i className="fa-solid fa-at"></i> UPI ID (VPA)
-                </button>
-                <button 
-                  type="button" 
-                  className={`toggle-btn ${payeeType === 'bank' ? 'active' : ''}`}
-                  onClick={() => setPayeeType('bank')}
-                >
-                  <i className="fa-solid fa-building-columns"></i> Bank Account & IFSC
-                </button>
-              </div>
-
-              {payeeType === "vpa" ? (
-                <div className="form-field">
-                  <label className="form-label">Payee UPI VPA Address</label>
-                  <input
-                    type="text"
-                    className="form-input"
-                    placeholder="e.g. startup@upi"
-                    value={upiVpa}
-                    onChange={(e) => setUpiVpa(e.target.value)}
-                    required
-                  />
-                  <span style={{ fontSize: '0.725rem', color: 'var(--text-muted)' }}>Provide the UPI address where backers will send fund pledges.</span>
-                </div>
-              ) : (
+            <div style={{ borderTop: '1px solid var(--border-standard)', paddingTop: '1.25rem', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+              <span style={{ fontSize: '0.85rem', fontWeight: 700, color: 'var(--text-primary)', display: 'block' }}>UPI Payout Destination</span>
+              
+              {/* Bank details input fields (displayed first) */}
+              <div style={{ background: 'var(--bg-main)', padding: '1.25rem', border: '1px solid var(--border-standard)', borderRadius: '16px' }}>
+                <span style={{ fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-primary)', display: 'block', marginBottom: '0.75rem' }}>Option A: Direct Bank Account & IFSC</span>
                 <div className="form-group-row">
                   <div className="form-field">
                     <label className="form-label">Bank Account Number</label>
@@ -2095,8 +2075,13 @@ function CreateProjectWizard({ onBack, onSubmit, user }) {
                       className="form-input"
                       placeholder="e.g. 91820491823"
                       value={bankAccount}
-                      onChange={(e) => setBankAccount(e.target.value)}
-                      required
+                      onChange={(e) => {
+                        setBankAccount(e.target.value);
+                        if (e.target.value) {
+                          setPayeeType('bank');
+                          setUpiVpa(''); // clear VPA to avoid conflict
+                        }
+                      }}
                     />
                   </div>
                   <div className="form-field">
@@ -2106,12 +2091,44 @@ function CreateProjectWizard({ onBack, onSubmit, user }) {
                       className="form-input"
                       placeholder="e.g. HDFC0000123"
                       value={bankIfsc}
-                      onChange={(e) => setBankIfsc(e.target.value)}
-                      required
+                      onChange={(e) => {
+                        setBankIfsc(e.target.value);
+                        if (e.target.value) {
+                          setPayeeType('bank');
+                          setUpiVpa(''); // clear VPA to avoid conflict
+                        }
+                      }}
                     />
                   </div>
                 </div>
-              )}
+              </div>
+
+              {/* OR divider */}
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0.25rem 0', color: 'var(--text-muted)', fontSize: '0.75rem', fontWeight: 700 }}>
+                <span>— OR —</span>
+              </div>
+
+              {/* UPI ID VPA input field (displayed second) */}
+              <div style={{ background: 'var(--bg-main)', padding: '1.25rem', border: '1px solid var(--border-standard)', borderRadius: '16px' }}>
+                <span style={{ fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-primary)', display: 'block', marginBottom: '0.75rem' }}>Option B: Payee UPI VPA Address</span>
+                <div className="form-field" style={{ margin: 0 }}>
+                  <input
+                    type="text"
+                    className="form-input"
+                    placeholder="e.g. startup@upi"
+                    value={upiVpa}
+                    onChange={(e) => {
+                      setUpiVpa(e.target.value);
+                      if (e.target.value) {
+                        setPayeeType('vpa');
+                        setBankAccount(''); // clear bank details to avoid conflict
+                        setBankIfsc('');
+                      }
+                    }}
+                  />
+                  <span style={{ fontSize: '0.725rem', color: 'var(--text-muted)', display: 'block', marginTop: '0.5rem' }}>Provide a standard UPI ID address (must contain @).</span>
+                </div>
+              </div>
             </div>
 
             <div className="form-field">
@@ -2822,30 +2839,28 @@ function UpiQrGenerator({ setView }) {
   useEffect(() => {
     if (!canvasRef.current) return;
     
-    // NPCI standard UPI URI
-    let payeeAddress = "";
-    if (payeeType === "vpa") {
-      payeeAddress = upiId;
-    } else {
-      if (!accountNo || !ifscCode) {
-        // Clear canvas or show message
-        const ctx = canvasRef.current.getContext('2d');
-        ctx.clearRect(0, 0, canvasRef.current.width, canvasRef.current.height);
-        ctx.font = "14px Inter";
-        ctx.fillStyle = "#64748b";
-        ctx.textAlign = "center";
-        ctx.fillText("Fill Account No. & IFSC", canvasRef.current.width / 2, canvasRef.current.height / 2);
-        return;
-      }
-      payeeAddress = `${accountNo}@${ifscCode}.ifsc.npci`;
+    if (payeeType === "bank" && (!accountNo || !ifscCode)) {
+      // Clear canvas or show message
+      const ctx = canvasRef.current.getContext('2d');
+      ctx.clearRect(0, 0, canvasRef.current.width, canvasRef.current.height);
+      ctx.font = "14px Inter";
+      ctx.fillStyle = "#64748b";
+      ctx.textAlign = "center";
+      ctx.fillText("Fill Account No. & IFSC", canvasRef.current.width / 2, canvasRef.current.height / 2);
+      return;
     }
+
+    // NPCI standard UPI URI
+    const payeeAddress = payeeType === "vpa"
+      ? upiId
+      : `${accountNo}@${ifscCode}.ifsc.npci`;
 
     const nameParam = payeeName ? `&pn=${encodeURIComponent(payeeName)}` : "";
     const amountParam = amount ? `&am=${encodeURIComponent(amount)}` : "";
     const noteParam = note ? `&tn=${encodeURIComponent(note)}` : "";
     
     // Standard UPI URI
-    const upiUri = `upi://pay?pa=${encodeURIComponent(payeeAddress)}${nameParam}${amountParam}${noteParam}&cu=INR`;
+    const upiUri = `upi://pay?pa=${payeeAddress}${nameParam}${amountParam}${noteParam}&cu=INR`;
 
     QRCode.toCanvas(canvasRef.current, upiUri, {
       width: Number(qrSize),
@@ -2869,17 +2884,14 @@ function UpiQrGenerator({ setView }) {
   };
 
   const handleDownloadSvg = () => {
-    let payeeAddress = "";
-    if (payeeType === "vpa") {
-      payeeAddress = upiId;
-    } else {
-      payeeAddress = `${accountNo}@${ifscCode}.ifsc.npci`;
-    }
+    const payeeAddress = payeeType === "vpa"
+      ? upiId
+      : `${accountNo}@${ifscCode}.ifsc.npci`;
 
     const nameParam = payeeName ? `&pn=${encodeURIComponent(payeeName)}` : "";
     const amountParam = amount ? `&am=${encodeURIComponent(amount)}` : "";
     const noteParam = note ? `&tn=${encodeURIComponent(note)}` : "";
-    const upiUri = `upi://pay?pa=${encodeURIComponent(payeeAddress)}${nameParam}${amountParam}${noteParam}&cu=INR`;
+    const upiUri = `upi://pay?pa=${payeeAddress}${nameParam}${amountParam}${noteParam}&cu=INR`;
 
     QRCode.toString(upiUri, {
       type: 'svg',
