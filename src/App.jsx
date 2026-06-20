@@ -287,6 +287,35 @@ export default function App() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  useEffect(() => {
+    const observerOptions = {
+      root: null,
+      rootMargin: "0px 0px -60px 0px",
+      threshold: 0.05
+    };
+
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach((entry) => {
+        if (entry.isIntersecting) {
+          entry.target.classList.add("revealed");
+          observer.unobserve(entry.target);
+        }
+      });
+    }, observerOptions);
+
+    const timer = setTimeout(() => {
+      const elements = document.querySelectorAll(".reveal-on-scroll");
+      elements.forEach((el) => {
+        observer.observe(el);
+      });
+    }, 50);
+
+    return () => {
+      clearTimeout(timer);
+      observer.disconnect();
+    };
+  }, [view, projects]);
+
   const handleLogout = () => {
     signOut(auth);
     showToast("Logged out successfully.");
@@ -319,6 +348,12 @@ export default function App() {
 
   return (
     <div className="vorynx-app">
+      {/* Ambient background glow blobs */}
+      <div className="ambient-glow-container">
+        <div className="ambient-glow-blob ambient-glow-blob-1"></div>
+        <div className="ambient-glow-blob ambient-glow-blob-2"></div>
+      </div>
+
       {/* Sandbox Simulation Toolbar */}
       <div className="sim-toolbar">
         <div className="sim-toolbar-container">
@@ -422,171 +457,183 @@ export default function App() {
       {/* Main Area */}
       <main className="vorynx-main">
         {view === "home" && (
-          <HomepageView
-            projects={projects}
-            searchQuery={searchQuery}
-            selectedCategory={selectedCategory}
-            setSelectedCategory={setSelectedCategory}
-            onSelectProject={(id) => { setSelectedProjectId(id); setView("details"); }}
-            protectAction={protectAction}
-            setView={setView}
-          />
+          <div className="view-transition-enter">
+            <HomepageView
+              projects={projects}
+              searchQuery={searchQuery}
+              selectedCategory={selectedCategory}
+              setSelectedCategory={setSelectedCategory}
+              onSelectProject={(id) => { setSelectedProjectId(id); setView("details"); }}
+              protectAction={protectAction}
+              setView={setView}
+            />
+          </div>
         )}
 
         {view === "details" && activeProject && (
-          <ProjectDetailView
-            project={activeProject}
-            onBack={() => { setView("home"); setSelectedProjectId(null); }}
-            user={user}
-            onPledge={(reward) => {
-              protectAction(() => {
-                setSelectedReward(reward);
-                setCheckoutOpen(true);
-              });
-            }}
-            onAddComment={async (body) => {
-              const username = user?.displayName || user?.email?.split('@')[0] || "Anonymous";
-              const newComment = {
-                id: `c_${Date.now()}`,
-                project_id: activeProject.id,
-                username,
-                body,
-                timestamp: "Just now"
-              };
-              try {
-                const { error } = await supabase
-                  .from('comments')
-                  .insert([newComment]);
-                if (error) throw error;
-                await fetchProjects();
-                showToast("Comment posted!");
-              } catch (err) {
-                console.error("Error adding comment:", err);
-                showToast("Failed to post comment to database.");
-              }
-            }}
-            onDeleteProject={async (projectId) => {
-              if (window.confirm("Are you sure you want to permanently discontinue and delete this campaign? This action cannot be undone.")) {
+          <div className="view-transition-enter">
+            <ProjectDetailView
+              project={activeProject}
+              onBack={() => { setView("home"); setSelectedProjectId(null); }}
+              user={user}
+              onPledge={(reward) => {
+                protectAction(() => {
+                  setSelectedReward(reward);
+                  setCheckoutOpen(true);
+                });
+              }}
+              onAddComment={async (body) => {
+                const username = user?.displayName || user?.email?.split('@')[0] || "Anonymous";
+                const newComment = {
+                  id: `c_${Date.now()}`,
+                  project_id: activeProject.id,
+                  username,
+                  body,
+                  timestamp: "Just now"
+                };
                 try {
-                  if (!auth.currentUser) {
-                    throw new Error("You must be logged in to delete this campaign.");
-                  }
-                  const token = await auth.currentUser.getIdToken(true);
-                  const response = await fetch('/api/discontinue', {
-                    method: 'POST',
-                    headers: {
-                      'Content-Type': 'application/json',
-                      'Authorization': `Bearer ${token}`
-                    },
-                    body: JSON.stringify({ projectId })
-                  });
-
-                  let result = {};
-                  const contentType = response.headers.get("content-type");
-                  if (contentType && contentType.includes("application/json")) {
-                    result = await response.json();
-                  } else {
-                    const errorText = await response.text();
-                    throw new Error(errorText || `Request failed with status ${response.status}`);
-                  }
-
-                  if (!response.ok) {
-                    throw new Error(result.error || "Failed to discontinue campaign");
-                  }
-
+                  const { error } = await supabase
+                    .from('comments')
+                    .insert([newComment]);
+                  if (error) throw error;
                   await fetchProjects();
-                  setView("home");
-                  setSelectedProjectId(null);
-                  showToast("Campaign has been discontinued and removed.");
+                  showToast("Comment posted!");
                 } catch (err) {
-                  console.error("Error deleting project:", err);
-                  showToast(err.message || "Failed to delete campaign from database.");
+                  console.error("Error adding comment:", err);
+                  showToast("Failed to post comment to database.");
                 }
-              }
-            }}
-          />
+              }}
+              onDeleteProject={async (projectId) => {
+                if (window.confirm("Are you sure you want to permanently discontinue and delete this campaign? This action cannot be undone.")) {
+                  try {
+                    if (!auth.currentUser) {
+                      throw new Error("You must be logged in to delete this campaign.");
+                    }
+                    const token = await auth.currentUser.getIdToken(true);
+                    const response = await fetch('/api/discontinue', {
+                      method: 'POST',
+                      headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                      },
+                      body: JSON.stringify({ projectId })
+                    });
+
+                    let result = {};
+                    const contentType = response.headers.get("content-type");
+                    if (contentType && contentType.includes("application/json")) {
+                      result = await response.json();
+                    } else {
+                      const errorText = await response.text();
+                      throw new Error(errorText || `Request failed with status ${response.status}`);
+                    }
+
+                    if (!response.ok) {
+                      throw new Error(result.error || "Failed to discontinue campaign");
+                    }
+
+                    await fetchProjects();
+                    setView("home");
+                    setSelectedProjectId(null);
+                    showToast("Campaign has been discontinued and removed.");
+                  } catch (err) {
+                    console.error("Error deleting project:", err);
+                    showToast(err.message || "Failed to delete campaign from database.");
+                  }
+                }
+              }}
+            />
+          </div>
         )}
 
         {view === "create" && (
-          <CreateProjectWizard
-            onBack={() => setView("home")}
-            onSubmit={async (newProj) => {
-              try {
-                const { error: projErr } = await supabase
-                  .from('projects')
-                  .insert([{
-                    id: newProj.id,
-                    title: newProj.title,
-                    subtitle: newProj.subtitle,
-                    description: newProj.description,
-                    category: newProj.category,
-                    image: newProj.image,
-                    creator_name: newProj.creator.name,
-                    creator_avatar: newProj.creator.avatar,
-                    creator_verified: newProj.creator.verified,
-                    goal_amount: newProj.goalAmount,
-                    raised_amount: newProj.raisedAmount,
-                    backer_count: newProj.backerCount,
-                    days_left: newProj.daysLeft,
-                    trending: newProj.trending,
-                    upi_id: newProj.upi_id,
-                    status: 'pending'
-                  }]);
+          <div className="view-transition-enter">
+            <CreateProjectWizard
+              onBack={() => setView("home")}
+              onSubmit={async (newProj) => {
+                try {
+                  const { error: projErr } = await supabase
+                    .from('projects')
+                    .insert([{
+                      id: newProj.id,
+                      title: newProj.title,
+                      subtitle: newProj.subtitle,
+                      description: newProj.description,
+                      category: newProj.category,
+                      image: newProj.image,
+                      creator_name: newProj.creator.name,
+                      creator_avatar: newProj.creator.avatar,
+                      creator_verified: newProj.creator.verified,
+                      goal_amount: newProj.goalAmount,
+                      raised_amount: newProj.raisedAmount,
+                      backer_count: newProj.backerCount,
+                      days_left: newProj.daysLeft,
+                      trending: newProj.trending,
+                      upi_id: newProj.upi_id,
+                      status: 'pending'
+                    }]);
 
-                if (projErr) throw projErr;
+                  if (projErr) throw projErr;
 
-                const rewardRows = newProj.rewards.map(r => ({
-                  id: r.id,
-                  project_id: newProj.id,
-                  pledge_amount: r.pledgeAmount,
-                  title: r.title,
-                  desc: r.desc,
-                  limit: r.limit,
-                  claimed: r.claimed
-                }));
+                  const rewardRows = newProj.rewards.map(r => ({
+                    id: r.id,
+                    project_id: newProj.id,
+                    pledge_amount: r.pledgeAmount,
+                    title: r.title,
+                    desc: r.desc,
+                    limit: r.limit,
+                    claimed: r.claimed
+                  }));
 
-                const { error: rewErr } = await supabase
-                  .from('rewards')
-                  .insert(rewardRows);
+                  const { error: rewErr } = await supabase
+                    .from('rewards')
+                    .insert(rewardRows);
 
-                if (rewErr) throw rewErr;
+                  if (rewErr) throw rewErr;
 
-                await refreshData();
-                setView("home");
-                showToast("Your campaign proposal has been submitted and is awaiting Admin approval.");
-              } catch (err) {
-                console.error("Error creating project:", err);
-                showToast("Failed to launch campaign to database.");
-              }
-            }}
-            user={user}
-          />
+                  await refreshData();
+                  setView("home");
+                  showToast("Your campaign proposal has been submitted and is awaiting Admin approval.");
+                } catch (err) {
+                  console.error("Error creating project:", err);
+                  showToast("Failed to launch campaign to database.");
+                }
+              }}
+              user={user}
+            />
+          </div>
         )}
 
         {view === "creator-dashboard" && (
-          <CreatorDashboardView
-            projects={projects}
-            donations={donations}
-            user={user}
-            setView={setView}
-            onSelectProject={(id) => { setSelectedProjectId(id); setView("details"); }}
-          />
+          <div className="view-transition-enter">
+            <CreatorDashboardView
+              projects={projects}
+              donations={donations}
+              user={user}
+              setView={setView}
+              onSelectProject={(id) => { setSelectedProjectId(id); setView("details"); }}
+            />
+          </div>
         )}
 
         {view === "admin-panel" && (
-          <AdminPanelView
-            projects={projects}
-            donations={donations}
-            setView={setView}
-            refreshData={refreshData}
-            showToast={showToast}
-          />
+          <div className="view-transition-enter">
+            <AdminPanelView
+              projects={projects}
+              donations={donations}
+              setView={setView}
+              refreshData={refreshData}
+              showToast={showToast}
+            />
+          </div>
         )}
 
         {view === "qr-generator" && (
-          <UpiQrGenerator
-            setView={setView}
-          />
+          <div className="view-transition-enter">
+            <UpiQrGenerator
+              setView={setView}
+            />
+          </div>
         )}
       </main>
 
@@ -798,7 +845,7 @@ function HomepageView({ projects, searchQuery, selectedCategory, setSelectedCate
               <i className="fa-solid fa-star"></i> Project We Love
             </span>
           </div>
-          <div className="hero-spotlight">
+          <div className="hero-spotlight reveal-on-scroll">
             <div className="hero-media">
               <span className="hero-tag">Staff Pick</span>
               <img src={spotlightProj.image} alt={spotlightProj.title} />
@@ -849,7 +896,7 @@ function HomepageView({ projects, searchQuery, selectedCategory, setSelectedCate
       )}
 
       {/* 4. DISCOVER TRENDING CAMPAIGNS GRID */}
-      <div id="discover-section" className="section-header" style={{ paddingTop: '1.5rem', borderTop: '1px solid var(--border-standard)' }}>
+      <div id="discover-section" className="section-header reveal-on-scroll" style={{ paddingTop: '1.5rem', borderTop: '1px solid var(--border-standard)' }}>
         <h2 className="section-title">
           {searchQuery !== "" || selectedCategory !== "All" ? "Search Results" : "Trending Campaigns"}
         </h2>
@@ -866,10 +913,10 @@ function HomepageView({ projects, searchQuery, selectedCategory, setSelectedCate
         </div>
       ) : (
         <div className="projects-grid">
-          {filteredProjects.map((proj) => {
+          {filteredProjects.map((proj, idx) => {
             const pct = Math.round((proj.raisedAmount / proj.goalAmount) * 100);
             return (
-              <div key={proj.id} className="project-card" onClick={() => onSelectProject(proj.id)}>
+              <div key={proj.id} className={`project-card reveal-on-scroll stagger-${(idx % 3) + 1}`} onClick={() => onSelectProject(proj.id)}>
                 <div className="card-media">
                   {proj.trending && <span className="card-badge"><i className="fa-solid fa-bolt text-green"></i> Trending</span>}
                   <img src={proj.image} alt={proj.title} />
@@ -909,7 +956,7 @@ function HomepageView({ projects, searchQuery, selectedCategory, setSelectedCate
       )}
 
       {/* 5. PLATFORM STATISTICS */}
-      <section style={{ background: 'var(--bg-surface)', border: '1px solid var(--border-standard)', borderRadius: '24px', padding: '3rem 2rem', marginBottom: '4rem', boxShadow: 'var(--shadow-sm)' }}>
+      <section className="reveal-on-scroll" style={{ background: 'var(--bg-surface)', border: '1px solid var(--border-standard)', borderRadius: '24px', padding: '3rem 2rem', marginBottom: '4rem', boxShadow: 'var(--shadow-sm)' }}>
         <div style={{ textAlign: 'center', marginBottom: '2.5rem' }}>
           <h2 style={{ fontFamily: 'var(--font-heading)', fontSize: '1.75rem', fontWeight: 800, color: 'var(--text-primary)' }}>Vorynx by the Numbers</h2>
           <p style={{ color: 'var(--text-secondary)', fontSize: '0.95rem', marginTop: '0.5rem' }}>Fast, reliable, and transparent fundraising supporting creative minds worldwide.</p>
@@ -935,7 +982,7 @@ function HomepageView({ projects, searchQuery, selectedCategory, setSelectedCate
       </section>
 
       {/* 6. SUCCESS STORIES */}
-      <section style={{ marginBottom: '4rem' }}>
+      <section className="reveal-on-scroll" style={{ marginBottom: '4rem' }}>
         <div className="section-header">
           <h2 className="section-title">Success Stories</h2>
           <span style={{ fontSize: '0.875rem', color: 'var(--text-secondary)', fontWeight: 500 }}>Visions made physical</span>
@@ -970,7 +1017,7 @@ function HomepageView({ projects, searchQuery, selectedCategory, setSelectedCate
       </section>
 
       {/* 7. TESTIMONIALS */}
-      <section style={{ marginBottom: '4rem' }}>
+      <section className="reveal-on-scroll" style={{ marginBottom: '4rem' }}>
         <div className="section-header">
           <h2 className="section-title">Backer & Creator Feedback</h2>
           <span style={{ fontSize: '0.875rem', color: 'var(--text-secondary)', fontWeight: 500 }}>Vetted testimonials</span>
@@ -1012,7 +1059,7 @@ function HomepageView({ projects, searchQuery, selectedCategory, setSelectedCate
       </section>
 
       {/* 8. TRUST AND SECURITY INDICATORS */}
-      <section style={{ background: 'linear-gradient(135deg, rgba(79, 70, 229, 0.02) 0%, rgba(16, 185, 129, 0.02) 100%)', border: '1px solid var(--border-standard)', borderRadius: '24px', padding: '2.5rem', display: 'flex', flexWrap: 'wrap', alignItems: 'center', justifycontent: 'space-between', gap: '2rem', boxShadow: 'var(--shadow-sm)' }}>
+      <section className="reveal-on-scroll" style={{ background: 'linear-gradient(135deg, rgba(79, 70, 229, 0.02) 0%, rgba(16, 185, 129, 0.02) 100%)', border: '1px solid var(--border-standard)', borderRadius: '24px', padding: '2.5rem', display: 'flex', flexWrap: 'wrap', alignItems: 'center', justifycontent: 'space-between', gap: '2rem', boxShadow: 'var(--shadow-sm)' }}>
         <div style={{ maxWidth: '600px' }}>
           <h3 style={{ fontFamily: 'var(--font-heading)', fontSize: '1.5rem', fontWeight: 800, color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
             <i className="fa-solid fa-shield-halved text-green"></i> Secure Crowdfunding Guaranteed
