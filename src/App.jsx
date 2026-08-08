@@ -2651,7 +2651,6 @@ function CreatorDashboardView({ projects, donations, user, setView, onSelectProj
 // ============================================================================
 function AdminPanelView({ projects, donations, setView, refreshData, showToast }) {
   const [activeSubTab, setActiveSubTab] = useState("campaigns"); // 'campaigns' | 'transactions'
-
   const pendingProjects = projects.filter(p => p.status === 'pending');
   const pendingDonations = donations.filter(d => d.status === 'pending');
 
