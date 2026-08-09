@@ -40,6 +40,44 @@ const getFriendlyErrorMessage = (error) => {
   return error.message ? error.message.replace("Firebase: ", "") : String(error);
 };
 
+// ==========================================
+// Currency Formatter & Helper
+// ==========================================
+const formatCurrency = (amount, currency = 'USD') => {
+  const num = Number(amount) || 0;
+  if (currency === 'INR') {
+    const inr = Math.round(num * 85);
+    return `₹${inr.toLocaleString('en-IN')}`;
+  }
+  return `$${Math.round(num).toLocaleString('en-US')}`;
+};
+
+// ==========================================
+// CSV Export Helper
+// ==========================================
+const exportDonationsToCSV = (donations, filename = "vorynx_transactions") => {
+  if (!donations || donations.length === 0) return;
+  const headers = ["ID", "Funder", "Amount (USD)", "UTR / Transaction ID", "Status", "Date"];
+  const rows = donations.map(d => [
+    `"${d.id || ''}"`,
+    `"${(d.username || 'Anonymous').replace(/"/g, '""')}"`,
+    `"${d.amount || 0}"`,
+    `"${(d.utr_id || '').replace(/"/g, '""')}"`,
+    `"${(d.status || '').replace(/"/g, '""')}"`,
+    `"${d.created_at ? new Date(d.created_at).toLocaleDateString() : ''}"`
+  ]);
+  const csvContent = [headers.join(","), ...rows.map(r => r.join(","))].join("\n");
+  const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.setAttribute("href", url);
+  link.setAttribute("download", `${filename}_${Date.now()}.csv`);
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  URL.revokeObjectURL(url);
+};
+
 // Initial Mock Campaign Data
 /* eslint-disable-next-line no-unused-vars */
 const INITIAL_PROJECTS = [
@@ -150,6 +188,27 @@ export default function App() {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("All");
 
+  // Currency State ($ USD or ₹ INR)
+  const [currency, setCurrency] = useState(() => {
+    try {
+      return localStorage.getItem('vorynx_currency') || 'USD';
+    } catch {
+      return 'USD';
+    }
+  });
+
+  // Bookmarks / Saved Projects State
+  const [bookmarkedIds, setBookmarkedIds] = useState(() => {
+    try {
+      return JSON.parse(localStorage.getItem('vorynx_bookmarks') || '[]');
+    } catch {
+      return [];
+    }
+  });
+
+  // Share Modal State
+  const [shareModalProject, setShareModalProject] = useState(null);
+
   // App Dynamic Project Database State
   const [projects, setProjects] = useState([]);
   
@@ -165,6 +224,24 @@ export default function App() {
     setTimeout(() => {
       setToastMessage("");
     }, 4000);
+  };
+
+  const toggleBookmark = (projectId, e) => {
+    if (e) {
+      e.stopPropagation();
+      e.preventDefault();
+    }
+    setBookmarkedIds((prev) => {
+      const exists = prev.includes(projectId);
+      const updated = exists ? prev.filter((id) => id !== projectId) : [...prev, projectId];
+      try {
+        localStorage.setItem('vorynx_bookmarks', JSON.stringify(updated));
+      } catch (err) {
+        console.error("Failed to save bookmark:", err);
+      }
+      showToast(exists ? "Campaign removed from Saved list." : "❤️ Campaign saved to your bookmarks!");
+      return updated;
+    });
   };
 
   const fetchProjects = async () => {
@@ -412,9 +489,35 @@ export default function App() {
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
             />
+            {searchQuery && (
+              <button 
+                type="button"
+                className="search-clear-btn"
+                onClick={() => setSearchQuery("")}
+                title="Clear search"
+              >
+                <i className="fa-solid fa-xmark"></i>
+              </button>
+            )}
           </div>
 
           <div className="nav-actions">
+            {/* Multi-Currency Toggle */}
+            <div className="currency-toggle-pill" title="Toggle Currency ($ USD / ₹ INR)">
+              <button 
+                className={`currency-pill-btn ${currency === 'USD' ? 'active' : ''}`}
+                onClick={() => { setCurrency('USD'); localStorage.setItem('vorynx_currency', 'USD'); }}
+              >
+                $ USD
+              </button>
+              <button 
+                className={`currency-pill-btn ${currency === 'INR' ? 'active' : ''}`}
+                onClick={() => { setCurrency('INR'); localStorage.setItem('vorynx_currency', 'INR'); }}
+              >
+                ₹ INR
+              </button>
+            </div>
+
             <button className="btn-text" onClick={() => { setView("qr-generator"); setSelectedProjectId(null); }}>
               UPI QR Generator
             </button>
@@ -466,6 +569,9 @@ export default function App() {
               onSelectProject={(id) => { setSelectedProjectId(id); setView("details"); }}
               protectAction={protectAction}
               setView={setView}
+              currency={currency}
+              bookmarkedIds={bookmarkedIds}
+              toggleBookmark={toggleBookmark}
             />
           </div>
         )}
@@ -476,6 +582,10 @@ export default function App() {
               project={activeProject}
               onBack={() => { setView("home"); setSelectedProjectId(null); }}
               user={user}
+              currency={currency}
+              bookmarkedIds={bookmarkedIds}
+              toggleBookmark={toggleBookmark}
+              onShare={(p) => setShareModalProject(p)}
               onPledge={(reward) => {
                 protectAction(() => {
                   setSelectedReward(reward);
@@ -611,6 +721,7 @@ export default function App() {
               donations={donations}
               user={user}
               setView={setView}
+              currency={currency}
               onSelectProject={(id) => { setSelectedProjectId(id); setView("details"); }}
             />
           </div>
@@ -624,6 +735,7 @@ export default function App() {
               setView={setView}
               refreshData={refreshData}
               showToast={showToast}
+              currency={currency}
             />
           </div>
         )}
@@ -683,11 +795,21 @@ export default function App() {
         </div>
       )}
 
+      {/* Modal - Share Campaign Modal */}
+      {shareModalProject && (
+        <ShareModal
+          project={shareModalProject}
+          onClose={() => setShareModalProject(null)}
+          showToast={showToast}
+        />
+      )}
+
       {/* Modal - Pledge/Checkout Simulator */}
       {checkoutOpen && selectedReward && activeProject && (
         <CheckoutModal
           project={activeProject}
           reward={selectedReward}
+          currency={currency}
           onClose={() => { setCheckoutOpen(false); setSelectedReward(null); }}
           onSubmit={async (pledgeAmt, paymentMethod, transactionId) => {
             try {
@@ -725,7 +847,7 @@ export default function App() {
                 await refreshData();
                 setCheckoutOpen(false);
                 setSelectedReward(null);
-                showToast(`Card pledge of $${pledgeAmt} authorized successfully!`);
+                showToast(`Card pledge of ${formatCurrency(pledgeAmt, currency)} authorized successfully!`);
               } else {
                 // UPI transaction flow - insert pending donation
                 const { error: donErr } = await supabase
@@ -766,7 +888,8 @@ export default function App() {
 // ============================================================================
 // HOMEPAGE VIEW COMPONENT
 // ============================================================================
-function HomepageView({ projects, searchQuery, selectedCategory, setSelectedCategory, onSelectProject, protectAction, setView }) {
+function HomepageView({ projects, searchQuery, selectedCategory, setSelectedCategory, onSelectProject, protectAction, setView, currency, bookmarkedIds, toggleBookmark }) {
+  const [sortBy, setSortBy] = useState("trending");
 
   // Filtering Logic
   const filteredProjects = projects.filter(proj => {
@@ -774,10 +897,28 @@ function HomepageView({ projects, searchQuery, selectedCategory, setSelectedCate
       proj.subtitle.toLowerCase().includes(searchQuery.toLowerCase()) ||
       proj.description.toLowerCase().includes(searchQuery.toLowerCase());
 
-    const matchesCategory = selectedCategory === "All" || proj.category === selectedCategory;
+    const matchesCategory = selectedCategory === "All"
+      ? true
+      : selectedCategory === "Saved"
+      ? bookmarkedIds.includes(proj.id)
+      : proj.category === selectedCategory;
+
     const isApproved = proj.status === 'approved' || proj.status === 'live';
 
     return matchesSearch && matchesCategory && isApproved;
+  });
+
+  // Sorting Logic
+  filteredProjects.sort((a, b) => {
+    if (sortBy === "funded_desc") return b.raisedAmount - a.raisedAmount;
+    if (sortBy === "pct_desc") return (b.raisedAmount / b.goalAmount) - (a.raisedAmount / a.goalAmount);
+    if (sortBy === "days_asc") return a.daysLeft - b.daysLeft;
+    if (sortBy === "backers_desc") return b.backerCount - a.backerCount;
+    if (sortBy === "newest") return String(b.id).localeCompare(String(a.id));
+    // Default 'trending'
+    if (a.trending && !b.trending) return -1;
+    if (!a.trending && b.trending) return 1;
+    return b.raisedAmount - a.raisedAmount;
   });
 
   // Spotlight is the first trending project
@@ -823,7 +964,7 @@ function HomepageView({ projects, searchQuery, selectedCategory, setSelectedCate
         </div>
       </section>
 
-      {/* 2. CATEGORY TABS */}
+      {/* 2. CATEGORY TABS WITH SAVED BOOKMARKS */}
       <div className="category-filter-bar" style={{ borderRadius: '16px', border: '1px solid var(--border-standard)', marginBottom: '3rem' }}>
         {["All", "Tech", "Design", "Games", "Publishing"].map((cat) => (
           <button
@@ -834,6 +975,13 @@ function HomepageView({ projects, searchQuery, selectedCategory, setSelectedCate
             {cat}
           </button>
         ))}
+        <button
+          className={`category-tab ${selectedCategory === 'Saved' ? 'active' : ''}`}
+          onClick={() => setSelectedCategory('Saved')}
+        >
+          <i className="fa-solid fa-heart" style={{ color: selectedCategory === 'Saved' ? 'inherit' : '#ef4444', marginRight: '5px' }}></i>
+          Saved ({bookmarkedIds.length})
+        </button>
       </div>
 
       {/* 3. CURATED FEATURED PROJECT */}
@@ -848,6 +996,14 @@ function HomepageView({ projects, searchQuery, selectedCategory, setSelectedCate
           <div className="hero-spotlight reveal-on-scroll">
             <div className="hero-media">
               <span className="hero-tag">Staff Pick</span>
+              <button 
+                className={`card-bookmark-btn ${bookmarkedIds.includes(spotlightProj.id) ? 'bookmarked' : ''}`}
+                onClick={(e) => toggleBookmark(spotlightProj.id, e)}
+                title={bookmarkedIds.includes(spotlightProj.id) ? "Remove from bookmarks" : "Save campaign"}
+                style={{ top: '1.25rem', right: '1.25rem', zIndex: 10 }}
+              >
+                <i className={bookmarkedIds.includes(spotlightProj.id) ? "fa-solid fa-heart" : "fa-regular fa-heart"}></i>
+              </button>
               <img src={spotlightProj.image} alt={spotlightProj.title} />
             </div>
             <div className="hero-details">
@@ -857,7 +1013,7 @@ function HomepageView({ projects, searchQuery, selectedCategory, setSelectedCate
 
               <div className="hero-stats-panel">
                 <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.9rem', marginBottom: '0.5rem', fontWeight: 700 }}>
-                  <span>${spotlightProj.raisedAmount.toLocaleString()} pledged</span>
+                  <span>{formatCurrency(spotlightProj.raisedAmount, currency)} pledged</span>
                   <span className="text-green">{Math.round((spotlightProj.raisedAmount / spotlightProj.goalAmount) * 100)}%</span>
                 </div>
                 <div className="progress-container">
@@ -872,7 +1028,7 @@ function HomepageView({ projects, searchQuery, selectedCategory, setSelectedCate
                     <span className="stat-label">Backers</span>
                   </div>
                   <div className="stat-item">
-                    <span className="stat-value">${spotlightProj.goalAmount.toLocaleString()}</span>
+                    <span className="stat-value">{formatCurrency(spotlightProj.goalAmount, currency)}</span>
                     <span className="stat-label">Goal</span>
                   </div>
                   <div className="stat-item">
@@ -896,29 +1052,64 @@ function HomepageView({ projects, searchQuery, selectedCategory, setSelectedCate
       )}
 
       {/* 4. DISCOVER TRENDING CAMPAIGNS GRID */}
-      <div id="discover-section" className="section-header reveal-on-scroll" style={{ paddingTop: '1.5rem', borderTop: '1px solid var(--border-standard)' }}>
-        <h2 className="section-title">
-          {searchQuery !== "" || selectedCategory !== "All" ? "Search Results" : "Trending Campaigns"}
-        </h2>
-        <span style={{ fontSize: '0.875rem', color: 'var(--text-secondary)', fontWeight: 500 }}>
-          Showing {filteredProjects.length} campaigns
-        </span>
+      <div id="discover-section" className="section-header reveal-on-scroll" style={{ paddingTop: '1.5rem', borderTop: '1px solid var(--border-standard)', flexWrap: 'wrap', gap: '1rem' }}>
+        <div>
+          <h2 className="section-title">
+            {selectedCategory === "Saved" ? "Saved Bookmarks" : searchQuery !== "" || selectedCategory !== "All" ? "Search Results" : "Trending Campaigns"}
+          </h2>
+          <span style={{ fontSize: '0.875rem', color: 'var(--text-secondary)', fontWeight: 500 }}>
+            Showing {filteredProjects.length} campaigns
+          </span>
+        </div>
+
+        {/* Sort Controls */}
+        <div className="sort-controls-box">
+          <label className="sort-control-label">
+            <i className="fa-solid fa-arrow-down-wide-short"></i> Sort:
+          </label>
+          <select 
+            className="sort-select-dropdown" 
+            value={sortBy} 
+            onChange={(e) => setSortBy(e.target.value)}
+          >
+            <option value="trending">🔥 Trending / Featured</option>
+            <option value="funded_desc">💰 Most Funded</option>
+            <option value="pct_desc">📈 % Funded (High to Low)</option>
+            <option value="days_asc">⏳ Ending Soonest</option>
+            <option value="backers_desc">👥 Most Backers</option>
+            <option value="newest">✨ Newest</option>
+          </select>
+        </div>
       </div>
 
       {filteredProjects.length === 0 ? (
         <div style={{ textAlign: 'center', padding: '5rem 1rem', background: 'var(--bg-surface)', border: '1px solid var(--border-standard)', borderRadius: '24px', color: 'var(--text-secondary)', boxShadow: 'var(--shadow-sm)' }}>
-          <i className="fa-solid fa-magnifying-glass" style={{ fontSize: '3rem', marginBottom: '1.25rem', color: 'var(--text-light)' }}></i>
-          <h3 style={{ fontSize: '1.25rem', fontWeight: 700, color: 'var(--text-primary)' }}>No Campaigns Found</h3>
-          <p style={{ marginTop: '0.5rem', fontSize: '0.95rem', maxWidth: '400px', margin: '0.5rem auto 0' }}>We couldn't find any projects matching your search. Try adjusting filters or searching for key words.</p>
+          <i className={selectedCategory === "Saved" ? "fa-solid fa-heart-crack" : "fa-solid fa-magnifying-glass"} style={{ fontSize: '3rem', marginBottom: '1.25rem', color: 'var(--text-light)' }}></i>
+          <h3 style={{ fontSize: '1.25rem', fontWeight: 700, color: 'var(--text-primary)' }}>
+            {selectedCategory === "Saved" ? "No Saved Campaigns Yet" : "No Campaigns Found"}
+          </h3>
+          <p style={{ marginTop: '0.5rem', fontSize: '0.95rem', maxWidth: '400px', margin: '0.5rem auto 0' }}>
+            {selectedCategory === "Saved" 
+              ? "Click the heart icon on any campaign to save it to your bookmarks for quick access anytime!" 
+              : "We couldn't find any projects matching your search. Try adjusting filters or searching for key words."}
+          </p>
         </div>
       ) : (
         <div className="projects-grid">
           {filteredProjects.map((proj, idx) => {
             const pct = Math.round((proj.raisedAmount / proj.goalAmount) * 100);
+            const isSaved = bookmarkedIds.includes(proj.id);
             return (
               <div key={proj.id} className={`project-card reveal-on-scroll stagger-${(idx % 3) + 1}`} onClick={() => onSelectProject(proj.id)}>
                 <div className="card-media">
                   {proj.trending && <span className="card-badge"><i className="fa-solid fa-bolt text-green"></i> Trending</span>}
+                  <button 
+                    className={`card-bookmark-btn ${isSaved ? 'bookmarked' : ''}`}
+                    onClick={(e) => toggleBookmark(proj.id, e)}
+                    title={isSaved ? "Remove from bookmarks" : "Save campaign"}
+                  >
+                    <i className={isSaved ? "fa-solid fa-heart" : "fa-regular fa-heart"}></i>
+                  </button>
                   <img src={proj.image} alt={proj.title} />
                 </div>
                 <div className="card-content">
@@ -928,7 +1119,7 @@ function HomepageView({ projects, searchQuery, selectedCategory, setSelectedCate
 
                   <div className="card-footer-stats">
                     <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8rem', marginBottom: '0.4rem', fontWeight: 700 }}>
-                      <span>${proj.raisedAmount.toLocaleString()} raised of ${proj.goalAmount.toLocaleString()}</span>
+                      <span>{formatCurrency(proj.raisedAmount, currency)} raised of {formatCurrency(proj.goalAmount, currency)}</span>
                       <span className="text-green">{pct}%</span>
                     </div>
                     <div className="progress-container" style={{ height: '6px', marginBottom: '0.8rem' }}>
@@ -1119,7 +1310,7 @@ const getCategoryDetails = (category) => {
   }
 };
 
-function ProjectDetailView({ project, onBack, user, onPledge, onAddComment, onDeleteProject }) {
+function ProjectDetailView({ project, onBack, user, onPledge, onAddComment, onDeleteProject, currency, bookmarkedIds, toggleBookmark, onShare }) {
   const [activeTab, setActiveTab] = useState("story"); // 'story' | 'updates' | 'comments'
   const [commentInput, setCommentInput] = useState("");
 
@@ -1128,6 +1319,7 @@ function ProjectDetailView({ project, onBack, user, onPledge, onAddComment, onDe
     user.displayName === project.creator.name ||
     user.email?.split('@')[0] === project.creator.name
   );
+  const isSaved = bookmarkedIds && bookmarkedIds.includes(project.id);
 
   const handleSubmitComment = (e) => {
     e.preventDefault();
@@ -1140,10 +1332,32 @@ function ProjectDetailView({ project, onBack, user, onPledge, onAddComment, onDe
 
   return (
     <div>
-      {/* Back button */}
-      <span className="back-link" onClick={onBack}>
-        <i className="fa-solid fa-arrow-left"></i> Back to discovery
-      </span>
+      {/* Back button and quick actions */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', flexWrap: 'wrap', gap: '1rem' }}>
+        <span className="back-link" style={{ margin: 0 }} onClick={onBack}>
+          <i className="fa-solid fa-arrow-left"></i> Back to discovery
+        </span>
+
+        <div className="detail-action-buttons-row">
+          <button 
+            type="button" 
+            className="btn-secondary detail-share-btn" 
+            onClick={() => onShare && onShare(project)}
+            title="Share this campaign"
+          >
+            <i className="fa-solid fa-share-nodes"></i> Share
+          </button>
+          <button 
+            type="button" 
+            className={`detail-bookmark-btn ${isSaved ? 'bookmarked' : ''}`} 
+            onClick={(e) => toggleBookmark && toggleBookmark(project.id, e)}
+            title={isSaved ? "Remove from bookmarks" : "Save campaign"}
+          >
+            <i className={isSaved ? "fa-solid fa-heart" : "fa-regular fa-heart"}></i>
+            <span>{isSaved ? "Saved" : "Save"}</span>
+          </button>
+        </div>
+      </div>
 
       <div className="detail-header-full">
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem' }}>
@@ -1218,9 +1432,12 @@ function ProjectDetailView({ project, onBack, user, onPledge, onAddComment, onDe
                   </div>
                 </div>
 
+                {/* Card 2: Interactive Roadmap & Milestones Track */}
+                <ProjectRoadmap project={project} />
+
                 {/* 2-Column Grid */}
                 <div className="story-grid-2col">
-                  {/* Card 2: Specs */}
+                  {/* Card 3: Specs */}
                   <div className="story-card-premium success">
                     <div className="story-card-header">
                       <div className="story-card-icon-wrapper icon-wrapper-success">
@@ -1233,7 +1450,7 @@ function ProjectDetailView({ project, onBack, user, onPledge, onAddComment, onDe
                     </div>
                   </div>
 
-                  {/* Card 3: Materials & Craftsmanship */}
+                  {/* Card 4: Materials & Craftsmanship */}
                   <div className="story-card-premium purple">
                     <div className="story-card-header">
                       <div className="story-card-icon-wrapper icon-wrapper-purple">
@@ -1246,7 +1463,7 @@ function ProjectDetailView({ project, onBack, user, onPledge, onAddComment, onDe
                     </div>
                   </div>
 
-                  {/* Card 4: Timeline & Weekly Updates */}
+                  {/* Card 5: Timeline & Weekly Updates */}
                   <div className="story-card-premium info">
                     <div className="story-card-header">
                       <div className="story-card-icon-wrapper icon-wrapper-info">
@@ -1259,7 +1476,7 @@ function ProjectDetailView({ project, onBack, user, onPledge, onAddComment, onDe
                     </div>
                   </div>
 
-                  {/* Card 5: Safe Escrow / Guarantee */}
+                  {/* Card 6: Safe Escrow / Guarantee */}
                   <div className="story-card-premium brand">
                     <div className="story-card-header">
                       <div className="story-card-icon-wrapper icon-wrapper-brand">
@@ -1273,7 +1490,7 @@ function ProjectDetailView({ project, onBack, user, onPledge, onAddComment, onDe
                   </div>
                 </div>
 
-                {/* Card 6: Risks & Challenges */}
+                {/* Card 7: Risks & Challenges */}
                 <div className="story-card-premium warning warning-theme">
                   <div className="story-card-header">
                     <div className="story-card-icon-wrapper icon-wrapper-warning">
@@ -1360,8 +1577,8 @@ function ProjectDetailView({ project, onBack, user, onPledge, onAddComment, onDe
           {/* Funding Stats */}
           <div className="stats-card-side">
             <div className="side-stat-block">
-              <span className="side-stat-big">${project.raisedAmount.toLocaleString()}</span>
-              <span className="side-stat-lbl">pledged of ${project.goalAmount.toLocaleString()} goal</span>
+              <span className="side-stat-big">{formatCurrency(project.raisedAmount, currency)}</span>
+              <span className="side-stat-lbl">pledged of {formatCurrency(project.goalAmount, currency)} goal</span>
             </div>
 
             <div className="progress-container" style={{ marginBottom: '0.5rem' }}>
@@ -1445,7 +1662,7 @@ function ProjectDetailView({ project, onBack, user, onPledge, onAddComment, onDe
             <div className="rewards-stack">
               {project.rewards.map(rew => (
                 <div key={rew.id} className="reward-tier" onClick={() => onPledge(rew)}>
-                  <div className="tier-pledge-amount">Pledge ${rew.pledgeAmount}+</div>
+                  <div className="tier-pledge-amount">Pledge {formatCurrency(rew.pledgeAmount, currency)}+</div>
                   <h4 className="tier-title">{rew.title}</h4>
                   <p className="tier-description">{rew.desc}</p>
                   <div className="tier-meta">
@@ -1460,6 +1677,194 @@ function ProjectDetailView({ project, onBack, user, onPledge, onAddComment, onDe
                   </div>
                 </div>
               ))}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ============================================================================
+// PROJECT ROADMAP & MILESTONES COMPONENT
+// ============================================================================
+function ProjectRoadmap({ project }) {
+  const percent = Math.round((project.raisedAmount / project.goalAmount) * 100);
+  const isFunded = percent >= 100;
+  
+  const milestones = [
+    {
+      phase: "Phase 1",
+      title: "Concept & Prototype Verification",
+      desc: "Hardware schematics, component bench testing, and team identity verification completed.",
+      status: "completed",
+      icon: "fa-solid fa-check"
+    },
+    {
+      phase: "Phase 2",
+      title: "Community Crowdfunding",
+      desc: `Target: $${project.goalAmount.toLocaleString()} — Currently at ${percent}% backed by ${project.backerCount} supporters.`,
+      status: isFunded ? "completed" : "in-progress",
+      icon: isFunded ? "fa-solid fa-check" : "fa-solid fa-bolt"
+    },
+    {
+      phase: "Phase 3",
+      title: "Tooling & Manufacturing",
+      desc: "Mass manufacturing line setup, CNC milling, injection mold fabrication, and batch packaging.",
+      status: "upcoming",
+      icon: "fa-solid fa-gears"
+    },
+    {
+      phase: "Phase 4",
+      title: "Quality Assurance & Global Delivery",
+      desc: "Final QC inspection, tracking ID assignment, and worldwide backer shipment.",
+      status: "upcoming",
+      icon: "fa-solid fa-truck-fast"
+    }
+  ];
+
+  return (
+    <div className="story-card-premium brand roadmap-container">
+      <div className="story-card-header">
+        <div className="story-card-icon-wrapper icon-wrapper-brand">
+          <i className="fa-solid fa-route"></i>
+        </div>
+        <div>
+          <h3 className="story-card-title">Campaign Roadmap & Milestones</h3>
+          <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', margin: 0 }}>Step-by-step progress from prototyping to backer fulfillment</p>
+        </div>
+      </div>
+
+      <div className="roadmap-milestones-track">
+        {milestones.map((m, idx) => (
+          <div key={idx} className={`roadmap-step-item ${m.status}`}>
+            <div className="roadmap-step-left">
+              <div className="roadmap-node-circle">
+                <i className={m.icon}></i>
+              </div>
+              {idx < milestones.length - 1 && <div className="roadmap-connector-line"></div>}
+            </div>
+            <div className="roadmap-step-content">
+              <div className="roadmap-step-header">
+                <span className="roadmap-step-phase">{m.phase}</span>
+                <span className={`roadmap-status-pill ${m.status}`}>
+                  {m.status === 'completed' ? 'Completed' : m.status === 'in-progress' ? 'In Progress' : 'Upcoming'}
+                </span>
+              </div>
+              <h4 className="roadmap-step-title">{m.title}</h4>
+              <p className="roadmap-step-desc">{m.desc}</p>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// ============================================================================
+// SHARE MODAL COMPONENT
+// ============================================================================
+function ShareModal({ project, onClose, showToast }) {
+  const qrCanvasRef = useRef(null);
+  const [copied, setCopied] = useState(false);
+  const shareUrl = typeof window !== 'undefined' 
+    ? `${window.location.origin}${window.location.pathname}?campaign=${project.id}` 
+    : `https://vorynx.com/campaign/${project.id}`;
+
+  useEffect(() => {
+    if (qrCanvasRef.current) {
+      QRCode.toCanvas(qrCanvasRef.current, shareUrl, {
+        width: 150,
+        margin: 2,
+        color: {
+          dark: '#0f172a',
+          light: '#ffffff'
+        }
+      }, (err) => {
+        if (err) console.error("QR Code Error:", err);
+      });
+    }
+  }, [shareUrl]);
+
+  const handleCopyLink = () => {
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(shareUrl).then(() => {
+        setCopied(true);
+        showToast("Campaign link copied to clipboard!");
+        setTimeout(() => setCopied(false), 2500);
+      }).catch(() => {
+        showToast("Unable to copy link.");
+      });
+    } else {
+      showToast("Link: " + shareUrl);
+    }
+  };
+
+  const shareText = `Check out "${project.title}" on Vorynx! Zero-Barrier Crowdfunding for innovators:`;
+
+  return (
+    <div className="modal-overlay" onClick={onClose}>
+      <div className="modal-content share-modal-box" onClick={(e) => e.stopPropagation()}>
+        <button className="modal-close-btn" onClick={onClose}>&times;</button>
+        <div className="share-modal-header">
+          <div className="share-modal-icon-badge">
+            <i className="fa-solid fa-share-nodes"></i>
+          </div>
+          <h2 className="share-modal-title">Share Campaign</h2>
+          <p className="share-modal-subtitle">Spread the word about <strong>{project.title}</strong> and help reach the funding goal!</p>
+        </div>
+
+        <div className="share-modal-body">
+          {/* Quick Copy Link Box */}
+          <div className="share-link-box">
+            <input type="text" readOnly value={shareUrl} className="share-link-input" />
+            <button className="btn-primary share-copy-btn" onClick={handleCopyLink}>
+              <i className={copied ? "fa-solid fa-check" : "fa-regular fa-copy"}></i>
+              {copied ? "Copied!" : "Copy Link"}
+            </button>
+          </div>
+
+          {/* Social Share Grid */}
+          <div className="social-share-grid">
+            <a 
+              href={`https://api.whatsapp.com/send?text=${encodeURIComponent(shareText + ' ' + shareUrl)}`} 
+              target="_blank" 
+              rel="noopener noreferrer" 
+              className="social-share-btn whatsapp"
+            >
+              <i className="fa-brands fa-whatsapp"></i> WhatsApp
+            </a>
+            <a 
+              href={`https://twitter.com/intent/tweet?text=${encodeURIComponent(shareText)}&url=${encodeURIComponent(shareUrl)}`} 
+              target="_blank" 
+              rel="noopener noreferrer" 
+              className="social-share-btn twitter"
+            >
+              <i className="fa-brands fa-x-twitter"></i> X / Twitter
+            </a>
+            <a 
+              href={`https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(shareUrl)}`} 
+              target="_blank" 
+              rel="noopener noreferrer" 
+              className="social-share-btn linkedin"
+            >
+              <i className="fa-brands fa-linkedin"></i> LinkedIn
+            </a>
+            <a 
+              href={`https://reddit.com/submit?url=${encodeURIComponent(shareUrl)}&title=${encodeURIComponent(project.title)}`} 
+              target="_blank" 
+              rel="noopener noreferrer" 
+              className="social-share-btn reddit"
+            >
+              <i className="fa-brands fa-reddit-alien"></i> Reddit
+            </a>
+          </div>
+
+          {/* Mobile Scan QR Box */}
+          <div className="share-qr-section">
+            <span className="share-qr-title"><i className="fa-solid fa-qrcode"></i> Scan on Mobile to Open Campaign</span>
+            <div className="share-qr-wrapper">
+              <canvas ref={qrCanvasRef} />
             </div>
           </div>
         </div>
@@ -1573,7 +1978,7 @@ function UpiPaymentCard({ merchantName, upiId, canvasRef }) {
 // ============================================================================
 // CHECKOUT MODAL SIMULATOR
 // ============================================================================
-function CheckoutModal({ project, reward, onClose, onSubmit }) {
+function CheckoutModal({ project, reward, onClose, onSubmit, currency = 'USD' }) {
   const [pledgeAmt, setPledgeAmt] = useState(reward.pledgeAmount);
   const [paymentMethod, setPaymentMethod] = useState("card"); // 'card' | 'upi'
 
@@ -1593,7 +1998,7 @@ function CheckoutModal({ project, reward, onClose, onSubmit }) {
 
   useEffect(() => {
     if (paymentMethod === 'upi' && !upiPaid && qrCanvasRef.current && project.upi_id) {
-      const pledgeAmtInInr = Math.round(pledgeAmt * 83);
+      const pledgeAmtInInr = Math.round(pledgeAmt * 85);
       const upiUri = `upi://pay?pa=${project.upi_id}&pn=${encodeURIComponent(project.title)}&am=${pledgeAmtInInr}&cu=INR`;
       QRCode.toCanvas(qrCanvasRef.current, upiUri, {
         width: 180,
@@ -1611,7 +2016,7 @@ function CheckoutModal({ project, reward, onClose, onSubmit }) {
   const handlePledgeSubmit = (e) => {
     e.preventDefault();
     if (pledgeAmt < reward.pledgeAmount) {
-      alert(`Minimum pledge amount for this reward is $${reward.pledgeAmount}`);
+      alert(`Minimum pledge amount for this reward is ${formatCurrency(reward.pledgeAmount, currency)}`);
       return;
     }
 
@@ -1639,7 +2044,7 @@ function CheckoutModal({ project, reward, onClose, onSubmit }) {
     setIsSimulating(true);
     setSimulationStatus("Opening GPay/PhonePe intent connection...");
     setTimeout(() => {
-      setSimulationStatus(`Requesting authorization for $${pledgeAmt} (₹${Math.round(pledgeAmt * 83)}) to ${project.upi_id}...`);
+      setSimulationStatus(`Requesting authorization for $${pledgeAmt} (₹${Math.round(pledgeAmt * 85)}) to ${project.upi_id}...`);
       setTimeout(() => {
         setSimulationStatus("UPI Payment Completed! Generating Bank UTR ID...");
         setTimeout(() => {
@@ -1670,11 +2075,11 @@ function CheckoutModal({ project, reward, onClose, onSubmit }) {
             <div style={{ background: 'var(--bg-main)', padding: '1.25rem', borderRadius: '12px', border: '1px solid var(--border-standard)', marginBottom: '0.25rem' }}>
               <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)', fontWeight: 600, textTransform: 'uppercase' }}>Selected Reward Tier:</span>
               <div style={{ fontWeight: 800, color: 'var(--text-primary)', marginTop: '0.25rem', fontSize: '1rem' }}>{reward.title}</div>
-              <div style={{ fontSize: '0.875rem', color: 'var(--accent-brand)', marginTop: '0.2rem', fontWeight: 600 }}>Minimum Pledge: ${reward.pledgeAmount}</div>
+              <div style={{ fontSize: '0.875rem', color: 'var(--accent-brand)', marginTop: '0.2rem', fontWeight: 600 }}>Minimum Pledge: {formatCurrency(reward.pledgeAmount, currency)}</div>
             </div>
 
             <div className="form-field">
-              <label className="form-label">Pledge Amount ($)</label>
+              <label className="form-label">Pledge Amount (USD Base Equivalent)</label>
               <input
                 type="number"
                 className="form-input"
@@ -1683,6 +2088,9 @@ function CheckoutModal({ project, reward, onClose, onSubmit }) {
                 min={reward.pledgeAmount}
                 required
               />
+              <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '0.25rem' }}>
+                Estimated total: {formatCurrency(pledgeAmt, currency)}
+              </span>
             </div>
 
             {/* Payment Method Tabs */}
@@ -2529,7 +2937,7 @@ function AuthPanel({ initialError }) {
 // ============================================================================
 // CREATOR DASHBOARD VIEW
 // ============================================================================
-function CreatorDashboardView({ projects, donations, user, setView, onSelectProject }) {
+function CreatorDashboardView({ projects, donations, user, setView, currency, onSelectProject }) {
   const creatorName = user?.displayName || user?.email?.split('@')[0] || "";
   const myProjects = projects.filter(p => p.creator.name === creatorName);
 
@@ -2573,34 +2981,52 @@ function CreatorDashboardView({ projects, donations, user, setView, onSelectProj
                     </div>
                     <h2 style={{ fontFamily: 'var(--font-heading)', fontSize: '1.5rem', fontWeight: 800, color: 'var(--text-primary)', marginTop: '0.5rem' }}>{project.title}</h2>
                   </div>
-                  <button className="btn-secondary" style={{ fontSize: '0.85rem' }} onClick={() => onSelectProject(project.id)}>
-                    View Live Page <i className="fa-solid fa-arrow-up-right-from-square"></i>
-                  </button>
+                  <div style={{ display: 'flex', gap: '0.8rem', alignItems: 'center', flexWrap: 'wrap' }}>
+                    {projectDonations.length > 0 && (
+                      <button 
+                        type="button"
+                        className="btn-secondary" 
+                        style={{ fontSize: '0.85rem' }} 
+                        onClick={() => exportDonationsToCSV(projectDonations, `${project.title.replace(/\s+/g, '_')}_backers`)}
+                        title="Download backer list and transaction records as CSV"
+                      >
+                        <i className="fa-solid fa-file-csv text-green"></i> Export Backers CSV
+                      </button>
+                    )}
+                    <button className="btn-secondary" style={{ fontSize: '0.85rem' }} onClick={() => onSelectProject(project.id)}>
+                      View Live Page <i className="fa-solid fa-arrow-up-right-from-square"></i>
+                    </button>
+                  </div>
                 </div>
 
                 {/* Metrics */}
                 <div className="stats-grid-3col">
                   <div className="metric-card gross">
                     <span className="metric-label">Gross Raised</span>
-                    <span className="metric-value">${project.raisedAmount.toLocaleString()}</span>
+                    <span className="metric-value">{formatCurrency(project.raisedAmount, currency)}</span>
                     <span className="metric-sub">Pledged by {project.backerCount} backers</span>
                   </div>
                   <div className="metric-card fee">
                     <span className="metric-label">Platform Fee (20%)</span>
-                    <span className="metric-value">${(project.raisedAmount * 0.20).toLocaleString()}</span>
+                    <span className="metric-value">{formatCurrency(project.raisedAmount * 0.20, currency)}</span>
                     <span className="metric-sub">Dedicated to platform maintenance</span>
                   </div>
                   <div className="metric-card net">
                     <span className="metric-label">Net Proceeds (80%)</span>
-                    <span className="metric-value">${(project.raisedAmount * 0.80).toLocaleString()}</span>
+                    <span className="metric-value">{formatCurrency(project.raisedAmount * 0.80, currency)}</span>
                     <span className="metric-sub">Payout amount to startup wallet</span>
                   </div>
                 </div>
 
                 {/* Donation list */}
                 <div className="table-container" style={{ margin: 0 }}>
-                  <div className="table-header-title">
-                    Transaction & Escrow History
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '1rem 1.25rem', borderBottom: '1px solid var(--border-standard)' }}>
+                    <div className="table-header-title" style={{ margin: 0, padding: 0, border: 'none' }}>
+                      Transaction & Escrow History
+                    </div>
+                    {projectDonations.length > 0 && (
+                      <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>{projectDonations.length} total entries</span>
+                    )}
                   </div>
                   <div style={{ overflowX: 'auto' }}>
                     {projectDonations.length === 0 ? (
@@ -2622,7 +3048,7 @@ function CreatorDashboardView({ projects, donations, user, setView, onSelectProj
                           {projectDonations.map(donation => (
                             <tr key={donation.id} className="admin-tr">
                               <td className="admin-td" style={{ fontWeight: 600, color: 'var(--text-primary)' }}>{donation.username}</td>
-                              <td className="admin-td" style={{ fontWeight: 700, color: 'var(--accent-success)' }}>${Number(donation.amount).toLocaleString()}</td>
+                              <td className="admin-td" style={{ fontWeight: 700, color: 'var(--accent-success)' }}>{formatCurrency(donation.amount, currency)}</td>
                               <td className="admin-td" style={{ fontFamily: 'monospace', fontSize: '0.85rem' }}>{donation.utr_id}</td>
                               <td className="admin-td">{new Date(donation.created_at).toLocaleDateString()}</td>
                               <td className="admin-td">
@@ -2649,7 +3075,7 @@ function CreatorDashboardView({ projects, donations, user, setView, onSelectProj
 // ============================================================================
 // ADMIN PANEL VIEW
 // ============================================================================
-function AdminPanelView({ projects, donations, setView, refreshData, showToast }) {
+function AdminPanelView({ projects, donations, setView, refreshData, showToast, currency }) {
   const [activeSubTab, setActiveSubTab] = useState("campaigns"); // 'campaigns' | 'transactions'
   const pendingProjects = projects.filter(p => p.status === 'pending');
   const pendingDonations = donations.filter(d => d.status === 'pending');
@@ -2713,7 +3139,7 @@ function AdminPanelView({ projects, donations, setView, refreshData, showToast }
 
       if (projErr) throw projErr;
 
-      showToast(`Donation of $${donation.amount} verified! Project raised amount updated.`);
+      showToast(`Donation of ${formatCurrency(donation.amount, currency)} verified! Project raised amount updated.`);
       await refreshData();
     } catch (err) {
       console.error(err);
@@ -2785,7 +3211,7 @@ function AdminPanelView({ projects, donations, setView, refreshData, showToast }
                     <span className="approval-card-title">{proj.title}</span>
                     <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', margin: '0.2rem 0' }}>{proj.subtitle}</p>
                     <div className="approval-card-meta">
-                      <span>Goal: <strong>${proj.goalAmount.toLocaleString()}</strong></span>
+                      <span>Goal: <strong>{formatCurrency(proj.goalAmount, currency)}</strong></span>
                       <span>Creator: <strong>{proj.creator.name}</strong></span>
                       <span>UPI ID: <strong style={{ color: 'var(--accent-brand)' }}>{proj.upi_id}</strong></span>
                     </div>
@@ -2808,8 +3234,21 @@ function AdminPanelView({ projects, donations, setView, refreshData, showToast }
       {/* Transactions Queue */}
       {activeSubTab === "transactions" && (
         <div className="table-container" style={{ margin: 0 }}>
-          <div className="table-header-title">
-            Pending UTR Receipts Queue
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '1rem 1.25rem', borderBottom: '1px solid var(--border-standard)', flexWrap: 'wrap', gap: '1rem' }}>
+            <div className="table-header-title" style={{ margin: 0, padding: 0, border: 'none' }}>
+              Pending UTR Receipts Queue
+            </div>
+            {pendingDonations.length > 0 && (
+              <button 
+                type="button"
+                className="btn-secondary" 
+                style={{ fontSize: '0.8rem', padding: '0.4rem 0.8rem' }}
+                onClick={() => exportDonationsToCSV(pendingDonations, "vorynx_pending_receipts")}
+                title="Download pending UTR receipts as CSV"
+              >
+                <i className="fa-solid fa-file-csv text-green"></i> Export Receipts CSV
+              </button>
+            )}
           </div>
           <div style={{ overflowX: 'auto' }}>
             {pendingDonations.length === 0 ? (
@@ -2837,7 +3276,7 @@ function AdminPanelView({ projects, donations, setView, refreshData, showToast }
                       <tr key={donation.id} className="admin-tr">
                         <td className="admin-td" style={{ fontWeight: 600 }}>{campaign?.title || donation.project_id}</td>
                         <td className="admin-td">{donation.username}</td>
-                        <td className="admin-td" style={{ fontWeight: 700, color: 'var(--accent-success)' }}>${Number(donation.amount).toLocaleString()}</td>
+                        <td className="admin-td" style={{ fontWeight: 700, color: 'var(--accent-success)' }}>{formatCurrency(donation.amount, currency)}</td>
                         <td className="admin-td" style={{ fontFamily: 'monospace', fontSize: '0.85rem' }}>{donation.utr_id}</td>
                         <td className="admin-td">{new Date(donation.created_at).toLocaleDateString()}</td>
                         <td className="admin-td">

@@ -5,6 +5,12 @@ Vorynx is a modern crowdfunding and payment gateway platform built for creators,
 ## 🚀 Features
 
 - **Direct UPI Backing**: Generate NPCI-compliant dynamic UPI QR codes and accept zero-fee payments directly.
+- **Multi-Currency Toggle**: Instant dynamic currency conversion between USD ($) and INR (₹) across all goals, pledges, and dashboard analytics.
+- **Campaign Bookmarking & Favorites**: Save and manage favorite campaigns with reactive localStorage persistence and dedicated "Saved" category views.
+- **Advanced Sorting & Discovery**: Real-time campaign sorting by Trending, Most Funded, % Funded, Ending Soonest, and Most Backers.
+- **Interactive Share Modal & Mobile QR**: 1-click clipboard link copying, social sharing (WhatsApp, X/Twitter, LinkedIn, Reddit), and live mobile QR scanning.
+- **Project Roadmap & Milestone Tracker**: Interactive visual progression tracking across Prototype Verification, Crowdfunding, Tooling, and Global Backer Fulfillment.
+- **Backers & Receipts CSV Export**: 1-click export of transactions, UTR IDs, amounts, and dates in Creator and Admin consoles.
 - **Creator Dashboard**: Monitor campaign metrics, track gross/net proceeds, platform fee breakdown, and transaction status.
 - **Admin Approval Console**: Review campaign proposals, verify funder UTR transaction IDs, and approve live campaigns.
 - **Multi-Auth Support**: Email/password, passwordless email links, Google, and GitHub OAuth powered by Firebase Auth.
@@ -13,7 +19,7 @@ Vorynx is a modern crowdfunding and payment gateway platform built for creators,
 
 ## 🛠️ Tech Stack
 
-- **Frontend**: React, Vite
+- **Frontend**: React 19, Vite
 - **Authentication**: Firebase Auth (OAuth & Passwordless)
 - **Database & Storage**: Supabase
 - **Utilities**: QRCode.js, FontAwesome
