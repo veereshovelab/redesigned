@@ -11,6 +11,8 @@ Vorynx is a modern crowdfunding and payment gateway platform built for creators,
 - **Interactive Share Modal & Mobile QR**: 1-click clipboard link copying, social sharing (WhatsApp, X/Twitter, LinkedIn, Reddit), and live mobile QR scanning.
 - **Project Roadmap & Milestone Tracker**: Interactive visual progression tracking across Prototype Verification, Crowdfunding, Tooling, and Global Backer Fulfillment.
 - **Backers & Receipts CSV Export**: 1-click export of transactions, UTR IDs, amounts, and dates in Creator and Admin consoles.
+- **Keyboard Shortcuts & Power UX**: Press `/` anywhere to instantly focus discovery search, press `Escape` to close active modals, and use the floating smooth scroll-to-top button.
+- **Quick Pledge Boost Presets**: Instant +$5, +$10, +$25, +$50, and +$100 one-click pledge increments in checkout with real-time currency calculation.
 - **Creator Dashboard**: Monitor campaign metrics, track gross/net proceeds, platform fee breakdown, and transaction status.
 - **Admin Approval Console**: Review campaign proposals, verify funder UTR transaction IDs, and approve live campaigns.
 - **Multi-Auth Support**: Email/password, passwordless email links, Google, and GitHub OAuth powered by Firebase Auth.

@@ -328,8 +328,45 @@ export default function App() {
   const [authOpen, setAuthOpen] = useState(false);
   const [checkoutOpen, setCheckoutOpen] = useState(false);
   const [selectedReward, setSelectedReward] = useState(null);
+  const [showScrollTop, setShowScrollTop] = useState(false);
 
+  // Global Keyboard Shortcuts (/ for search, Escape for modals)
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (e.key === '/' && !['INPUT', 'TEXTAREA', 'SELECT'].includes(document.activeElement?.tagName)) {
+        e.preventDefault();
+        const searchInput = document.getElementById('search-campaigns-input');
+        if (searchInput) {
+          searchInput.focus();
+          searchInput.select();
+        }
+      }
+      if (e.key === 'Escape') {
+        if (authOpen) setAuthOpen(false);
+        if (shareModalProject) setShareModalProject(null);
+        if (checkoutOpen) {
+          setCheckoutOpen(false);
+          setSelectedReward(null);
+        }
+      }
+    };
 
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [authOpen, shareModalProject, checkoutOpen]);
+
+  // Scroll listener for floating scroll-to-top button
+  useEffect(() => {
+    const handleScroll = () => {
+      setShowScrollTop(window.scrollY > 350);
+    };
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
+  const scrollToTop = () => {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
 
   useEffect(() => {
     // Check if the link is a sign-in with email link
@@ -489,15 +526,17 @@ export default function App() {
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
             />
-            {searchQuery && (
+            {searchQuery ? (
               <button 
-                type="button"
+                type="button" 
                 className="search-clear-btn"
                 onClick={() => setSearchQuery("")}
                 title="Clear search"
               >
                 <i className="fa-solid fa-xmark"></i>
               </button>
+            ) : (
+              <kbd className="search-shortcut-badge" title="Press / to search">/</kbd>
             )}
           </div>
 
@@ -880,6 +919,19 @@ export default function App() {
             }
           }}
         />
+      )}
+
+      {/* Floating Scroll to Top Button */}
+      {showScrollTop && (
+        <button 
+          type="button"
+          className="scroll-top-btn"
+          onClick={scrollToTop}
+          title="Scroll to top (or navigate)"
+          aria-label="Scroll to top"
+        >
+          <i className="fa-solid fa-arrow-up"></i>
+        </button>
       )}
     </div>
   );
@@ -2088,8 +2140,35 @@ function CheckoutModal({ project, reward, onClose, onSubmit, currency = 'USD' })
                 min={reward.pledgeAmount}
                 required
               />
-              <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '0.25rem' }}>
-                Estimated total: {formatCurrency(pledgeAmt, currency)}
+              
+              {/* Quick Boost Preset Chips */}
+              <div className="pledge-preset-chips">
+                <span className="pledge-preset-label">Quick boost:</span>
+                {[5, 10, 25, 50, 100].map(add => (
+                  <button
+                    key={add}
+                    type="button"
+                    className="pledge-preset-chip"
+                    onClick={() => setPledgeAmt(prev => prev + add)}
+                    title={`Add ${formatCurrency(add, currency)} to pledge`}
+                  >
+                    +{formatCurrency(add, currency)}
+                  </button>
+                ))}
+                {pledgeAmt > reward.pledgeAmount && (
+                  <button
+                    type="button"
+                    className="pledge-reset-chip"
+                    onClick={() => setPledgeAmt(reward.pledgeAmount)}
+                    title="Reset to minimum tier amount"
+                  >
+                    Reset
+                  </button>
+                )}
+              </div>
+
+              <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '0.35rem', display: 'block' }}>
+                Estimated total: <strong>{formatCurrency(pledgeAmt, currency)}</strong>
               </span>
             </div>
 

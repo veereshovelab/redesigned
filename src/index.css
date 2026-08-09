@@ -2792,3 +2792,107 @@ body {
     display: block;
     border-radius: 6px;
 }
+
+/* ==========================================================================
+   Keyboard Shortcut Badge & Scroll to Top
+   ========================================================================== */
+.search-shortcut-badge {
+    position: absolute;
+    right: 0.75rem;
+    top: 50%;
+    transform: translateY(-50%);
+    background: #f1f5f9;
+    border: 1px solid var(--border-standard);
+    color: var(--text-muted);
+    font-family: inherit;
+    font-size: 0.7rem;
+    font-weight: 700;
+    padding: 0.15rem 0.45rem;
+    border-radius: 6px;
+    box-shadow: var(--shadow-sm);
+    pointer-events: none;
+}
+
+.scroll-top-btn {
+    position: fixed;
+    bottom: 2rem;
+    right: 2rem;
+    z-index: 99;
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    background: var(--bg-surface);
+    color: var(--text-primary);
+    border: 1px solid var(--border-standard);
+    box-shadow: var(--shadow-md);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1rem;
+    transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    animation: scaleUp 0.3s var(--ease-out-back) forwards;
+}
+
+.scroll-top-btn:hover {
+    background: var(--accent-brand);
+    color: #ffffff;
+    border-color: var(--accent-brand);
+    transform: translateY(-4px);
+    box-shadow: 0 10px 20px -5px rgba(79, 70, 229, 0.35);
+}
+
+/* ==========================================================================
+   Pledge Preset Increment Chips
+   ========================================================================== */
+.pledge-preset-chips {
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+    flex-wrap: wrap;
+    margin-top: 0.5rem;
+}
+
+.pledge-preset-label {
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--text-muted);
+    margin-right: 0.2rem;
+}
+
+.pledge-preset-chip {
+    background: var(--bg-main);
+    border: 1px solid var(--border-standard);
+    color: var(--text-primary);
+    padding: 0.25rem 0.55rem;
+    border-radius: 6px;
+    font-size: 0.75rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.pledge-preset-chip:hover {
+    background: var(--accent-brand-light);
+    color: var(--accent-brand);
+    border-color: rgba(79, 70, 229, 0.3);
+    transform: translateY(-1px);
+}
+
+.pledge-reset-chip {
+    background: transparent;
+    border: 1px dashed var(--border-standard);
+    color: var(--text-muted);
+    padding: 0.25rem 0.5rem;
+    border-radius: 6px;
+    font-size: 0.7rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.pledge-reset-chip:hover {
+    border-color: #ef4444;
+    color: #ef4444;
+    background: #fef2f2;
+}
