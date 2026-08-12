@@ -1487,6 +1487,9 @@ function ProjectDetailView({ project, onBack, user, onPledge, onAddComment, onDe
                 {/* Card 2: Interactive Roadmap & Milestones Track */}
                 <ProjectRoadmap project={project} />
 
+                {/* Card 2b: Visual Stretch Goals & Unlock Milestones */}
+                <StretchGoalsMilestones project={project} currency={currency} />
+
                 {/* 2-Column Grid */}
                 <div className="story-grid-2col">
                   {/* Card 3: Specs */}
@@ -1681,6 +1684,9 @@ function ProjectDetailView({ project, onBack, user, onPledge, onAddComment, onDe
                 <i className="fa-solid fa-trash-can"></i> Discontinue Campaign
               </button>
             )}
+
+            {/* Interactive Goal Impact Calculator */}
+            <GoalCompletionCalculator project={project} currency={currency} onPledge={onPledge} />
           </div>
 
           {/* Organizer Profile Card */}
@@ -1812,6 +1818,205 @@ function ProjectRoadmap({ project }) {
     </div>
   );
 }
+
+// ============================================================================
+// STRETCH GOALS & UNLOCKABLE MILESTONES COMPONENT
+// ============================================================================
+function StretchGoalsMilestones({ project, currency }) {
+  const goal = project.goalAmount || 10000;
+  const raised = project.raisedAmount || 0;
+
+  const tiers = [
+    {
+      multiplier: 1.0,
+      title: "Base Funding Goal",
+      desc: "Initial tooling, batch production runs, and core inventory manufacturing unlocked.",
+      icon: "fa-solid fa-flag-checkered"
+    },
+    {
+      multiplier: 1.25,
+      title: "Stretch Goal 1: Extended Care & Accessories",
+      desc: "All backers receive a complimentary braided cable upgrade and 2-year extended warranty.",
+      icon: "fa-solid fa-gift"
+    },
+    {
+      multiplier: 1.50,
+      title: "Stretch Goal 2: Custom Hardshell Travel Case",
+      desc: "Unlocks custom shockproof hardshell travel case included in all reward tier shipments.",
+      icon: "fa-solid fa-box-open"
+    },
+    {
+      multiplier: 2.00,
+      title: "Stretch Goal 3: Laser-Engraved Founder Edition",
+      desc: "Custom laser-engraved serial numbering and founder signature plaque on housing.",
+      icon: "fa-solid fa-award"
+    }
+  ];
+
+  return (
+    <div className="stretch-goals-container reveal-on-scroll">
+      <div className="story-card-header" style={{ marginBottom: '1rem' }}>
+        <div className="story-card-icon-wrapper icon-wrapper-purple">
+          <i className="fa-solid fa-trophy"></i>
+        </div>
+        <div>
+          <h3 className="story-card-title">Stretch Goal Unlock Milestones</h3>
+          <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', margin: 0 }}>
+            Community funding progress unlocks bonus features & accessories for all backers!
+          </p>
+        </div>
+      </div>
+
+      <div className="stretch-tiers-list">
+        {tiers.map((t, idx) => {
+          const targetAmount = Math.round(goal * t.multiplier);
+          const isUnlocked = raised >= targetAmount;
+          const prevTarget = idx === 0 ? 0 : Math.round(goal * tiers[idx - 1].multiplier);
+          const isInProgress = !isUnlocked && raised >= prevTarget;
+          const remainingNeeded = targetAmount - raised;
+
+          return (
+            <div 
+              key={idx} 
+              className={`stretch-tier-item ${isUnlocked ? 'unlocked' : isInProgress ? 'in-progress' : ''}`}
+            >
+              <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
+                <div style={{
+                  width: '42px',
+                  height: '42px',
+                  borderRadius: '12px',
+                  background: isUnlocked ? 'rgba(16, 185, 129, 0.15)' : isInProgress ? 'rgba(79, 70, 229, 0.15)' : 'var(--bg-surface)',
+                  color: isUnlocked ? 'var(--accent-success)' : isInProgress ? 'var(--accent-brand)' : 'var(--text-muted)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  fontSize: '1.1rem',
+                  border: '1px solid var(--border-standard)'
+                }}>
+                  <i className={t.icon}></i>
+                </div>
+                <div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.2rem' }}>
+                    <span style={{ fontWeight: 800, color: 'var(--text-primary)', fontSize: '0.95rem' }}>{t.title}</span>
+                    <span style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)' }}>({Math.round(t.multiplier * 100)}%)</span>
+                  </div>
+                  <p style={{ fontSize: '0.825rem', color: 'var(--text-secondary)', margin: 0, lineHeight: 1.4 }}>{t.desc}</p>
+                </div>
+              </div>
+
+              <div style={{ textAlign: 'right', minWidth: '140px' }}>
+                <div style={{ fontSize: '0.9rem', fontWeight: 800, color: 'var(--text-primary)', marginBottom: '0.25rem' }}>
+                  {formatCurrency(targetAmount, currency)}
+                </div>
+                {isUnlocked ? (
+                  <span className="stretch-tier-badge unlocked">
+                    <i className="fa-solid fa-circle-check"></i> Unlocked
+                  </span>
+                ) : isInProgress ? (
+                  <span className="stretch-tier-badge in-progress">
+                    <i className="fa-solid fa-spinner fa-spin"></i> {formatCurrency(remainingNeeded, currency)} left
+                  </span>
+                ) : (
+                  <span className="stretch-tier-badge locked">
+                    <i className="fa-solid fa-lock"></i> Locked
+                  </span>
+                )}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+// ============================================================================
+// INTERACTIVE GOAL COMPLETION CALCULATOR COMPONENT
+// ============================================================================
+function GoalCompletionCalculator({ project, currency, onPledge }) {
+  const [pledgeValueUSD, setPledgeValueUSD] = useState(25);
+
+  const currentRaised = project.raisedAmount || 0;
+  const goal = project.goalAmount || 10000;
+
+  const newRaised = currentRaised + pledgeValueUSD;
+  const currentPercent = Math.round((currentRaised / goal) * 100);
+  const newPercent = ((newRaised / goal) * 100).toFixed(1);
+  const boostPercent = ((pledgeValueUSD / goal) * 100).toFixed(1);
+
+  const presetAmounts = [10, 25, 50, 100, 250];
+
+  return (
+    <div className="calc-widget-card">
+      <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.8rem' }}>
+        <i className="fa-solid fa-calculator text-green" style={{ fontSize: '1.1rem' }}></i>
+        <h4 style={{ margin: 0, fontSize: '0.95rem', fontWeight: 800, color: 'var(--text-primary)', fontFamily: 'var(--font-heading)' }}>
+          Pledge Impact Calculator
+        </h4>
+      </div>
+      <p style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', marginBottom: '1rem', lineHeight: 1.4 }}>
+        See how your support advances this campaign's funding milestones in real time.
+      </p>
+
+      {/* Preset Amount Chips */}
+      <div style={{ display: 'flex', gap: '0.4rem', flexWrap: 'wrap', marginBottom: '1rem' }}>
+        {presetAmounts.map((amt) => (
+          <button
+            key={amt}
+            type="button"
+            className={`calc-preset-btn ${pledgeValueUSD === amt ? 'active' : ''}`}
+            onClick={() => setPledgeValueUSD(amt)}
+          >
+            +{formatCurrency(amt, currency)}
+          </button>
+        ))}
+      </div>
+
+      {/* Range Slider */}
+      <div style={{ marginBottom: '1.25rem' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.78rem', color: 'var(--text-muted)', marginBottom: '0.4rem', fontWeight: 600 }}>
+          <span>Pledge Amount</span>
+          <span style={{ color: 'var(--accent-brand)', fontWeight: 800 }}>{formatCurrency(pledgeValueUSD, currency)}</span>
+        </div>
+        <input
+          type="range"
+          min="5"
+          max="500"
+          step="5"
+          value={pledgeValueUSD}
+          onChange={(e) => setPledgeValueUSD(Number(e.target.value))}
+          style={{ width: '100%', accentColor: 'var(--accent-brand)', cursor: 'pointer' }}
+        />
+      </div>
+
+      {/* Dynamic Results Box */}
+      <div style={{ background: 'var(--bg-main)', border: '1px solid var(--border-standard)', borderRadius: '12px', padding: '0.8rem 1rem', marginBottom: '1rem' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
+          <span style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>Projected Funding %</span>
+          <span style={{ fontSize: '0.9rem', fontWeight: 800, color: 'var(--accent-success)' }}>
+            {currentPercent}% → {newPercent}%
+          </span>
+        </div>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <span style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>Campaign Goal Boost</span>
+          <span style={{ fontSize: '0.85rem', fontWeight: 700, color: 'var(--accent-brand)' }}>
+            +{boostPercent}%
+          </span>
+        </div>
+      </div>
+
+      <button
+        type="button"
+        className="btn-primary"
+        style={{ width: '100%', padding: '0.65rem 1rem', fontSize: '0.85rem' }}
+        onClick={() => onPledge({ pledgeAmount: pledgeValueUSD, title: "Calculated Backer Pledge", desc: "Custom pledge boost calculated via Impact Calculator." })}
+      >
+        Pledge {formatCurrency(pledgeValueUSD, currency)} Now
+      </button>
+    </div>
+  );
+}
+
 
 // ============================================================================
 // SHARE MODAL COMPONENT

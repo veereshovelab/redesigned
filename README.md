@@ -10,6 +10,8 @@ Vorynx is a modern crowdfunding and payment gateway platform built for creators,
 - **Advanced Sorting & Discovery**: Real-time campaign sorting by Trending, Most Funded, % Funded, Ending Soonest, and Most Backers.
 - **Interactive Share Modal & Mobile QR**: 1-click clipboard link copying, social sharing (WhatsApp, X/Twitter, LinkedIn, Reddit), and live mobile QR scanning.
 - **Project Roadmap & Milestone Tracker**: Interactive visual progression tracking across Prototype Verification, Crowdfunding, Tooling, and Global Backer Fulfillment.
+- **Stretch-Goal Unlock Milestones**: Interactive 100%, 125%, 150%, and 200% community funding goal tiers with live unlock badges and remaining targets in active currency.
+- **Pledge Impact Calculator**: Real-time calculator widget enabling prospective backers to simulate custom pledge amounts and preview immediate funding % boosts and milestone progression.
 - **Backers & Receipts CSV Export**: 1-click export of transactions, UTR IDs, amounts, and dates in Creator and Admin consoles.
 - **Keyboard Shortcuts & Power UX**: Press `/` anywhere to instantly focus discovery search, press `Escape` to close active modals, and use the floating smooth scroll-to-top button.
 - **Quick Pledge Boost Presets**: Instant +$5, +$10, +$25, +$50, and +$100 one-click pledge increments in checkout with real-time currency calculation.
