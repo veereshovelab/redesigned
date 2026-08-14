@@ -201,6 +201,30 @@ export default function App() {
     }
   });
 
+  // Theme State ('light' | 'dark')
+  const [theme, setTheme] = useState(() => {
+    try {
+      return localStorage.getItem('vorynx_theme') || 'dark';
+    } catch {
+      return 'dark';
+    }
+  });
+
+  useEffect(() => {
+    document.documentElement.setAttribute('data-theme', theme);
+    try {
+      localStorage.setItem('vorynx_theme', theme);
+    } catch (err) {
+      console.error("Failed to save theme:", err);
+    }
+  }, [theme]);
+
+  const toggleTheme = () => {
+    const nextTheme = theme === 'dark' ? 'light' : 'dark';
+    setTheme(nextTheme);
+    showToast(`Switched to ${nextTheme === 'dark' ? 'Dark' : 'Light'} Mode`, 'info');
+  };
+
   // Bookmarks / Saved Projects State
   const [bookmarkedIds, setBookmarkedIds] = useState(() => {
     try {
@@ -568,6 +592,16 @@ export default function App() {
                 ₹ INR
               </button>
             </div>
+
+            {/* Light / Dark Mode Toggle */}
+            <button 
+              className="theme-toggle-btn"
+              onClick={toggleTheme}
+              title={`Switch to ${theme === 'dark' ? 'Light' : 'Dark'} Mode`}
+            >
+              <i className={`fa-solid ${theme === 'dark' ? 'fa-sun text-amber' : 'fa-moon text-blue'}`}></i>
+              <span>{theme === 'dark' ? 'Light' : 'Dark'}</span>
+            </button>
 
             <button className="btn-text" onClick={() => { setView("qr-generator"); setSelectedProjectId(null); }}>
               UPI QR Generator

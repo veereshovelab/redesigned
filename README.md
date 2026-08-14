@@ -6,6 +6,7 @@ Vorynx is a modern crowdfunding and payment gateway platform built for creators,
 
 - **Direct UPI Backing**: Generate NPCI-compliant dynamic UPI QR codes and accept zero-fee payments directly.
 - **Multi-Currency Toggle**: Instant dynamic currency conversion between USD ($) and INR (₹) across all goals, pledges, and dashboard analytics.
+- **Light & Dark Mode Switcher**: 1-click seamless theme toggle with persistent user preference and dynamic color token transition.
 - **Campaign Bookmarking & Favorites**: Save and manage favorite campaigns with reactive localStorage persistence and dedicated "Saved" category views.
 - **Advanced Sorting & Discovery**: Real-time campaign sorting by Trending, Most Funded, % Funded, Ending Soonest, and Most Backers.
 - **Interactive Sub-Tag Filters**: 1-click filtering by popular tags (`#Hardware`, `#Privacy`, `#Tabletop`, `#Ergonomics`, `#Travel`, `#Wireless`) with reactive tag reset controls.
