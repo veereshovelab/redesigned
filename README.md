@@ -8,6 +8,8 @@ Vorynx is a modern crowdfunding and payment gateway platform built for creators,
 - **Multi-Currency Toggle**: Instant dynamic currency conversion between USD ($) and INR (₹) across all goals, pledges, and dashboard analytics.
 - **Campaign Bookmarking & Favorites**: Save and manage favorite campaigns with reactive localStorage persistence and dedicated "Saved" category views.
 - **Advanced Sorting & Discovery**: Real-time campaign sorting by Trending, Most Funded, % Funded, Ending Soonest, and Most Backers.
+- **Interactive Sub-Tag Filters**: 1-click filtering by popular tags (`#Hardware`, `#Privacy`, `#Tabletop`, `#Ergonomics`, `#Travel`, `#Wireless`) with reactive tag reset controls.
+- **Enhanced Toast Notification Center**: Context-aware toast alerts supporting success, warning, and info status variants with instant dismiss controls.
 - **Interactive Share Modal & Mobile QR**: 1-click clipboard link copying, social sharing (WhatsApp, X/Twitter, LinkedIn, Reddit), and live mobile QR scanning.
 - **Project Roadmap & Milestone Tracker**: Interactive visual progression tracking across Prototype Verification, Crowdfunding, Tooling, and Global Backer Fulfillment.
 - **Stretch-Goal Unlock Milestones**: Interactive 100%, 125%, 150%, and 200% community funding goal tiers with live unlock badges and remaining targets in active currency.

@@ -87,6 +87,7 @@ const INITIAL_PROJECTS = [
     subtitle: "A gasket-mounted wireless keyboard with premium walnut casing & custom tactile switches.",
     description: "An ergonomic mechanical keyboard crafted with premium CNC-aluminum, hot-swappable tactile switches, and hand-polished walnut casing. Featuring dual-wireless connectivity, custom gasket-mount dampening, and vibrant RGB backing. Perfect for programmers, writers, and keyboard enthusiasts looking for acoustic perfection and ergonomic comfort.",
     category: "Design",
+    tags: ["#Hardware", "#Ergonomics", "#Wireless", "#Retro"],
     image: "https://images.unsplash.com/photo-1587829741301-dc798b83add3?auto=format&fit=crop&w=800&q=80",
     creator: { name: "Aether Laboratories", avatar: "A", verified: true },
     goalAmount: 15000,
@@ -114,6 +115,7 @@ const INITIAL_PROJECTS = [
     subtitle: "An offline-first voice assistant and smart hub prioritizing local household privacy.",
     description: "The next generation of localized smart home controllers. Aura Hub operates completely offline to protect your household data privacy, using a custom voice-recognition model and low-power mesh radios. Control smart lights, temperature sensors, media systems, and appliance schedules through a stunning, glassmorphic touch interface.",
     category: "Tech",
+    tags: ["#Privacy", "#Hardware", "#SmartHome", "#AI"],
     image: "https://images.unsplash.com/photo-1558002038-1055907df827?auto=format&fit=crop&w=800&q=80",
     creator: { name: "Nova Smart Labs", avatar: "N", verified: true },
     goalAmount: 45000,
@@ -139,6 +141,7 @@ const INITIAL_PROJECTS = [
     subtitle: "A dystopian sci-fi tabletop RPG with detailed miniature figurines.",
     description: "An immersive tabletop roleplaying game featuring neon-drenched dystopian environments, deep hacking mechanics, and modular visual assets. Traverse through a highly detailed urban landscape as an augmented mercenary, solving complex political intrigues and escaping cybernetic strike squads. Includes 12 high-quality miniatures, rulebook, and map grids.",
     category: "Games",
+    tags: ["#Tabletop", "#Gaming", "#Cyberpunk", "#Miniatures"],
     image: "https://images.unsplash.com/photo-1542751371-adc38448a05e?auto=format&fit=crop&w=800&q=80",
     creator: { name: "PixelGrid Tabletop", avatar: "P", verified: false },
     goalAmount: 20000,
@@ -159,6 +162,7 @@ const INITIAL_PROJECTS = [
     subtitle: "A weather-resistant travel companion with customizable magnetic compartments.",
     description: "Designed for digital nomads and weekend travelers. The Nomad Pro features magnetic modular pockets, high-durability Cordura fabric, expandable capacity from 25L to 40L, and an integrated TSA-friendly laptop sleeve. Keep your gear organized with dedicated slots for chargers, cameras, clothing, and water bottles.",
     category: "Design",
+    tags: ["#Travel", "#Modular", "#Design", "#Everyday"],
     image: "https://images.unsplash.com/photo-1553062407-98eeb64c6a62?auto=format&fit=crop&w=800&q=80",
     creator: { name: "Nomad Gear Co.", avatar: "N", verified: true },
     goalAmount: 10000,
@@ -217,13 +221,14 @@ export default function App() {
   const [donations, setDonations] = useState([]);
 
   // Alerts
-  const [toastMessage, setToastMessage] = useState("");
+  const [toast, setToast] = useState(null);
 
-  const showToast = (msg) => {
-    setToastMessage(msg);
+  const showToast = (msg, type = "success") => {
+    const toastObj = typeof msg === "string" ? { message: msg, type } : msg;
+    setToast(toastObj);
     setTimeout(() => {
-      setToastMessage("");
-    }, 4000);
+      setToast((prev) => (prev?.message === toastObj.message ? null : prev));
+    }, 4500);
   };
 
   const toggleBookmark = (projectId, e) => {
@@ -500,11 +505,18 @@ export default function App() {
         </div>
       </div>
 
-      {/* Toast Alert */}
-      {toastMessage && (
-        <div style={{ position: 'fixed', bottom: '2rem', right: '2rem', background: 'rgba(17, 24, 39, 0.95)', border: '1px solid #00f59b', color: '#fff', padding: '1rem 2rem', borderRadius: '12px', zIndex: 10000, boxShadow: '0 5px 25px rgba(0, 245, 155, 0.15)', display: 'flex', alignItems: 'center', gap: '0.8rem', animation: 'slideUp 0.3s ease-out' }}>
-          <i className="fa-solid fa-circle-info text-green"></i>
-          <span style={{ fontSize: '0.9rem', fontWeight: 500 }}>{toastMessage}</span>
+      {/* Toast Alert Notification */}
+      {toast && (
+        <div className={`toast-notification-card toast-${toast.type || 'info'}`}>
+          <i className={`fa-solid ${
+            toast.type === 'success' ? 'fa-circle-check text-green' :
+            toast.type === 'warning' ? 'fa-triangle-exclamation text-amber' :
+            'fa-circle-info text-blue'
+          }`} style={{ fontSize: '1.1rem' }}></i>
+          <span style={{ fontSize: '0.9rem', fontWeight: 500, color: '#fff' }}>{toast.message}</span>
+          <button className="toast-close-btn" onClick={() => setToast(null)} title="Dismiss">
+            <i className="fa-solid fa-xmark"></i>
+          </button>
         </div>
       )}
 
@@ -942,6 +954,9 @@ export default function App() {
 // ============================================================================
 function HomepageView({ projects, searchQuery, selectedCategory, setSelectedCategory, onSelectProject, protectAction, setView, currency, bookmarkedIds, toggleBookmark }) {
   const [sortBy, setSortBy] = useState("trending");
+  const [selectedTag, setSelectedTag] = useState("All Tags");
+
+  const POPULAR_TAGS = ["All Tags", "#Hardware", "#Privacy", "#Tabletop", "#Ergonomics", "#Travel", "#Wireless"];
 
   // Filtering Logic
   const filteredProjects = projects.filter(proj => {
@@ -955,9 +970,16 @@ function HomepageView({ projects, searchQuery, selectedCategory, setSelectedCate
       ? bookmarkedIds.includes(proj.id)
       : proj.category === selectedCategory;
 
+    const matchesTag = selectedTag === "All Tags" || (
+      proj.tags ? proj.tags.includes(selectedTag) :
+      (proj.title + " " + proj.subtitle + " " + proj.description + " " + proj.category)
+        .toLowerCase()
+        .includes(selectedTag.replace('#', '').toLowerCase())
+    );
+
     const isApproved = proj.status === 'approved' || proj.status === 'live';
 
-    return matchesSearch && matchesCategory && isApproved;
+    return matchesSearch && matchesCategory && matchesTag && isApproved;
   });
 
   // Sorting Logic
@@ -1017,7 +1039,7 @@ function HomepageView({ projects, searchQuery, selectedCategory, setSelectedCate
       </section>
 
       {/* 2. CATEGORY TABS WITH SAVED BOOKMARKS */}
-      <div className="category-filter-bar" style={{ borderRadius: '16px', border: '1px solid var(--border-standard)', marginBottom: '3rem' }}>
+      <div className="category-filter-bar" style={{ borderRadius: '16px', border: '1px solid var(--border-standard)', marginBottom: '1.25rem' }}>
         {["All", "Tech", "Design", "Games", "Publishing"].map((cat) => (
           <button
             key={cat}
@@ -1034,6 +1056,31 @@ function HomepageView({ projects, searchQuery, selectedCategory, setSelectedCate
           <i className="fa-solid fa-heart" style={{ color: selectedCategory === 'Saved' ? 'inherit' : '#ef4444', marginRight: '5px' }}></i>
           Saved ({bookmarkedIds.length})
         </button>
+      </div>
+
+      {/* 2b. INTERACTIVE SUB-TAG QUICK FILTERS */}
+      <div className="tag-filter-bar">
+        <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)', fontWeight: 600, marginRight: '0.2rem' }}>
+          <i className="fa-solid fa-tags"></i> Tags:
+        </span>
+        {POPULAR_TAGS.map((tag) => (
+          <button
+            key={tag}
+            className={`tag-chip ${selectedTag === tag ? 'active' : ''}`}
+            onClick={() => setSelectedTag(selectedTag === tag ? "All Tags" : tag)}
+          >
+            {tag}
+          </button>
+        ))}
+        {selectedTag !== "All Tags" && (
+          <button
+            className="tag-chip"
+            style={{ background: 'rgba(239, 68, 68, 0.1)', color: '#ef4444', borderColor: 'rgba(239, 68, 68, 0.3)' }}
+            onClick={() => setSelectedTag("All Tags")}
+          >
+            <i className="fa-solid fa-xmark"></i> Clear Tag Filter
+          </button>
+        )}
       </div>
 
       {/* 3. CURATED FEATURED PROJECT */}

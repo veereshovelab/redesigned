@@ -488,3 +488,110 @@
     color: #ffffff;
     border-color: var(--accent-brand);
 }
+
+/* ==========================================
+   Interactive Sub-Tag Filter Chips & Velocity Badge
+   ========================================== */
+.tag-filter-bar {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+    padding: 0.25rem 0 1rem;
+    margin-top: -1.75rem;
+    margin-bottom: 2rem;
+}
+
+.tag-chip {
+    background: var(--bg-surface);
+    border: 1px solid var(--border-standard);
+    color: var(--text-secondary);
+    padding: 0.35rem 0.85rem;
+    border-radius: 9999px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+}
+
+.tag-chip:hover {
+    border-color: var(--accent-brand);
+    color: var(--text-primary);
+    transform: translateY(-1px);
+}
+
+.tag-chip.active {
+    background: var(--accent-brand);
+    color: #ffffff;
+    border-color: var(--accent-brand);
+    box-shadow: 0 4px 12px rgba(79, 70, 229, 0.25);
+}
+
+/* Upgrade Toast Notification Styling */
+.toast-notification-card {
+    position: fixed;
+    bottom: 2rem;
+    right: 2rem;
+    background: rgba(15, 23, 42, 0.95);
+    backdrop-filter: blur(12px);
+    border: 1px solid var(--border-standard);
+    color: #ffffff;
+    padding: 0.9rem 1.4rem;
+    border-radius: 14px;
+    z-index: 10000;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
+    display: flex;
+    align-items: center;
+    gap: 0.8rem;
+    animation: slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    max-width: 420px;
+}
+
+.toast-notification-card.toast-success {
+    border-color: rgba(16, 185, 129, 0.5);
+    box-shadow: 0 8px 25px rgba(16, 185, 129, 0.15);
+}
+
+.toast-notification-card.toast-warning {
+    border-color: rgba(245, 158, 11, 0.5);
+    box-shadow: 0 8px 25px rgba(245, 158, 11, 0.15);
+}
+
+.toast-notification-card.toast-info {
+    border-color: rgba(59, 130, 246, 0.5);
+    box-shadow: 0 8px 25px rgba(59, 130, 246, 0.15);
+}
+
+.toast-close-btn {
+    background: transparent;
+    border: none;
+    color: var(--text-muted);
+    font-size: 0.9rem;
+    cursor: pointer;
+    padding: 0.2rem;
+    margin-left: auto;
+    transition: color 0.2s ease;
+}
+
+.toast-close-btn:hover {
+    color: #ffffff;
+}
+
+/* Funding Velocity Pace Badge */
+.velocity-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    background: rgba(16, 185, 129, 0.1);
+    color: var(--accent-success);
+    border: 1px solid rgba(16, 185, 129, 0.25);
+    padding: 0.4rem 0.85rem;
+    border-radius: 10px;
+    font-size: 0.82rem;
+    font-weight: 600;
+    margin-top: 0.75rem;
+}
