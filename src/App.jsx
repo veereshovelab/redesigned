@@ -1,3 +1,8 @@
+/**
+ * Vorynx - Zero-Barrier Crowdfunding Platform (v0.1.0)
+ * Main Application Component & Router Interface
+ */
+
 import { useState, useEffect, useRef } from "react";
 import QRCode from "qrcode";
 import './App.css';
@@ -20,6 +25,11 @@ import { supabase } from './supabaseClient';
 // ==========================================
 // Friendly Error Message Helper
 // ==========================================
+/**
+ * Maps raw auth error messages or codes to user-friendly status strings.
+ * @param {Error|Object|string} error
+ * @returns {string} Human readable error message
+ */
 const getFriendlyErrorMessage = (error) => {
   const code = error.code || error.message || "";
   if (code.includes("invalid-credential") || code.includes("wrong-password") || code.includes("user-not-found")) {
