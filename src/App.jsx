@@ -613,6 +613,30 @@ export default function App() {
               <span>{theme === 'dark' ? 'Light' : 'Dark'}</span>
             </button>
 
+            {/* Saved Bookmarks Navigation Button */}
+            <button 
+              className="btn-text"
+              style={{ display: 'inline-flex', alignItems: 'center', gap: '0.35rem' }}
+              onClick={() => { setView("home"); setSelectedCategory("Saved"); setSelectedProjectId(null); }}
+              title="View Saved Bookmarks"
+            >
+              <i className="fa-solid fa-heart" style={{ color: '#ef4444' }}></i>
+              <span>Saved</span>
+              {bookmarkedIds.length > 0 && (
+                <span style={{ 
+                  background: '#ef4444', 
+                  color: '#fff', 
+                  fontSize: '0.7rem', 
+                  fontWeight: 700, 
+                  padding: '0.1rem 0.45rem', 
+                  borderRadius: '999px',
+                  lineHeight: 1
+                }}>
+                  {bookmarkedIds.length}
+                </span>
+              )}
+            </button>
+
             <button className="btn-text" onClick={() => { setView("qr-generator"); setSelectedProjectId(null); }}>
               UPI QR Generator
             </button>
