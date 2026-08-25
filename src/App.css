@@ -695,3 +695,119 @@
     border-radius: 6px;
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
 }
+
+/* Search Suggestions Popover */
+.search-suggestions-popover {
+    position: absolute;
+    top: calc(100% + 0.6rem);
+    left: 0;
+    right: 0;
+    background: var(--bg-surface);
+    border: 1px solid var(--border-standard);
+    border-radius: 16px;
+    padding: 1rem;
+    box-shadow: 0 16px 36px rgba(0, 0, 0, 0.35);
+    z-index: 1000;
+    backdrop-filter: blur(16px);
+    animation: fadeIn 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+    min-width: 320px;
+}
+
+.search-popover-section {
+    margin-bottom: 0.85rem;
+}
+
+.search-popover-section:last-child {
+    margin-bottom: 0;
+}
+
+.search-popover-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 0.5rem;
+    padding: 0 0.25rem;
+}
+
+.search-clear-history-btn {
+    background: transparent;
+    border: none;
+    color: var(--accent-brand);
+    font-size: 0.72rem;
+    font-weight: 600;
+    cursor: pointer;
+    text-transform: none;
+    letter-spacing: normal;
+}
+
+.search-clear-history-btn:hover {
+    text-decoration: underline;
+}
+
+.search-popover-items {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+}
+
+.search-popover-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.5rem 0.75rem;
+    border-radius: 10px;
+    font-size: 0.875rem;
+    color: var(--text-primary);
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.search-popover-item:hover {
+    background: var(--border-light);
+    color: var(--accent-brand);
+}
+
+.search-remove-item-btn {
+    background: transparent;
+    border: none;
+    color: var(--text-muted);
+    font-size: 0.75rem;
+    cursor: pointer;
+    padding: 0.2rem 0.4rem;
+    border-radius: 4px;
+    transition: color 0.2s ease;
+}
+
+.search-remove-item-btn:hover {
+    color: #ef4444;
+}
+
+.search-popular-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+    margin-top: 0.35rem;
+}
+
+.search-popular-tag-btn {
+    background: var(--bg-main);
+    border: 1px solid var(--border-standard);
+    color: var(--text-secondary);
+    font-size: 0.78rem;
+    font-weight: 600;
+    padding: 0.3rem 0.65rem;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.search-popular-tag-btn:hover {
+    background: var(--accent-brand-light);
+    color: var(--accent-brand);
+    border-color: var(--accent-brand);
+}

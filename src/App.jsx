@@ -244,6 +244,54 @@ export default function App() {
     }
   });
 
+  // Recent Searches History State
+  const [recentSearches, setRecentSearches] = useState(() => {
+    try {
+      return JSON.parse(localStorage.getItem('vorynx_recent_searches') || '[]');
+    } catch {
+      return [];
+    }
+  });
+  const [searchFocused, setSearchFocused] = useState(false);
+
+  const addRecentSearch = (term) => {
+    if (!term || !term.trim()) return;
+    const cleanTerm = term.trim();
+    setRecentSearches((prev) => {
+      const filtered = prev.filter((item) => item.toLowerCase() !== cleanTerm.toLowerCase());
+      const updated = [cleanTerm, ...filtered].slice(0, 6);
+      try {
+        localStorage.setItem('vorynx_recent_searches', JSON.stringify(updated));
+      } catch (err) {
+        console.error("Failed to save search history:", err);
+      }
+      return updated;
+    });
+  };
+
+  const removeRecentSearch = (term, e) => {
+    e.stopPropagation();
+    setRecentSearches((prev) => {
+      const updated = prev.filter((item) => item !== term);
+      try {
+        localStorage.setItem('vorynx_recent_searches', JSON.stringify(updated));
+      } catch (err) {
+        console.error("Failed to update search history:", err);
+      }
+      return updated;
+    });
+  };
+
+  const clearAllRecentSearches = (e) => {
+    e.stopPropagation();
+    setRecentSearches([]);
+    try {
+      localStorage.removeItem('vorynx_recent_searches');
+    } catch (err) {
+      console.error("Failed to clear search history:", err);
+    }
+  };
+
   // Share Modal State
   const [shareModalProject, setShareModalProject] = useState(null);
 
@@ -593,6 +641,16 @@ export default function App() {
               className="search-input"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
+              onFocus={() => setSearchFocused(true)}
+              onBlur={() => setTimeout(() => setSearchFocused(false), 200)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  if (searchQuery.trim()) {
+                    addRecentSearch(searchQuery);
+                  }
+                  setSearchFocused(false);
+                }
+              }}
             />
             {searchQuery ? (
               <button 
@@ -605,6 +663,68 @@ export default function App() {
               </button>
             ) : (
               <kbd className="search-shortcut-badge" title="Press / to search">/</kbd>
+            )}
+
+            {/* Search Suggestions & History Popover */}
+            {searchFocused && (
+              <div 
+                className="search-suggestions-popover"
+                onMouseDown={(e) => e.preventDefault()}
+              >
+                {recentSearches.length > 0 && (
+                  <div className="search-popover-section">
+                    <div className="search-popover-header">
+                      <span><i className="fa-solid fa-clock-rotate-left"></i> Recent Searches</span>
+                      <button type="button" className="search-clear-history-btn" onClick={clearAllRecentSearches}>Clear All</button>
+                    </div>
+                    <div className="search-popover-items">
+                      {recentSearches.map((term) => (
+                        <div 
+                          key={term} 
+                          className="search-popover-item"
+                          onClick={() => {
+                            setSearchQuery(term);
+                            addRecentSearch(term);
+                            setSearchFocused(false);
+                            if (view !== "home") setView("home");
+                          }}
+                        >
+                          <span style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                            <i className="fa-solid fa-magnifying-glass" style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}></i>
+                            {term}
+                          </span>
+                          <button type="button" className="search-remove-item-btn" onClick={(e) => removeRecentSearch(term, e)} title="Remove">
+                            <i className="fa-solid fa-xmark"></i>
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                <div className="search-popover-section">
+                  <div className="search-popover-header">
+                    <span><i className="fa-solid fa-fire text-amber"></i> Trending Keywords</span>
+                  </div>
+                  <div className="search-popular-tags">
+                    {["Keyboard", "Privacy", "Cyberpunk", "Modular", "Smart Home", "Ergonomics"].map((keyword) => (
+                      <button
+                        key={keyword}
+                        type="button"
+                        className="search-popular-tag-btn"
+                        onClick={() => {
+                          setSearchQuery(keyword);
+                          addRecentSearch(keyword);
+                          setSearchFocused(false);
+                          if (view !== "home") setView("home");
+                        }}
+                      >
+                        #{keyword}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </div>
             )}
           </div>
 
