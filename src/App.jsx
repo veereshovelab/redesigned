@@ -368,11 +368,14 @@ export default function App() {
   const [checkoutOpen, setCheckoutOpen] = useState(false);
   const [selectedReward, setSelectedReward] = useState(null);
   const [showScrollTop, setShowScrollTop] = useState(false);
+  const [shortcutsOpen, setShortcutsOpen] = useState(false);
 
-  // Global Keyboard Shortcuts (/ for search, Escape for modals)
+  // Global Keyboard Shortcuts (/ for search, Escape for modals, ? for shortcut guide, Alt+T for theme, Alt+H for home)
   useEffect(() => {
     const handleKeyDown = (e) => {
-      if (e.key === '/' && !['INPUT', 'TEXTAREA', 'SELECT'].includes(document.activeElement?.tagName)) {
+      const isInputActive = ['INPUT', 'TEXTAREA', 'SELECT'].includes(document.activeElement?.tagName);
+
+      if (e.key === '/' && !isInputActive) {
         e.preventDefault();
         const searchInput = document.getElementById('search-campaigns-input');
         if (searchInput) {
@@ -380,7 +383,25 @@ export default function App() {
           searchInput.select();
         }
       }
+
+      if ((e.key === '?' || (e.shiftKey && e.key === '?')) && !isInputActive) {
+        e.preventDefault();
+        setShortcutsOpen((prev) => !prev);
+      }
+
+      if ((e.altKey || e.metaKey) && (e.key === 't' || e.key === 'T')) {
+        e.preventDefault();
+        toggleTheme();
+      }
+
+      if ((e.altKey || e.metaKey) && (e.key === 'h' || e.key === 'H')) {
+        e.preventDefault();
+        setView("home");
+        setSelectedProjectId(null);
+      }
+
       if (e.key === 'Escape') {
+        if (shortcutsOpen) setShortcutsOpen(false);
         if (authOpen) setAuthOpen(false);
         if (shareModalProject) setShareModalProject(null);
         if (checkoutOpen) {
@@ -392,7 +413,8 @@ export default function App() {
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [authOpen, shareModalProject, checkoutOpen]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [authOpen, shareModalProject, checkoutOpen, shortcutsOpen, theme]);
 
   // Scroll listener for floating scroll-to-top button
   useEffect(() => {
@@ -611,6 +633,16 @@ export default function App() {
             >
               <i className={`fa-solid ${theme === 'dark' ? 'fa-sun text-amber' : 'fa-moon text-blue'}`}></i>
               <span>{theme === 'dark' ? 'Light' : 'Dark'}</span>
+            </button>
+
+            {/* Keyboard Shortcuts Guide Button */}
+            <button
+              className="theme-toggle-btn"
+              onClick={() => setShortcutsOpen(true)}
+              title="Keyboard Shortcuts (?)"
+            >
+              <i className="fa-solid fa-keyboard text-purple" style={{ color: '#a855f7' }}></i>
+              <span>Shortcuts</span>
             </button>
 
             {/* Saved Bookmarks Navigation Button */}
@@ -901,6 +933,62 @@ export default function App() {
           <span>Terms & Privacy | Sandbox Mode</span>
         </div>
       </footer>
+
+      {/* Floating Scroll to Top Action Button */}
+      {showScrollTop && (
+        <button
+          className="scroll-to-top-btn"
+          onClick={scrollToTop}
+          title="Scroll back to top"
+          aria-label="Scroll back to top"
+        >
+          <i className="fa-solid fa-arrow-up"></i>
+        </button>
+      )}
+
+      {/* Modal - Keyboard Shortcuts Reference */}
+      {shortcutsOpen && (
+        <div className="modal-overlay" onClick={() => setShortcutsOpen(false)}>
+          <div className="shortcuts-modal-card" onClick={(e) => e.stopPropagation()}>
+            <div className="shortcuts-modal-header">
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
+                <i className="fa-solid fa-keyboard text-purple" style={{ color: '#a855f7', fontSize: '1.2rem' }}></i>
+                <h3 style={{ fontFamily: 'var(--font-heading)', fontSize: '1.25rem', fontWeight: 800, color: 'var(--text-primary)', margin: 0 }}>Keyboard Shortcuts</h3>
+              </div>
+              <button className="toast-close-btn" onClick={() => setShortcutsOpen(false)} title="Close (Esc)">
+                <i className="fa-solid fa-xmark"></i>
+              </button>
+            </div>
+
+            <div style={{ display: 'flex', flexDirection: 'column' }}>
+              <div className="shortcut-row">
+                <span style={{ fontSize: '0.9rem', color: 'var(--text-secondary)' }}>Focus Search Bar</span>
+                <kbd className="shortcut-key-badge">/</kbd>
+              </div>
+              <div className="shortcut-row">
+                <span style={{ fontSize: '0.9rem', color: 'var(--text-secondary)' }}>Toggle Keyboard Shortcuts</span>
+                <kbd className="shortcut-key-badge">?</kbd>
+              </div>
+              <div className="shortcut-row">
+                <span style={{ fontSize: '0.9rem', color: 'var(--text-secondary)' }}>Toggle Dark / Light Theme</span>
+                <kbd className="shortcut-key-badge">Alt + T</kbd>
+              </div>
+              <div className="shortcut-row">
+                <span style={{ fontSize: '0.9rem', color: 'var(--text-secondary)' }}>Navigate to Homepage</span>
+                <kbd className="shortcut-key-badge">Alt + H</kbd>
+              </div>
+              <div className="shortcut-row">
+                <span style={{ fontSize: '0.9rem', color: 'var(--text-secondary)' }}>Close Open Modal / Dialog</span>
+                <kbd className="shortcut-key-badge">Esc</kbd>
+              </div>
+            </div>
+
+            <div style={{ marginTop: '1.5rem', textAlign: 'center' }}>
+              <p style={{ fontSize: '0.78rem', color: 'var(--text-muted)', margin: 0 }}>Press <kbd className="shortcut-key-badge" style={{ fontSize: '0.7rem' }}>Esc</kbd> anytime to dismiss overlay windows.</p>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Modal - Firebase sliding AuthPanel wrapper */}
       {authOpen && (
