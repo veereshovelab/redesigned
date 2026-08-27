@@ -811,3 +811,365 @@
     color: var(--accent-brand);
     border-color: var(--accent-brand);
 }
+
+/* ==========================================
+   Campaign Comparison Drawer & Matrix Styles
+   ========================================== */
+.floating-comparison-drawer {
+    position: fixed;
+    bottom: 1.75rem;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(15, 23, 42, 0.94);
+    backdrop-filter: blur(16px);
+    border: 1px solid var(--border-standard);
+    border-radius: 20px;
+    padding: 0.75rem 1.25rem;
+    z-index: 9998;
+    box-shadow: 0 16px 40px rgba(0, 0, 0, 0.45);
+    max-width: 90%;
+    width: 720px;
+    animation: slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.comparison-drawer-content {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    flex-wrap: wrap;
+}
+
+.comparison-drawer-info {
+    display: flex;
+    align-items: center;
+    gap: 0.65rem;
+}
+
+.comparison-badge-icon {
+    width: 36px;
+    height: 36px;
+    border-radius: 10px;
+    background: linear-gradient(135deg, #a855f7 0%, #6366f1 100%);
+    color: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1rem;
+}
+
+.comparison-drawer-chips {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    overflow-x: auto;
+}
+
+.comparison-project-chip {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    padding: 0.25rem 0.6rem;
+    border-radius: 9999px;
+    font-size: 0.78rem;
+    color: #fff;
+}
+
+.comparison-project-chip img {
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    object-fit: cover;
+}
+
+.comparison-chip-title {
+    max-width: 100px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-weight: 500;
+}
+
+.comparison-chip-remove {
+    background: transparent;
+    border: none;
+    color: rgba(255, 255, 255, 0.6);
+    font-size: 0.7rem;
+    cursor: pointer;
+    padding: 0 0.1rem;
+    display: flex;
+    align-items: center;
+    transition: color 0.2s ease;
+}
+
+.comparison-chip-remove:hover {
+    color: #ef4444;
+}
+
+.comparison-drawer-actions {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+/* Card Compare Toggle Button */
+.card-compare-btn {
+    position: absolute;
+    top: 1.25rem;
+    right: 4rem;
+    width: 34px;
+    height: 34px;
+    border-radius: 50%;
+    background: rgba(15, 23, 42, 0.7);
+    backdrop-filter: blur(8px);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    color: rgba(255, 255, 255, 0.8);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.85rem;
+    cursor: pointer;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    z-index: 10;
+}
+
+.card-compare-btn:hover {
+    background: var(--accent-brand);
+    color: #ffffff;
+    border-color: var(--accent-brand);
+    transform: scale(1.1);
+}
+
+.card-compare-btn.active {
+    background: #a855f7;
+    color: #ffffff;
+    border-color: #a855f7;
+    box-shadow: 0 4px 12px rgba(168, 85, 247, 0.35);
+}
+
+/* Comparison Matrix Modal */
+.comparison-modal-content {
+    max-width: 960px !important;
+    width: 95% !important;
+    padding: 1.75rem !important;
+    border-radius: 24px !important;
+}
+
+.comparison-modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.5rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid var(--border-standard);
+}
+
+.comparison-matrix-scroll-wrapper {
+    overflow-x: auto;
+    max-height: 70vh;
+}
+
+.comparison-matrix-table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+}
+
+.comparison-matrix-table th,
+.comparison-matrix-table td {
+    padding: 1rem 1.25rem;
+    text-align: left;
+    vertical-align: top;
+    border-bottom: 1px solid var(--border-standard);
+}
+
+.comparison-matrix-table tr:last-child td {
+    border-bottom: none;
+}
+
+.matrix-label-col {
+    width: 200px;
+    min-width: 180px;
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: var(--text-secondary);
+    background: var(--bg-surface);
+    position: sticky;
+    left: 0;
+    z-index: 2;
+}
+
+.matrix-proj-col {
+    min-width: 230px;
+    max-width: 260px;
+}
+
+.matrix-proj-header {
+    display: flex;
+    gap: 0.75rem;
+    align-items: flex-start;
+}
+
+.matrix-proj-img {
+    width: 48px;
+    height: 48px;
+    border-radius: 10px;
+    object-fit: cover;
+}
+
+.matrix-proj-title {
+    font-family: var(--font-heading);
+    font-size: 0.95rem;
+    font-weight: 800;
+    color: var(--text-primary);
+    margin: 0 0 0.2rem 0;
+    line-height: 1.25;
+}
+
+.matrix-proj-creator {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+}
+
+/* ==========================================
+   Verified Creator Q&A Styles
+   ========================================== */
+.qna-ask-card {
+    background: var(--bg-surface);
+    border: 1px solid var(--border-standard);
+    border-radius: 20px;
+    padding: 1.5rem;
+    box-shadow: var(--shadow-sm);
+    margin-bottom: 1.5rem;
+}
+
+.qna-filter-bar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.25rem;
+}
+
+.qna-list {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.qna-card {
+    background: var(--bg-surface);
+    border: 1px solid var(--border-standard);
+    border-radius: 18px;
+    padding: 1.25rem 1.5rem;
+    box-shadow: var(--shadow-sm);
+    transition: border-color 0.2s ease;
+}
+
+.qna-card:hover {
+    border-color: var(--border-light);
+}
+
+.qna-card-top {
+    display: flex;
+    gap: 1rem;
+    align-items: flex-start;
+}
+
+.qna-upvote-btn {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    background: var(--bg-main);
+    border: 1px solid var(--border-standard);
+    color: var(--text-secondary);
+    padding: 0.4rem 0.6rem;
+    border-radius: 10px;
+    min-width: 44px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    font-size: 0.8rem;
+    font-weight: 700;
+}
+
+.qna-upvote-btn:hover, .qna-upvote-btn.upvoted {
+    background: var(--accent-brand-light);
+    color: var(--accent-brand);
+    border-color: var(--accent-brand);
+}
+
+.qna-question-text {
+    font-family: var(--font-heading);
+    font-size: 1rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin: 0 0 0.35rem 0;
+}
+
+.qna-question-meta {
+    font-size: 0.78rem;
+    color: var(--text-muted);
+}
+
+.qna-answer-box {
+    margin-top: 1rem;
+    margin-left: 3.75rem;
+    background: var(--bg-main);
+    border: 1px solid rgba(16, 185, 129, 0.25);
+    border-radius: 14px;
+    padding: 1rem 1.25rem;
+    position: relative;
+}
+
+.qna-answer-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.5rem;
+}
+
+.creator-verified-badge {
+    background: rgba(16, 185, 129, 0.15);
+    color: var(--accent-success);
+    border: 1px solid rgba(16, 185, 129, 0.3);
+    font-size: 0.72rem;
+    font-weight: 800;
+    padding: 0.2rem 0.55rem;
+    border-radius: 9999px;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.qna-answer-date {
+    font-size: 0.72rem;
+    color: var(--text-muted);
+}
+
+.qna-answer-text {
+    font-size: 0.9rem;
+    color: var(--text-primary);
+    line-height: 1.5;
+    margin: 0 0 0.5rem 0;
+}
+
+.qna-answer-author {
+    font-size: 0.78rem;
+    font-weight: 700;
+    color: var(--accent-success);
+}
+
+.qna-unanswered-badge {
+    margin-top: 0.75rem;
+    margin-left: 3.75rem;
+    font-size: 0.78rem;
+    color: var(--text-muted);
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    font-style: italic;
+}

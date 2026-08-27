@@ -244,6 +244,54 @@ export default function App() {
     }
   });
 
+  // Comparison Matrix State
+  const [comparedProjectIds, setComparedProjectIds] = useState(() => {
+    try {
+      return JSON.parse(localStorage.getItem('vorynx_compared_projects') || '[]');
+    } catch {
+      return [];
+    }
+  });
+  const [comparisonModalOpen, setComparisonModalOpen] = useState(false);
+
+  const toggleCompare = (projectId, e) => {
+    if (e) {
+      e.stopPropagation();
+      e.preventDefault();
+    }
+    setComparedProjectIds((prev) => {
+      const exists = prev.includes(projectId);
+      let updated;
+      if (exists) {
+        updated = prev.filter((id) => id !== projectId);
+        showToast("Campaign removed from comparison matrix.", "info");
+      } else {
+        if (prev.length >= 3) {
+          showToast("You can compare up to 3 campaigns simultaneously.", "warning");
+          return prev;
+        }
+        updated = [...prev, projectId];
+        showToast("Campaign added to comparison matrix!", "success");
+      }
+      try {
+        localStorage.setItem('vorynx_compared_projects', JSON.stringify(updated));
+      } catch (err) {
+        console.error("Failed to save compared projects:", err);
+      }
+      return updated;
+    });
+  };
+
+  const clearComparison = () => {
+    setComparedProjectIds([]);
+    setComparisonModalOpen(false);
+    try {
+      localStorage.removeItem('vorynx_compared_projects');
+    } catch (err) {
+      console.error("Failed to clear compared projects:", err);
+    }
+  };
+
   // Recent Searches History State
   const [recentSearches, setRecentSearches] = useState(() => {
     try {
@@ -843,6 +891,8 @@ export default function App() {
               currency={currency}
               bookmarkedIds={bookmarkedIds}
               toggleBookmark={toggleBookmark}
+              comparedProjectIds={comparedProjectIds}
+              toggleCompare={toggleCompare}
             />
           </div>
         )}
@@ -856,6 +906,9 @@ export default function App() {
               currency={currency}
               bookmarkedIds={bookmarkedIds}
               toggleBookmark={toggleBookmark}
+              comparedProjectIds={comparedProjectIds}
+              toggleCompare={toggleCompare}
+              showToast={showToast}
               onShare={(p) => setShareModalProject(p)}
               onPledge={(reward) => {
                 protectAction(() => {
@@ -1209,6 +1262,34 @@ export default function App() {
         />
       )}
 
+      {/* Floating Campaign Comparison Drawer */}
+      <FloatingComparisonDrawer
+        comparedProjects={projects.filter((p) => comparedProjectIds.includes(p.id))}
+        onOpenModal={() => setComparisonModalOpen(true)}
+        onRemove={(id) => toggleCompare(id)}
+        onClear={clearComparison}
+      />
+
+      {/* Comparison Matrix Modal */}
+      {comparisonModalOpen && (
+        <ComparisonModal
+          comparedProjects={projects.filter((p) => comparedProjectIds.includes(p.id))}
+          onClose={() => setComparisonModalOpen(false)}
+          currency={currency}
+          onSelectProject={(id) => {
+            setSelectedProjectId(id);
+            setView("details");
+          }}
+          onPledge={(proj, reward) => {
+            setSelectedProjectId(proj.id);
+            protectAction(() => {
+              setSelectedReward(reward);
+              setCheckoutOpen(true);
+            });
+          }}
+        />
+      )}
+
       {/* Floating Scroll to Top Button */}
       {showScrollTop && (
         <button 
@@ -1228,7 +1309,7 @@ export default function App() {
 // ============================================================================
 // HOMEPAGE VIEW COMPONENT
 // ============================================================================
-function HomepageView({ projects, searchQuery, selectedCategory, setSelectedCategory, onSelectProject, protectAction, setView, currency, bookmarkedIds, toggleBookmark }) {
+function HomepageView({ projects, searchQuery, selectedCategory, setSelectedCategory, onSelectProject, protectAction, setView, currency, bookmarkedIds, toggleBookmark, comparedProjectIds = [], toggleCompare }) {
   const [sortBy, setSortBy] = useState("trending");
   const [selectedTag, setSelectedTag] = useState("All Tags");
 
@@ -1378,6 +1459,14 @@ function HomepageView({ projects, searchQuery, selectedCategory, setSelectedCate
             <div className="hero-media">
               <span className="hero-tag">Staff Pick</span>
               <button 
+                className={`card-compare-btn ${comparedProjectIds.includes(spotlightProj.id) ? 'active' : ''}`}
+                onClick={(e) => toggleCompare && toggleCompare(spotlightProj.id, e)}
+                title={comparedProjectIds.includes(spotlightProj.id) ? "Remove from comparison matrix" : "Compare campaign side-by-side"}
+                style={{ top: '1.25rem', right: '4.25rem', zIndex: 10 }}
+              >
+                <i className="fa-solid fa-code-compare"></i>
+              </button>
+              <button 
                 className={`card-bookmark-btn ${bookmarkedIds.includes(spotlightProj.id) ? 'bookmarked' : ''}`}
                 onClick={(e) => toggleBookmark(spotlightProj.id, e)}
                 title={bookmarkedIds.includes(spotlightProj.id) ? "Remove from bookmarks" : "Save campaign"}
@@ -1419,9 +1508,16 @@ function HomepageView({ projects, searchQuery, selectedCategory, setSelectedCate
                 </div>
               </div>
 
-              <div style={{ display: 'flex', gap: '1rem' }}>
+              <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
                 <button className="btn-primary" onClick={() => onSelectProject(spotlightProj.id)}>
                   View Campaign
+                </button>
+                <button 
+                  className={`btn-secondary ${comparedProjectIds.includes(spotlightProj.id) ? 'active' : ''}`}
+                  onClick={(e) => toggleCompare && toggleCompare(spotlightProj.id, e)}
+                >
+                  <i className="fa-solid fa-code-compare"></i>
+                  {comparedProjectIds.includes(spotlightProj.id) ? " Comparing" : " Compare"}
                 </button>
                 <button className="btn-secondary" onClick={() => protectAction(() => setView("create"))}>
                   Create Yours
@@ -1480,10 +1576,18 @@ function HomepageView({ projects, searchQuery, selectedCategory, setSelectedCate
           {filteredProjects.map((proj, idx) => {
             const pct = Math.round((proj.raisedAmount / proj.goalAmount) * 100);
             const isSaved = bookmarkedIds.includes(proj.id);
+            const isCompared = comparedProjectIds.includes(proj.id);
             return (
               <div key={proj.id} className={`project-card reveal-on-scroll stagger-${(idx % 3) + 1}`} onClick={() => onSelectProject(proj.id)}>
                 <div className="card-media">
                   {proj.trending && <span className="card-badge"><i className="fa-solid fa-bolt text-green"></i> Trending</span>}
+                  <button 
+                    className={`card-compare-btn ${isCompared ? 'active' : ''}`}
+                    onClick={(e) => toggleCompare && toggleCompare(proj.id, e)}
+                    title={isCompared ? "Remove from comparison matrix" : "Compare campaign side-by-side"}
+                  >
+                    <i className="fa-solid fa-code-compare"></i>
+                  </button>
                   <button 
                     className={`card-bookmark-btn ${isSaved ? 'bookmarked' : ''}`}
                     onClick={(e) => toggleBookmark(proj.id, e)}
@@ -1691,8 +1795,8 @@ const getCategoryDetails = (category) => {
   }
 };
 
-function ProjectDetailView({ project, onBack, user, onPledge, onAddComment, onDeleteProject, currency, bookmarkedIds, toggleBookmark, onShare }) {
-  const [activeTab, setActiveTab] = useState("story"); // 'story' | 'updates' | 'comments'
+function ProjectDetailView({ project, onBack, user, onPledge, onAddComment, onDeleteProject, currency, bookmarkedIds, toggleBookmark, onShare, comparedProjectIds = [], toggleCompare, showToast }) {
+  const [activeTab, setActiveTab] = useState("story"); // 'story' | 'updates' | 'comments' | 'qna'
   const [commentInput, setCommentInput] = useState("");
 
   const percentFunded = Math.round((project.raisedAmount / project.goalAmount) * 100);
@@ -1701,6 +1805,7 @@ function ProjectDetailView({ project, onBack, user, onPledge, onAddComment, onDe
     user.email?.split('@')[0] === project.creator.name
   );
   const isSaved = bookmarkedIds && bookmarkedIds.includes(project.id);
+  const isCompared = comparedProjectIds && comparedProjectIds.includes(project.id);
 
   const handleSubmitComment = (e) => {
     e.preventDefault();
@@ -1720,6 +1825,15 @@ function ProjectDetailView({ project, onBack, user, onPledge, onAddComment, onDe
         </span>
 
         <div className="detail-action-buttons-row">
+          <button 
+            type="button" 
+            className={`btn-secondary ${isCompared ? 'active' : ''}`}
+            onClick={(e) => toggleCompare && toggleCompare(project.id, e)}
+            title="Compare side-by-side with other campaigns"
+          >
+            <i className="fa-solid fa-code-compare"></i>
+            <span>{isCompared ? "Comparing" : "Compare"}</span>
+          </button>
           <button 
             type="button" 
             className="btn-secondary detail-share-btn" 
@@ -1783,6 +1897,12 @@ function ProjectDetailView({ project, onBack, user, onPledge, onAddComment, onDe
                 onClick={() => setActiveTab("updates")}
               >
                 Updates ({project.updates.length})
+              </button>
+              <button
+                className={`detail-tab-btn ${activeTab === 'qna' ? 'active' : ''}`}
+                onClick={() => setActiveTab("qna")}
+              >
+                Community Q&A
               </button>
               <button
                 className={`detail-tab-btn ${activeTab === 'comments' ? 'active' : ''}`}
@@ -1909,6 +2029,10 @@ function ProjectDetailView({ project, onBack, user, onPledge, onAddComment, onDe
                   ))
                 )}
               </div>
+            )}
+
+            {activeTab === "qna" && (
+              <CommunityQnASection project={project} user={user} showToast={showToast} />
             )}
 
             {activeTab === "comments" && (
@@ -4167,6 +4291,464 @@ function UpiQrGenerator({ setView }) {
           </div>
         </div>
 
+      </div>
+    </div>
+  );
+}
+
+// ============================================================================
+// FLOATING CAMPAIGN COMPARISON DRAWER
+// ============================================================================
+function FloatingComparisonDrawer({ comparedProjects, onOpenModal, onRemove, onClear }) {
+  if (!comparedProjects || comparedProjects.length === 0) return null;
+
+  return (
+    <div className="floating-comparison-drawer">
+      <div className="comparison-drawer-content">
+        <div className="comparison-drawer-info">
+          <div className="comparison-badge-icon">
+            <i className="fa-solid fa-code-compare"></i>
+          </div>
+          <div>
+            <div style={{ fontWeight: 800, fontSize: '0.9rem', color: '#fff' }}>
+              Comparing {comparedProjects.length} Campaign{comparedProjects.length > 1 ? 's' : ''}
+            </div>
+            <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+              Side-by-side metrics & pledge velocity
+            </div>
+          </div>
+        </div>
+
+        <div className="comparison-drawer-chips">
+          {comparedProjects.map((proj) => (
+            <div key={proj.id} className="comparison-project-chip">
+              <img src={proj.image} alt={proj.title} />
+              <span className="comparison-chip-title">{proj.title}</span>
+              <button 
+                className="comparison-chip-remove"
+                onClick={() => onRemove(proj.id)}
+                title="Remove campaign"
+              >
+                <i className="fa-solid fa-xmark"></i>
+              </button>
+            </div>
+          ))}
+        </div>
+
+        <div className="comparison-drawer-actions">
+          <button className="btn-primary" onClick={onOpenModal} style={{ padding: '0.5rem 1rem', fontSize: '0.85rem' }}>
+            <i className="fa-solid fa-chart-simple"></i> Compare Matrix ({comparedProjects.length})
+          </button>
+          <button className="btn-secondary" onClick={onClear} style={{ padding: '0.5rem 0.8rem', fontSize: '0.8rem' }}>
+            Clear
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ============================================================================
+// SIDE-BY-SIDE CAMPAIGN COMPARISON MATRIX MODAL
+// ============================================================================
+function ComparisonModal({ comparedProjects, onClose, currency, onPledge, onSelectProject }) {
+  if (!comparedProjects || comparedProjects.length === 0) return null;
+
+  return (
+    <div className="modal-overlay" onClick={onClose}>
+      <div className="modal-content comparison-modal-content" onClick={(e) => e.stopPropagation()}>
+        <div className="comparison-modal-header">
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+            <div className="story-card-icon-wrapper icon-wrapper-purple">
+              <i className="fa-solid fa-code-compare"></i>
+            </div>
+            <div>
+              <h2 style={{ fontFamily: 'var(--font-heading)', fontSize: '1.4rem', fontWeight: 800, color: 'var(--text-primary)', margin: 0 }}>
+                Campaign Comparison Matrix
+              </h2>
+              <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', margin: 0 }}>
+                Side-by-side performance, pledge velocity, and reward tier breakdown
+              </p>
+            </div>
+          </div>
+          <button className="toast-close-btn" onClick={onClose} title="Close (Esc)">
+            <i className="fa-solid fa-xmark" style={{ fontSize: '1.2rem' }}></i>
+          </button>
+        </div>
+
+        <div className="comparison-matrix-scroll-wrapper">
+          <table className="comparison-matrix-table">
+            <thead>
+              <tr>
+                <th className="matrix-label-col">Metric / Feature</th>
+                {comparedProjects.map((p) => (
+                  <th key={p.id} className="matrix-proj-col">
+                    <div className="matrix-proj-header">
+                      <img src={p.image} alt={p.title} className="matrix-proj-img" />
+                      <div className="matrix-proj-info">
+                        <span className="badge-tag" style={{ fontSize: '0.7rem', padding: '0.15rem 0.5rem', margin: '0 0 0.3rem 0', display: 'inline-block' }}>{p.category}</span>
+                        <h4 className="matrix-proj-title">{p.title}</h4>
+                        <span className="matrix-proj-creator">by {p.creator.name}</span>
+                      </div>
+                    </div>
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {/* Row 1: Funding Progress */}
+              <tr>
+                <td className="matrix-label-col">
+                  <i className="fa-solid fa-chart-line text-green"></i> Funding Progress
+                </td>
+                {comparedProjects.map((p) => {
+                  const pct = Math.round((p.raisedAmount / p.goalAmount) * 100);
+                  return (
+                    <td key={p.id}>
+                      <div style={{ fontWeight: 800, fontSize: '1.1rem', color: 'var(--accent-success)', marginBottom: '0.2rem' }}>
+                        {pct}%
+                      </div>
+                      <div className="progress-container" style={{ height: '8px', marginBottom: '0.4rem' }}>
+                        <div className="progress-fill" style={{ width: `${Math.min(100, pct)}%` }}></div>
+                      </div>
+                      <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+                        {formatCurrency(p.raisedAmount, currency)} of {formatCurrency(p.goalAmount, currency)}
+                      </span>
+                    </td>
+                  );
+                })}
+              </tr>
+
+              {/* Row 2: Total Backers */}
+              <tr>
+                <td className="matrix-label-col">
+                  <i className="fa-solid fa-users text-blue"></i> Backers Count
+                </td>
+                {comparedProjects.map((p) => (
+                  <td key={p.id} style={{ fontWeight: 700, fontSize: '1rem', color: 'var(--text-primary)' }}>
+                    {p.backerCount.toLocaleString()} backers
+                  </td>
+                ))}
+              </tr>
+
+              {/* Row 3: Average Pledge size */}
+              <tr>
+                <td className="matrix-label-col">
+                  <i className="fa-solid fa-hand-holding-dollar text-purple"></i> Avg Pledge / Backer
+                </td>
+                {comparedProjects.map((p) => {
+                  const avg = p.backerCount > 0 ? Math.round(p.raisedAmount / p.backerCount) : 0;
+                  return (
+                    <td key={p.id} style={{ fontWeight: 700, fontSize: '1rem', color: 'var(--text-primary)' }}>
+                      {formatCurrency(avg, currency)}
+                    </td>
+                  );
+                })}
+              </tr>
+
+              {/* Row 4: Days Remaining */}
+              <tr>
+                <td className="matrix-label-col">
+                  <i className="fa-solid fa-clock text-amber"></i> Days Remaining
+                </td>
+                {comparedProjects.map((p) => (
+                  <td key={p.id} style={{ fontWeight: 700, fontSize: '1rem', color: p.daysLeft <= 5 ? '#ef4444' : 'var(--text-primary)' }}>
+                    {p.daysLeft} days left
+                  </td>
+                ))}
+              </tr>
+
+              {/* Row 5: Funding Velocity */}
+              <tr>
+                <td className="matrix-label-col">
+                  <i className="fa-solid fa-bolt text-amber"></i> Funding Velocity
+                </td>
+                {comparedProjects.map((p) => {
+                  const velocity = Math.round(p.raisedAmount / Math.max(1, (30 - p.daysLeft)));
+                  return (
+                    <td key={p.id}>
+                      <span className="velocity-badge" style={{ margin: 0, fontSize: '0.75rem' }}>
+                        <i className="fa-solid fa-fire"></i> ~{formatCurrency(velocity, currency)}/day
+                      </span>
+                    </td>
+                  );
+                })}
+              </tr>
+
+              {/* Row 6: Lowest Pledge Tier */}
+              <tr>
+                <td className="matrix-label-col">
+                  <i className="fa-solid fa-tags"></i> Entry Reward Tier
+                </td>
+                {comparedProjects.map((p) => {
+                  const minReward = p.rewards && p.rewards.length > 0 ? p.rewards[0] : null;
+                  return (
+                    <td key={p.id}>
+                      {minReward ? (
+                        <div>
+                          <div style={{ fontWeight: 700, color: 'var(--accent-brand)' }}>
+                            {formatCurrency(minReward.pledgeAmount, currency)}
+                          </div>
+                          <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '180px' }}>
+                            {minReward.title}
+                          </div>
+                        </div>
+                      ) : (
+                        <span style={{ color: 'var(--text-muted)', fontSize: '0.8rem' }}>N/A</span>
+                      )}
+                    </td>
+                  );
+                })}
+              </tr>
+
+              {/* Row 7: Creator Trust Verification */}
+              <tr>
+                <td className="matrix-label-col">
+                  <i className="fa-solid fa-shield-halved text-green"></i> Creator Status
+                </td>
+                {comparedProjects.map((p) => (
+                  <td key={p.id}>
+                    {p.creator.verified ? (
+                      <span className="creator-tag" style={{ fontSize: '0.75rem', display: 'inline-flex' }}>
+                        <i className="fa-solid fa-circle-check text-green"></i> Trust Vetted
+                      </span>
+                    ) : (
+                      <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Community Creator</span>
+                    )}
+                  </td>
+                ))}
+              </tr>
+
+              {/* Row 8: Action Buttons */}
+              <tr>
+                <td className="matrix-label-col">Actions</td>
+                {comparedProjects.map((p) => (
+                  <td key={p.id}>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                      <button 
+                        className="btn-primary" 
+                        style={{ padding: '0.5rem 1rem', fontSize: '0.8rem', width: '100%' }}
+                        onClick={() => {
+                          onClose();
+                          if (onSelectProject) onSelectProject(p.id);
+                        }}
+                      >
+                        View Details
+                      </button>
+                      <button 
+                        className="btn-secondary" 
+                        style={{ padding: '0.5rem 1rem', fontSize: '0.8rem', width: '100%' }}
+                        onClick={() => {
+                          onClose();
+                          if (onPledge && p.rewards && p.rewards.length > 0) {
+                            onPledge(p, p.rewards[0]);
+                          }
+                        }}
+                      >
+                        Pledge
+                      </button>
+                    </div>
+                  </td>
+                ))}
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ============================================================================
+// VERIFIED CREATOR COMMUNITY Q&A COMPONENT
+// ============================================================================
+function CommunityQnASection({ project, user, showToast }) {
+  const [questions, setQuestions] = useState([
+    {
+      id: "q1",
+      question: "What is the expected shipping date after funding ends?",
+      askedBy: "alex_dev",
+      askedAt: "3 days ago",
+      upvotes: 14,
+      userUpvoted: false,
+      answer: {
+        answeredBy: project.creator.name,
+        answerText: "We plan to begin component tooling immediately after campaign completion. Initial shipments are scheduled for deployment within 6-8 weeks.",
+        answeredAt: "2 days ago",
+        verifiedCreator: true
+      }
+    },
+    {
+      id: "q2",
+      question: "Are international shipping taxes and customs clearance duties included in pledge tiers?",
+      askedBy: "sarah_backer",
+      askedAt: "1 day ago",
+      upvotes: 9,
+      userUpvoted: false,
+      answer: {
+        answeredBy: project.creator.name,
+        answerText: "International shipping is calculated at checkout based on region. Customs and import tariffs are handled seamlessly via our DDP (Delivered Duty Paid) shipping partners.",
+        answeredAt: "18 hours ago",
+        verifiedCreator: true
+      }
+    },
+    {
+      id: "q3",
+      question: "Can I upgrade my pledge tier later during the campaign timeline?",
+      askedBy: "techno_fan",
+      askedAt: "5 hours ago",
+      upvotes: 4,
+      userUpvoted: false,
+      answer: null
+    }
+  ]);
+
+  const [filter, setFilter] = useState("all");
+  const [newQuestionText, setNewQuestionText] = useState("");
+
+  const handleAddQuestion = (e) => {
+    e.preventDefault();
+    if (!newQuestionText.trim()) return;
+    if (!user) {
+      if (showToast) showToast("Please sign in to post a question.", "warning");
+      return;
+    }
+    const username = user.displayName || user.email.split('@')[0] || "Anonymous";
+    const newQ = {
+      id: `q_${Date.now()}`,
+      question: newQuestionText.trim(),
+      askedBy: username,
+      askedAt: "Just now",
+      upvotes: 1,
+      userUpvoted: true,
+      answer: null
+    };
+    setQuestions((prev) => [newQ, ...prev]);
+    setNewQuestionText("");
+    if (showToast) showToast("Question posted to creator community Q&A!", "success");
+  };
+
+  const handleToggleUpvote = (id) => {
+    setQuestions((prev) => prev.map((q) => {
+      if (q.id === id) {
+        const nextUpvoted = !q.userUpvoted;
+        return {
+          ...q,
+          userUpvoted: nextUpvoted,
+          upvotes: nextUpvoted ? q.upvotes + 1 : q.upvotes - 1
+        };
+      }
+      return q;
+    }));
+  };
+
+  const filteredQuestions = questions.filter((q) => {
+    if (filter === "answered") return !!q.answer;
+    if (filter === "unanswered") return !q.answer;
+    return true;
+  });
+
+  return (
+    <div className="tab-pane-content">
+      {/* Ask Question Form */}
+      <form onSubmit={handleAddQuestion} className="qna-ask-card">
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', marginBottom: '0.75rem' }}>
+          <div className="story-card-icon-wrapper icon-wrapper-purple" style={{ width: '32px', height: '32px', fontSize: '0.85rem' }}>
+            <i className="fa-solid fa-circle-question"></i>
+          </div>
+          <h4 style={{ fontFamily: 'var(--font-heading)', fontSize: '1.05rem', fontWeight: 800, color: 'var(--text-primary)', margin: 0 }}>
+            Ask the Creator a Question
+          </h4>
+        </div>
+        <textarea
+          placeholder={user ? "What would you like to know about this campaign or reward tiers?" : "Please sign in to submit a question."}
+          className="comment-textarea"
+          value={newQuestionText}
+          onChange={(e) => setNewQuestionText(e.target.value)}
+          disabled={!user}
+        />
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '0.75rem', flexWrap: 'wrap', gap: '0.5rem' }}>
+          <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+            Questions are public and answered directly by project creators.
+          </span>
+          <button type="submit" className="btn-primary" disabled={!user || !newQuestionText.trim()}>
+            Submit Question
+          </button>
+        </div>
+      </form>
+
+      {/* Filter Chips */}
+      <div className="qna-filter-bar">
+        <div style={{ display: 'flex', gap: '0.4rem', flexWrap: 'wrap' }}>
+          <button 
+            className={`tag-chip ${filter === 'all' ? 'active' : ''}`}
+            onClick={() => setFilter('all')}
+          >
+            All Questions ({questions.length})
+          </button>
+          <button 
+            className={`tag-chip ${filter === 'answered' ? 'active' : ''}`}
+            onClick={() => setFilter('answered')}
+          >
+            Answered ({questions.filter((q) => q.answer).length})
+          </button>
+          <button 
+            className={`tag-chip ${filter === 'unanswered' ? 'active' : ''}`}
+            onClick={() => setFilter('unanswered')}
+          >
+            Unanswered ({questions.filter((q) => !q.answer).length})
+          </button>
+        </div>
+      </div>
+
+      {/* Questions List */}
+      <div className="qna-list">
+        {filteredQuestions.length === 0 ? (
+          <div style={{ textAlign: 'center', padding: '3rem 1rem', color: 'var(--text-muted)' }}>
+            No questions in this category yet.
+          </div>
+        ) : (
+          filteredQuestions.map((q) => (
+            <div key={q.id} className="qna-card">
+              <div className="qna-card-top">
+                <button 
+                  className={`qna-upvote-btn ${q.userUpvoted ? 'upvoted' : ''}`}
+                  onClick={() => handleToggleUpvote(q.id)}
+                  title={q.userUpvoted ? "Remove upvote" : "Upvote question"}
+                >
+                  <i className="fa-solid fa-caret-up"></i>
+                  <span>{q.upvotes}</span>
+                </button>
+                <div style={{ flex: 1 }}>
+                  <h4 className="qna-question-text">{q.question}</h4>
+                  <div className="qna-question-meta">
+                    Asked by <span style={{ color: 'var(--text-primary)', fontWeight: 600 }}>{q.askedBy}</span> • {q.askedAt}
+                  </div>
+                </div>
+              </div>
+
+              {/* Creator Answer Sub-card */}
+              {q.answer ? (
+                <div className="qna-answer-box">
+                  <div className="qna-answer-header">
+                    <span className="creator-verified-badge">
+                      <i className="fa-solid fa-square-check"></i> Creator Response
+                    </span>
+                    <span className="qna-answer-date">{q.answer.answeredAt}</span>
+                  </div>
+                  <p className="qna-answer-text">{q.answer.answerText}</p>
+                  <div className="qna-answer-author">
+                    — {q.answer.answeredBy}
+                  </div>
+                </div>
+              ) : (
+                <div className="qna-unanswered-badge">
+                  <i className="fa-solid fa-clock"></i> Awaiting creator response
+                </div>
+              )}
+            </div>
+          ))
+        )}
       </div>
     </div>
   );
