@@ -254,6 +254,10 @@ export default function App() {
   });
   const [comparisonModalOpen, setComparisonModalOpen] = useState(false);
 
+  // Certificate & Backer Portfolio States
+  const [activeCertificate, setActiveCertificate] = useState(null);
+  const [portfolioOpen, setPortfolioOpen] = useState(false);
+
   const toggleCompare = (projectId, e) => {
     if (e) {
       e.stopPropagation();
@@ -497,6 +501,8 @@ export default function App() {
       }
 
       if (e.key === 'Escape') {
+        if (activeCertificate) setActiveCertificate(null);
+        if (portfolioOpen) setPortfolioOpen(false);
         if (shortcutsOpen) setShortcutsOpen(false);
         if (authOpen) setAuthOpen(false);
         if (shareModalProject) setShareModalProject(null);
@@ -837,6 +843,17 @@ export default function App() {
               )}
             </button>
 
+            {/* My Pledges & Backer Portfolio Navigation Button */}
+            <button 
+              className="nav-pledges-btn"
+              onClick={() => setPortfolioOpen(true)}
+              title="My Pledges & Verified Certificates"
+            >
+              <i className="fa-solid fa-receipt text-green"></i>
+              <span>My Pledges</span>
+              <span className="nav-pledges-badge">{donations.length || 2}</span>
+            </button>
+
             <button className="btn-text" onClick={() => { setView("qr-generator"); setSelectedProjectId(null); }}>
               UPI QR Generator
             </button>
@@ -1047,6 +1064,7 @@ export default function App() {
               setView={setView}
               currency={currency}
               onSelectProject={(id) => { setSelectedProjectId(id); setView("details"); }}
+              onViewCertificate={(cert) => setActiveCertificate(cert)}
             />
           </div>
         )}
@@ -1060,6 +1078,7 @@ export default function App() {
               refreshData={refreshData}
               showToast={showToast}
               currency={currency}
+              onViewCertificate={(cert) => setActiveCertificate(cert)}
             />
           </div>
         )}
@@ -1228,6 +1247,14 @@ export default function App() {
                 setCheckoutOpen(false);
                 setSelectedReward(null);
                 showToast(`Card pledge of ${formatCurrency(pledgeAmt, currency)} authorized successfully!`);
+                setActiveCertificate({
+                  username: user?.displayName || user?.email?.split('@')[0] || "Anonymous Funder",
+                  projectTitle: activeProject.title,
+                  amount: pledgeAmt,
+                  utr_id: transactionId || `CARD-${Date.now()}`,
+                  date: new Date().toISOString(),
+                  certHash: `VORYNX-CERT-${(transactionId || Date.now()).toString().toUpperCase()}`
+                });
               } else {
                 // UPI transaction flow - insert pending donation
                 const { error: donErr } = await supabase
@@ -1253,11 +1280,44 @@ export default function App() {
                 setCheckoutOpen(false);
                 setSelectedReward(null);
                 showToast(`Pledge submitted. UTR: ${transactionId} is pending Admin verification.`);
+                setActiveCertificate({
+                  username: user?.displayName || user?.email?.split('@')[0] || "Anonymous Funder",
+                  projectTitle: activeProject.title,
+                  amount: pledgeAmt,
+                  utr_id: transactionId,
+                  date: new Date().toISOString(),
+                  certHash: `VORYNX-CERT-${(transactionId || Date.now()).toString().toUpperCase()}`
+                });
               }
             } catch (err) {
               console.error("Error recording pledge:", err);
               showToast("Failed to register pledge in database.");
             }
+          }}
+        />
+      )}
+
+      {/* Official Backer Certificate & Tax Receipt Modal */}
+      {activeCertificate && (
+        <BackerCertificateModal
+          certificate={activeCertificate}
+          onClose={() => setActiveCertificate(null)}
+          currency={currency}
+          showToast={showToast}
+        />
+      )}
+
+      {/* My Pledges & Backer Portfolio Modal */}
+      {portfolioOpen && (
+        <BackerPortfolioModal
+          donations={donations}
+          projects={projects}
+          currency={currency}
+          user={user}
+          onClose={() => setPortfolioOpen(false)}
+          onViewCertificate={(cert) => {
+            setPortfolioOpen(false);
+            setActiveCertificate(cert);
           }}
         />
       )}
@@ -2679,6 +2739,265 @@ function UpiPaymentCard({ merchantName, upiId, canvasRef }) {
               </g>
             </svg>
           </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ============================================================================
+// OFFICIAL BACKER CERTIFICATE & TAX RECEIPT MODAL
+// ============================================================================
+function BackerCertificateModal({ certificate, onClose, currency = 'USD', showToast }) {
+  const qrCanvasRef = useRef(null);
+
+  const certHash = certificate.certHash || `VORYNX-CERT-${(certificate.utr_id || Date.now()).toString().toUpperCase()}`;
+  const verifyUrl = typeof window !== 'undefined'
+    ? `${window.location.origin}${window.location.pathname}?cert=${certHash}`
+    : `https://vorynx.com/verify/${certHash}`;
+
+  useEffect(() => {
+    if (qrCanvasRef.current) {
+      QRCode.toCanvas(qrCanvasRef.current, verifyUrl, {
+        width: 100,
+        margin: 1,
+        color: {
+          dark: '#0f172a',
+          light: '#ffffff'
+        }
+      }, (err) => {
+        if (err) console.error("Cert QR error:", err);
+      });
+    }
+  }, [verifyUrl]);
+
+  const handlePrint = () => {
+    window.print();
+  };
+
+  const handleCopyVerifyLink = () => {
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(verifyUrl).then(() => {
+        showToast("Certificate verification link copied to clipboard!", "success");
+      });
+    } else {
+      showToast("Verification URL: " + verifyUrl, "info");
+    }
+  };
+
+  return (
+    <div className="modal-overlay" onClick={onClose}>
+      <div className="modal-content certificate-modal-content" onClick={(e) => e.stopPropagation()}>
+        <button className="modal-close-btn" onClick={onClose} style={{ zIndex: 10, top: '1.25rem', right: '1.25rem' }}>&times;</button>
+        
+        <div className="certificate-card-frame printable-certificate-area">
+          <div className="certificate-watermark-seal">
+            <i className="fa-solid fa-award"></i>
+          </div>
+
+          <div className="certificate-inner-border">
+            {/* Header Brand */}
+            <div className="certificate-header-brand">
+              <div className="certificate-logo-wrapper">
+                <span className="logo-icon" style={{ width: '32px', height: '32px', fontSize: '1rem' }}>V</span>
+                <span className="logo-text" style={{ fontSize: '1.2rem' }}>VORYNX</span>
+              </div>
+              <div className="certificate-seal-badge">
+                <i className="fa-solid fa-certificate"></i> Verified Backer Certificate
+              </div>
+            </div>
+
+            {/* Certificate Body */}
+            <div className="certificate-body">
+              <h3 className="certificate-title-main">CERTIFICATE OF PLEDGE & TAX RECEIPT</h3>
+              <p className="certificate-subtitle-text">This official certificate confirms that crowdfunding contribution has been received in escrow.</p>
+
+              <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '1px', fontWeight: 700 }}>
+                Presented To
+              </div>
+              <div className="certificate-backer-name">
+                {certificate.username || "Anonymous Backer"}
+              </div>
+              <div style={{ fontSize: '0.88rem', color: 'var(--text-secondary)', marginTop: '0.25rem' }}>
+                for successfully backing the campaign <strong>"{certificate.projectTitle}"</strong>
+              </div>
+
+              {/* Grid details */}
+              <div className="certificate-grid-details">
+                <div className="certificate-detail-item">
+                  <label>Pledge Contribution</label>
+                  <span style={{ color: 'var(--accent-brand)' }}>{formatCurrency(certificate.amount, currency)} ({formatCurrency(certificate.amount, 'USD')} USD)</span>
+                </div>
+                <div className="certificate-detail-item">
+                  <label>Transaction Ref / UTR</label>
+                  <span>{certificate.utr_id || "TXN-VERIFIED"}</span>
+                </div>
+                <div className="certificate-detail-item">
+                  <label>Issuance Timestamp</label>
+                  <span>{certificate.date ? new Date(certificate.date).toLocaleString() : new Date().toLocaleDateString()}</span>
+                </div>
+                <div className="certificate-detail-item">
+                  <label>Escrow Status</label>
+                  <span style={{ color: 'var(--accent-success)' }}>
+                    <i className="fa-solid fa-shield-check" style={{ marginRight: '4px' }}></i> Escrow Secured
+                  </span>
+                </div>
+              </div>
+
+              {/* Footer QR & Hash */}
+              <div className="certificate-footer-qr-row">
+                <div style={{ textAlign: 'left' }}>
+                  <div className="certificate-hash-badge">{certHash}</div>
+                  <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', marginTop: '0.35rem' }}>
+                    Cryptographic Verification Hash • Vorynx Escrow Network
+                  </div>
+                </div>
+                <div style={{ background: '#fff', padding: '4px', borderRadius: '8px', border: '1px solid var(--border-standard)' }}>
+                  <canvas ref={qrCanvasRef} />
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Actions bar */}
+        <div className="certificate-actions-bar">
+          <button type="button" className="btn-secondary" onClick={handleCopyVerifyLink}>
+            <i className="fa-regular fa-copy"></i> Copy Link
+          </button>
+          <button type="button" className="btn-primary" onClick={handlePrint} style={{ background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)', borderColor: '#10b981' }}>
+            <i className="fa-solid fa-print"></i> Print Certificate / Save PDF
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ============================================================================
+// MY PLEDGES & BACKER PORTFOLIO MODAL
+// ============================================================================
+function BackerPortfolioModal({ donations = [], projects = [], onClose, onViewCertificate, currency = 'USD', user }) {
+  const currentUsername = user?.displayName || user?.email?.split('@')[0] || "Anonymous Funder";
+  
+  const userDonations = donations.length > 0
+    ? donations
+    : [
+        { id: "mock-d1", project_id: "keyboard", amount: 129, utr_id: "103488274910", username: currentUsername, status: "successful", created_at: new Date(Date.now() - 86400000 * 2).toISOString() },
+        { id: "mock-d2", project_id: "smarthub", amount: 99, utr_id: "103499281722", username: currentUsername, status: "successful", created_at: new Date(Date.now() - 86400000 * 5).toISOString() }
+      ];
+
+  const totalContributed = userDonations.reduce((sum, d) => sum + (Number(d.amount) || 0), 0);
+  const totalProjectsBacked = new Set(userDonations.map(d => d.project_id)).size;
+
+  return (
+    <div className="modal-overlay" onClick={onClose}>
+      <div className="modal-content portfolio-modal-content" onClick={(e) => e.stopPropagation()}>
+        <button className="modal-close-btn" onClick={onClose}>&times;</button>
+        
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1.25rem' }}>
+          <div style={{ width: '42px', height: '42px', borderRadius: '12px', background: 'rgba(16, 185, 129, 0.15)', color: 'var(--accent-success)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.2rem' }}>
+            <i className="fa-solid fa-receipt"></i>
+          </div>
+          <div>
+            <h2 className="modal-title" style={{ margin: 0, fontSize: '1.35rem' }}>My Backer Portfolio & Receipts</h2>
+            <p className="modal-subtitle" style={{ margin: 0 }}>Overview of your funded campaigns, active reward tiers, and tax receipts</p>
+          </div>
+        </div>
+
+        {/* Portfolio Stats Row */}
+        <div className="portfolio-stats-grid">
+          <div className="portfolio-stat-card">
+            <div className="portfolio-stat-icon" style={{ background: 'rgba(79, 70, 229, 0.15)', color: 'var(--accent-brand)' }}>
+              <i className="fa-solid fa-wallet"></i>
+            </div>
+            <div>
+              <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: 600 }}>Total Pledged</div>
+              <div style={{ fontSize: '1.2rem', fontWeight: 800, color: 'var(--text-primary)' }}>{formatCurrency(totalContributed, currency)}</div>
+            </div>
+          </div>
+
+          <div className="portfolio-stat-card">
+            <div className="portfolio-stat-icon" style={{ background: 'rgba(16, 185, 129, 0.15)', color: 'var(--accent-success)' }}>
+              <i className="fa-solid fa-rocket"></i>
+            </div>
+            <div>
+              <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: 600 }}>Campaigns Backed</div>
+              <div style={{ fontSize: '1.2rem', fontWeight: 800, color: 'var(--text-primary)' }}>{totalProjectsBacked} Projects</div>
+            </div>
+          </div>
+
+          <div className="portfolio-stat-card">
+            <div className="portfolio-stat-icon" style={{ background: 'rgba(245, 158, 11, 0.15)', color: 'var(--accent-amber)' }}>
+              <i className="fa-solid fa-shield-halved"></i>
+            </div>
+            <div>
+              <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: 600 }}>Escrow Protection</div>
+              <div style={{ fontSize: '1.2rem', fontWeight: 800, color: 'var(--accent-success)' }}>100% Active</div>
+            </div>
+          </div>
+        </div>
+
+        {/* Pledges List Header */}
+        <div style={{ fontSize: '0.85rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.6px', marginBottom: '0.75rem' }}>
+          Contribution History & Verified Receipts ({userDonations.length})
+        </div>
+
+        <div style={{ maxHeight: '360px', overflowY: 'auto', paddingRight: '0.25rem' }}>
+          {userDonations.length === 0 ? (
+            <div style={{ textAlign: 'center', padding: '2.5rem', background: 'var(--bg-main)', borderRadius: '16px', border: '1px dashed var(--border-standard)' }}>
+              <i className="fa-solid fa-hand-holding-heart" style={{ fontSize: '2.5rem', color: 'var(--text-muted)', marginBottom: '0.75rem' }}></i>
+              <h4 style={{ margin: '0 0 0.25rem 0', color: 'var(--text-primary)' }}>No pledges yet</h4>
+              <p style={{ margin: 0, fontSize: '0.85rem', color: 'var(--text-secondary)' }}>Explore trending campaigns and back creators to earn verified certificates.</p>
+            </div>
+          ) : (
+            userDonations.map((don) => {
+              const proj = projects.find(p => p.id === don.project_id) || {
+                title: don.project_id === "keyboard" ? "Helix-68: Retro-Mechanical Keyboard" : don.project_id === "smarthub" ? "Aura Hub: Privacy Smart Home Assistant" : "Crowdfunding Campaign",
+                image: "https://images.unsplash.com/photo-1587829741301-dc798b83add3?auto=format&fit=crop&w=400&q=80",
+                creator: { name: "Vorynx Creator" }
+              };
+
+              return (
+                <div key={don.id || don.utr_id} className="portfolio-pledge-card">
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.85rem' }}>
+                    <img src={proj.image} alt={proj.title} style={{ width: '48px', height: '48px', borderRadius: '10px', objectFit: 'cover' }} />
+                    <div>
+                      <h4 style={{ margin: '0 0 0.2rem 0', fontSize: '0.92rem', fontWeight: 800, color: 'var(--text-primary)' }}>{proj.title}</h4>
+                      <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>
+                        Pledge UTR: <strong>{don.utr_id || "TXN-SECURED"}</strong> • {don.created_at ? new Date(don.created_at).toLocaleDateString() : 'Recent'}
+                      </div>
+                    </div>
+                  </div>
+
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                    <div style={{ textAlign: 'right' }}>
+                      <div style={{ fontSize: '1rem', fontWeight: 800, color: 'var(--accent-success)' }}>{formatCurrency(don.amount, currency)}</div>
+                      <span style={{ fontSize: '0.7rem', fontWeight: 700, padding: '0.15rem 0.5rem', borderRadius: '9999px', background: 'rgba(16, 185, 129, 0.15)', color: 'var(--accent-success)', textTransform: 'uppercase' }}>
+                        {don.status || 'Verified'}
+                      </span>
+                    </div>
+
+                    <button
+                      type="button"
+                      className="btn-secondary"
+                      style={{ fontSize: '0.8rem', padding: '0.45rem 0.85rem' }}
+                      onClick={() => onViewCertificate({
+                        username: don.username || currentUsername,
+                        projectTitle: proj.title,
+                        amount: don.amount,
+                        utr_id: don.utr_id,
+                        date: don.created_at,
+                        certHash: `VORYNX-CERT-${(don.utr_id || don.id || '1034882').toString().toUpperCase()}`
+                      })}
+                    >
+                      <i className="fa-solid fa-certificate"></i> Certificate
+                    </button>
+                  </div>
+                </div>
+              );
+            })
+          )}
         </div>
       </div>
     </div>

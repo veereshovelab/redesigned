@@ -1173,3 +1173,295 @@
     gap: 0.4rem;
     font-style: italic;
 }
+
+/* ==========================================
+   Backer Certificate & Tax Receipt Styles
+   ========================================== */
+.certificate-modal-content {
+    max-width: 680px !important;
+    width: 92% !important;
+    padding: 0 !important;
+    border-radius: 24px !important;
+    overflow: hidden !important;
+    background: var(--bg-surface) !important;
+    border: 1px solid var(--border-standard) !important;
+    box-shadow: 0 25px 60px rgba(0, 0, 0, 0.5) !important;
+}
+
+.certificate-card-frame {
+    padding: 2.25rem 2.5rem;
+    position: relative;
+    background: radial-gradient(circle at top right, rgba(16, 185, 129, 0.08), transparent 60%),
+                radial-gradient(circle at bottom left, rgba(79, 70, 229, 0.08), transparent 60%),
+                var(--bg-surface);
+}
+
+.certificate-watermark-seal {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%) rotate(-15deg);
+    font-size: 16rem;
+    color: rgba(16, 185, 129, 0.03);
+    pointer-events: none;
+    user-select: none;
+    z-index: 0;
+}
+
+.certificate-inner-border {
+    border: 2px dashed rgba(16, 185, 129, 0.3);
+    border-radius: 18px;
+    padding: 1.75rem 2rem;
+    position: relative;
+    z-index: 1;
+}
+
+.certificate-header-brand {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid var(--border-standard);
+    padding-bottom: 1.25rem;
+    margin-bottom: 1.5rem;
+}
+
+.certificate-logo-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 0.65rem;
+}
+
+.certificate-seal-badge {
+    background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+    color: #ffffff;
+    font-size: 0.72rem;
+    font-weight: 800;
+    padding: 0.35rem 0.85rem;
+    border-radius: 9999px;
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+}
+
+.certificate-body {
+    text-align: center;
+    margin-bottom: 1.75rem;
+}
+
+.certificate-title-main {
+    font-family: var(--font-heading);
+    font-size: 1.6rem;
+    font-weight: 800;
+    color: var(--text-primary);
+    letter-spacing: -0.5px;
+    margin: 0 0 0.4rem 0;
+}
+
+.certificate-subtitle-text {
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+    margin: 0 0 1.5rem 0;
+}
+
+.certificate-backer-name {
+    font-family: var(--font-heading);
+    font-size: 1.75rem;
+    font-weight: 800;
+    color: var(--accent-success);
+    margin: 0.5rem 0;
+    letter-spacing: -0.5px;
+    text-shadow: 0 0 20px rgba(16, 185, 129, 0.2);
+}
+
+.certificate-grid-details {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1rem;
+    background: var(--bg-main);
+    border: 1px solid var(--border-standard);
+    border-radius: 14px;
+    padding: 1rem 1.25rem;
+    margin: 1.5rem 0;
+    text-align: left;
+}
+
+.certificate-detail-item label {
+    font-size: 0.72rem;
+    font-weight: 700;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.6px;
+    display: block;
+    margin-bottom: 0.25rem;
+}
+
+.certificate-detail-item span {
+    font-size: 0.92rem;
+    font-weight: 700;
+    color: var(--text-primary);
+}
+
+.certificate-footer-qr-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding-top: 1rem;
+    border-top: 1px solid var(--border-standard);
+}
+
+.certificate-hash-badge {
+    font-family: monospace;
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    background: var(--bg-main);
+    padding: 0.35rem 0.75rem;
+    border-radius: 8px;
+    border: 1px solid var(--border-standard);
+}
+
+.certificate-actions-bar {
+    display: flex;
+    gap: 0.75rem;
+    padding: 1.25rem 2rem;
+    background: var(--bg-main);
+    border-top: 1px solid var(--border-standard);
+    justify-content: flex-end;
+}
+
+/* ==========================================
+   Backer Portfolio & History Drawer Styles
+   ========================================== */
+.portfolio-modal-content {
+    max-width: 820px !important;
+    width: 94% !important;
+    padding: 1.75rem !important;
+    border-radius: 24px !important;
+}
+
+.portfolio-stats-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1rem;
+    margin-bottom: 1.75rem;
+}
+
+.portfolio-stat-card {
+    background: var(--bg-main);
+    border: 1px solid var(--border-standard);
+    border-radius: 16px;
+    padding: 1.15rem 1.25rem;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.portfolio-stat-icon {
+    width: 44px;
+    height: 44px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.2rem;
+}
+
+.portfolio-pledge-card {
+    background: var(--bg-main);
+    border: 1px solid var(--border-standard);
+    border-radius: 16px;
+    padding: 1.15rem 1.35rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 1rem;
+    margin-bottom: 0.85rem;
+    transition: all 0.2s ease;
+}
+
+.portfolio-pledge-card:hover {
+    border-color: var(--accent-brand);
+    transform: translateY(-1px);
+}
+
+.nav-pledges-btn {
+    background: var(--bg-surface);
+    border: 1px solid var(--border-standard);
+    color: var(--text-primary);
+    padding: 0.4rem 0.85rem;
+    border-radius: 9999px;
+    font-size: 0.82rem;
+    font-weight: 600;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45rem;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: var(--shadow-sm);
+}
+
+.nav-pledges-btn:hover {
+    border-color: var(--accent-success);
+    color: var(--accent-success);
+    transform: translateY(-1px);
+}
+
+.nav-pledges-badge {
+    background: var(--accent-success);
+    color: #ffffff;
+    font-size: 0.7rem;
+    font-weight: 800;
+    padding: 0.1rem 0.45rem;
+    border-radius: 9999px;
+}
+
+/* ==========================================
+   @media print Rules for Certificate Printing
+   ========================================== */
+@media print {
+    body {
+        background: #ffffff !important;
+        color: #000000 !important;
+    }
+    .vorynx-app > *:not(.modal-overlay) {
+        display: none !important;
+    }
+    .modal-overlay {
+        position: static !important;
+        background: transparent !important;
+        backdrop-filter: none !important;
+        padding: 0 !important;
+    }
+    .modal-content:not(.certificate-modal-content) {
+        display: none !important;
+    }
+    .certificate-modal-content {
+        max-width: 100% !important;
+        width: 100% !important;
+        border: none !important;
+        box-shadow: none !important;
+        background: #ffffff !important;
+    }
+    .certificate-card-frame {
+        background: #ffffff !important;
+        color: #000000 !important;
+        padding: 1rem !important;
+    }
+    .certificate-inner-border {
+        border: 2px dashed #10b981 !important;
+    }
+    .certificate-title-main,
+    .certificate-detail-item span {
+        color: #0f172a !important;
+    }
+    .certificate-grid-details {
+        background: #f8fafc !important;
+        border-color: #cbd5e1 !important;
+    }
+    .certificate-actions-bar,
+    .modal-close-btn {
+        display: none !important;
+    }
+}
