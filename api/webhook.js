@@ -1,76 +1,5 @@
-import { createClient } from '@supabase/supabase-js';
 import crypto from 'crypto';
-import fs from 'fs';
-import path from 'path';
-import { fileURLToPath } from 'url';
-
-// Manual Env Loader as a fallback for Vercel CLI local env binding issues
-function findEnvFile(filename) {
-  let dir = process.cwd();
-  while (true) {
-    const fullPath = path.join(dir, filename);
-    if (fs.existsSync(fullPath)) return fullPath;
-    const parent = path.dirname(dir);
-    if (parent === dir) break;
-    dir = parent;
-  }
-  try {
-    const __filename = fileURLToPath(import.meta.url);
-    let currentDir = path.dirname(__filename);
-    while (true) {
-      const fullPath = path.join(currentDir, filename);
-      if (fs.existsSync(fullPath)) return fullPath;
-      const parent = path.dirname(currentDir);
-      if (parent === currentDir) break;
-      currentDir = parent;
-    }
-  } catch (err) {
-    console.debug('Could not resolve env file relative to import.meta.url:', err);
-  }
-  return null;
-}
-
-function loadEnv() {
-  ['.env', '.env.local'].forEach(file => {
-    try {
-      const envPath = findEnvFile(file);
-      if (envPath) {
-        const content = fs.readFileSync(envPath, 'utf-8');
-        content.split('\n').forEach(line => {
-          const trimmed = line.trim();
-          if (!trimmed || trimmed.startsWith('#')) return;
-          const parts = trimmed.split('=');
-          if (parts.length >= 2) {
-            const key = parts[0].trim();
-            let val = parts.slice(1).join('=').trim();
-            if ((val.startsWith('"') && val.endsWith('"')) ||
-                (val.startsWith("'") && val.endsWith("'"))) {
-              val = val.slice(1, -1);
-            }
-            process.env[key] = val;
-          }
-        });
-      }
-    } catch (err) {
-      console.error(`Error loading env file ${file}:`, err);
-    }
-  });
-}
-
-loadEnv();
-
-let supabaseAdmin;
-function getSupabaseAdmin() {
-  if (!supabaseAdmin) {
-    const supabaseUrl = process.env.VITE_SUPABASE_URL;
-    const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-    if (!supabaseUrl || !supabaseServiceKey) {
-      throw new Error('Missing Supabase admin credentials in serverless environment.');
-    }
-    supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey);
-  }
-  return supabaseAdmin;
-}
+import { getSupabaseAdmin } from './_utils.js';
 
 /**
  * Verify Razorpay webhook HMAC-SHA256 signature.
@@ -135,16 +64,13 @@ export default async function handler(req, res) {
     return res.status(400).json({ error: 'Invalid or empty webhook payload.' });
   }
 
-  // ─── Determine Event Type ───────────────────────────────────────────────────
-  // Razorpay sends: { event: 'payment.captured', payload: { payment: { entity: {...} } } }
-  // Cashfree sends: { type: 'PAYMENT_SUCCESS', data: { payment: {...} } }
+  // ─── Determine Event Type & Amount Calculation ──────────────────────────────
   const eventType = payload.event || payload.type || '';
 
   let utrId;
-  let amountPaise;
+  let amountUSD;
   let projectId;
   let providerPaymentId;
-
 
   if (eventType === 'payment.captured') {
     // Razorpay payment.captured
@@ -153,23 +79,30 @@ export default async function handler(req, res) {
       || entity.description
       || entity.id
       || null;
-    amountPaise = entity.amount; // amount in paise
+    const amountINR = (entity.amount || 0) / 100; // Razorpay amount is in paise
+    amountUSD = Math.round(amountINR / 85);
     providerPaymentId = entity.id;
     projectId = entity.notes?.project_id || entity.notes?.campaign || null;
   } else if (eventType === 'PAYMENT_SUCCESS' || eventType === 'PAYMENT_CAPTURED') {
     // Cashfree PAYMENT_SUCCESS
     const payment = payload?.data?.payment || {};
     utrId = payment.cf_utr || payment.bank_reference || payment.cf_payment_id || null;
-    amountPaise = Math.round((payment.payment_amount || 0) * 100);
+    const amountINR = Number(payment.payment_amount || 0); // Cashfree amount is in INR
+    amountUSD = Math.round(amountINR / 85);
     providerPaymentId = payment.cf_payment_id;
     projectId = payload?.data?.order?.order_tags?.project_id || null;
   } else if (payload.utr_id && payload.project_id) {
     // Internal admin manual verification fallback
     utrId = payload.utr_id;
-    amountPaise = Math.round((payload.amount || 0) * 100);
+    const rawAmt = Number(payload.amount || 0);
+    // If currency is explicitly INR or amount looks like INR, convert; else treat as USD base
+    if (payload.currency === 'INR') {
+      amountUSD = Math.round(rawAmt / 85);
+    } else {
+      amountUSD = rawAmt; // Direct USD pledge amount
+    }
     projectId = payload.project_id;
   } else {
-    // Unknown event — acknowledge without processing
     console.log(`[Webhook] Unhandled event type: "${eventType}". Acknowledging.`);
     return res.status(200).json({ received: true, processed: false, reason: 'Unhandled event type' });
   }
@@ -182,7 +115,6 @@ export default async function handler(req, res) {
   // ─── Update Donation Status in Supabase ────────────────────────────────────
   try {
     const db = getSupabaseAdmin();
-    const amountUSD = amountPaise ? Math.round(amountPaise / 85) : null; // paise → INR → USD approx
 
     // Find the matching pending donation by UTR ID
     const { data: existing, error: findErr } = await db
@@ -278,7 +210,6 @@ export default async function handler(req, res) {
     });
   } catch (err) {
     console.error('[Webhook] Error processing payment confirmation:', err);
-    // Always return 200 to prevent payment gateway retry storms
     return res.status(200).json({
       received: true,
       processed: false,

@@ -1,83 +1,4 @@
-import { createClient } from '@supabase/supabase-js';
-import fs from 'fs';
-import path from 'path';
-import { fileURLToPath } from 'url';
-
-// Manual Env Loader as a fallback for Vercel CLI local env binding issues
-function findEnvFile(filename) {
-  let dir = process.cwd();
-  while (true) {
-    const fullPath = path.join(dir, filename);
-    if (fs.existsSync(fullPath)) {
-      return fullPath;
-    }
-    const parent = path.dirname(dir);
-    if (parent === dir) break;
-    dir = parent;
-  }
-
-  try {
-    const __filename = fileURLToPath(import.meta.url);
-    let currentDir = path.dirname(__filename);
-    while (true) {
-      const fullPath = path.join(currentDir, filename);
-      if (fs.existsSync(fullPath)) {
-        return fullPath;
-      }
-      const parent = path.dirname(currentDir);
-      if (parent === currentDir) break;
-      currentDir = parent;
-    }
-  } catch (err) {
-    console.debug("Could not resolve env file relative to import.meta.url:", err);
-  }
-
-  return null;
-}
-
-function loadEnv() {
-  ['.env', '.env.local'].forEach(file => {
-    try {
-      const envPath = findEnvFile(file);
-      if (envPath) {
-        const content = fs.readFileSync(envPath, 'utf-8');
-        content.split('\n').forEach(line => {
-          const trimmed = line.trim();
-          if (!trimmed || trimmed.startsWith('#')) return;
-          const parts = trimmed.split('=');
-          if (parts.length >= 2) {
-            const key = parts[0].trim();
-            let val = parts.slice(1).join('=').trim();
-            if (val.startsWith('"') && val.endsWith('"')) {
-              val = val.substring(1, val.length - 1);
-            }
-            if (val.startsWith("'") && val.endsWith("'")) {
-              val = val.substring(1, val.length - 1);
-            }
-            process.env[key] = val;
-          }
-        });
-      }
-    } catch (err) {
-      console.error(`Error loading env file ${file} manually:`, err);
-    }
-  });
-}
-
-loadEnv();
-
-let supabaseClient;
-function getSupabaseClient() {
-  if (!supabaseClient) {
-    const supabaseUrl = process.env.VITE_SUPABASE_URL;
-    const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.VITE_SUPABASE_ANON_KEY;
-    if (!supabaseUrl || !supabaseKey) {
-      throw new Error("Missing Supabase credentials in serverless environment.");
-    }
-    supabaseClient = createClient(supabaseUrl, supabaseKey);
-  }
-  return supabaseClient;
-}
+import { getSupabaseAdmin } from './_utils.js';
 
 /**
  * Serverless Backend Handler: Platform Analytics & Campaign Velocity API
@@ -102,7 +23,7 @@ export default async function handler(req, res) {
   const projectId = (queryProjectId || bodyProjectId || '').toString().trim();
 
   try {
-    const supabase = getSupabaseClient();
+    const supabase = getSupabaseAdmin();
 
     // Fetch projects and donations from database
     const { data: projects = [] } = await supabase.from('projects').select('*');
@@ -146,7 +67,7 @@ export default async function handler(req, res) {
 
       const projRaised = Number(targetProj.raised_amount || targetProj.raisedAmount || 0);
       const projGoal = Number(targetProj.goal_amount || targetProj.goalAmount || 0);
-      const percentFunded = Math.round((projRaised / projGoal) * 100);
+      const percentFunded = projGoal > 0 ? Math.round((projRaised / projGoal) * 100) : 0;
 
       return res.status(200).json({
         type: 'campaign_velocity',
@@ -173,7 +94,7 @@ export default async function handler(req, res) {
       summary: {
         totalPlatformRaised,
         totalGoalTarget,
-        overallFundedRatio: `${Math.round((totalPlatformRaised / totalGoalTarget) * 100)}%`,
+        overallFundedRatio: `${totalGoalTarget > 0 ? Math.round((totalPlatformRaised / totalGoalTarget) * 100) : 0}%`,
         totalBackers,
         totalActiveCampaigns: activeProjects.length,
         averagePledgeAmount,

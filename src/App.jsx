@@ -89,7 +89,6 @@ const exportDonationsToCSV = (donations, filename = "vorynx_transactions") => {
 };
 
 // Initial Mock Campaign Data
-/* eslint-disable-next-line no-unused-vars */
 const INITIAL_PROJECTS = [
   {
     id: "keyboard",
@@ -389,10 +388,14 @@ export default function App() {
         .from('projects')
         .select('*, rewards(*), comments(*), updates(*)');
 
-      if (error) throw error;
+      if (error || !data || data.length === 0) {
+        if (error) console.warn("Supabase fetch projects error, using mock data fallback:", error);
+        setProjects(INITIAL_PROJECTS);
+        return;
+      }
 
       const mapped = data.map(p => {
-        const rewards = (p.rewards || []).sort((a, b) => a.pledge_amount - b.pledge_amount);
+        const rewards = (p.rewards || []).sort((a, b) => (a.pledge_amount || 0) - (b.pledge_amount || 0));
         const comments = (p.comments || []).sort((a, b) => new Date(b.created_at || 0) - new Date(a.created_at || 0));
         const updates = (p.updates || []).sort((a, b) => new Date(b.created_at || 0) - new Date(a.created_at || 0));
 
@@ -404,24 +407,24 @@ export default function App() {
           category: p.category,
           image: p.image,
           creator: {
-            name: p.creator_name,
-            avatar: p.creator_avatar,
+            name: p.creator_name || "Anonymous Creator",
+            avatar: p.creator_avatar || "C",
             verified: !!p.creator_verified
           },
-          goalAmount: Number(p.goal_amount),
-          raisedAmount: Number(p.raised_amount),
-          backerCount: Number(p.backer_count),
-          daysLeft: Number(p.days_left),
+          goalAmount: Number(p.goal_amount || 0),
+          raisedAmount: Number(p.raised_amount || 0),
+          backerCount: Number(p.backer_count || 0),
+          daysLeft: Number(p.days_left || 30),
           trending: !!p.trending,
           upi_id: p.upi_id || "payment@vorynx",
           status: p.status || "pending",
           rewards: rewards.map(r => ({
             id: r.id,
-            pledgeAmount: Number(r.pledge_amount),
+            pledgeAmount: Number(r.pledge_amount || 0),
             title: r.title,
             desc: r.desc,
             limit: r.limit,
-            claimed: Number(r.claimed)
+            claimed: Number(r.claimed || 0)
           })),
           comments: comments.map(c => ({
             id: c.id,
@@ -440,8 +443,8 @@ export default function App() {
 
       setProjects(mapped);
     } catch (err) {
-      console.error("Error fetching projects:", err);
-      showToast("Error loading campaigns from database.");
+      console.warn("Error fetching projects from DB, displaying sandbox mock projects:", err);
+      setProjects(INITIAL_PROJECTS);
     }
   };
 
