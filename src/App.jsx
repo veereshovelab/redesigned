@@ -2751,10 +2751,11 @@ function UpiPaymentCard({ merchantName, upiId, canvasRef }) {
 function BackerCertificateModal({ certificate, onClose, currency = 'USD', showToast }) {
   const qrCanvasRef = useRef(null);
 
-  const certHash = certificate.certHash || `VORYNX-CERT-${(certificate.utr_id || Date.now()).toString().toUpperCase()}`;
+  const certHash = certificate.certHash || `VORYNX-CERT-${(certificate.utr_id || certificate.date || "SECURED").toString().toUpperCase()}`;
   const verifyUrl = typeof window !== 'undefined'
     ? `${window.location.origin}${window.location.pathname}?cert=${certHash}`
     : `https://vorynx.com/verify/${certHash}`;
+
 
   useEffect(() => {
     if (qrCanvasRef.current) {
@@ -2883,9 +2884,10 @@ function BackerPortfolioModal({ donations = [], projects = [], onClose, onViewCe
   const userDonations = donations.length > 0
     ? donations
     : [
-        { id: "mock-d1", project_id: "keyboard", amount: 129, utr_id: "103488274910", username: currentUsername, status: "successful", created_at: new Date(Date.now() - 86400000 * 2).toISOString() },
-        { id: "mock-d2", project_id: "smarthub", amount: 99, utr_id: "103499281722", username: currentUsername, status: "successful", created_at: new Date(Date.now() - 86400000 * 5).toISOString() }
+        { id: "mock-d1", project_id: "keyboard", amount: 129, utr_id: "103488274910", username: currentUsername, status: "successful", created_at: "2026-08-27T10:00:00.000Z" },
+        { id: "mock-d2", project_id: "smarthub", amount: 99, utr_id: "103499281722", username: currentUsername, status: "successful", created_at: "2026-08-24T10:00:00.000Z" }
       ];
+
 
   const totalContributed = userDonations.reduce((sum, d) => sum + (Number(d.amount) || 0), 0);
   const totalProjectsBacked = new Set(userDonations.map(d => d.project_id)).size;

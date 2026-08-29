@@ -21,8 +21,10 @@ Vorynx is a modern crowdfunding and payment gateway platform built for creators,
 - **Creator Dashboard**: Monitor campaign metrics, track gross/net proceeds, platform fee breakdown, and transaction status.
 - **Admin Approval Console**: Review campaign proposals, verify funder UTR transaction IDs, and approve live campaigns.
 - **Multi-Auth Support**: Email/password, passwordless email links, Google, and GitHub OAuth powered by Firebase Auth.
+- **Serverless Payment Webhooks**: HMAC-SHA256 signature verification for Razorpay and Cashfree gateway webhooks to automatically mark donations as successful and update project funding metrics.
 - **Real-time Database**: Powered by Supabase for real-time campaign status and donation tracking.
 - **Responsive Modern UI**: Sleek dark/light theme, micro-animations, and mobile-responsive layouts.
+
 
 ## 🛠️ Tech Stack
 
