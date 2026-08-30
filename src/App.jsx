@@ -898,6 +898,14 @@ export default function App() {
 
       {/* Main Area */}
       <main className="vorynx-main">
+        {/* Real-Time Live Backer Activity Ticker */}
+        <LiveBackerTicker 
+          projects={projects} 
+          currency={currency} 
+          onSelectProject={(id) => { setSelectedProjectId(id); setView("details"); }} 
+          showToast={showToast} 
+        />
+
         {view === "home" && (
           <div className="view-transition-enter">
             <HomepageView
@@ -1973,6 +1981,12 @@ function ProjectDetailView({ project, onBack, user, onPledge, onAddComment, onDe
               >
                 Comments ({project.comments.length})
               </button>
+              <button
+                className={`detail-tab-btn ${activeTab === 'analytics' ? 'active' : ''}`}
+                onClick={() => setActiveTab("analytics")}
+              >
+                <i className="fa-solid fa-chart-line text-green" style={{ marginRight: '0.35rem' }}></i> Analytics & Velocity
+              </button>
             </div>
 
             {/* Tab Panes */}
@@ -2139,6 +2153,10 @@ function ProjectDetailView({ project, onBack, user, onPledge, onAddComment, onDe
                   )}
                 </div>
               </div>
+            )}
+
+            {activeTab === "analytics" && (
+              <PledgeVelocityAnalytics project={project} currency={currency} showToast={showToast} />
             )}
           </div>
         </div>
@@ -2441,6 +2459,358 @@ function StretchGoalsMilestones({ project, currency }) {
             </div>
           );
         })}
+      </div>
+    </div>
+  );
+}
+
+// ============================================================================
+// REAL-TIME LIVE BACKER TICKER COMPONENT
+// ============================================================================
+function LiveBackerTicker({ projects = [], currency = 'USD', onSelectProject, showToast }) {
+  const [tickerItems, setTickerItems] = useState([
+    { id: 't1', name: 'Alex M.', amount: 199, projectTitle: 'Helix-68 Keyboard', badge: '🌟 High Roller', time: '2m ago', avatar: 'A' },
+    { id: 't2', name: 'Elena R.', amount: 169, projectTitle: 'Aura Home Hub', badge: '⚡ Fast Backer', time: '5m ago', avatar: 'E' },
+    { id: 't3', name: 'Devon S.', amount: 60, projectTitle: 'Cyberpunk RPG', badge: '🔥 Goal Booster', time: '12m ago', avatar: 'D' },
+    { id: 't4', name: 'Samantha K.', amount: 119, projectTitle: 'Nomad Pro Backpack', badge: '🎯 Backer #250', time: '18m ago', avatar: 'S' },
+    { id: 't5', name: 'Marcus B.', amount: 35, projectTitle: 'Helix-68 Keyboard', badge: '🙌 Supporter', time: '24m ago', avatar: 'M' }
+  ]);
+  const [isPaused, setIsPaused] = useState(false);
+
+  useEffect(() => {
+    if (isPaused) return;
+
+    const names = ['Liam P.', 'Sophia V.', 'Noah T.', 'Mia C.', 'Ethan H.', 'Isabella W.', 'Lucas G.', 'Zoe A.'];
+    const badges = ['⚡ Fast Backer', '🌟 High Roller', '🔥 Goal Booster', '🎯 Milestone Backer', '🚀 Super Fan'];
+    const amounts = [15, 35, 60, 99, 129, 169, 199, 250];
+
+    const interval = setInterval(() => {
+      const randomName = names[Math.floor(Math.random() * names.length)];
+      const randomBadge = badges[Math.floor(Math.random() * badges.length)];
+      const randomAmount = amounts[Math.floor(Math.random() * amounts.length)];
+      const randomProj = projects.length > 0 ? projects[Math.floor(Math.random() * projects.length)] : { title: 'Vorynx Campaign' };
+
+      const newItem = {
+        id: `t_${Date.now()}`,
+        name: randomName,
+        amount: randomAmount,
+        projectTitle: randomProj.title,
+        badge: randomBadge,
+        time: 'Just now',
+        avatar: randomName[0]
+      };
+
+      setTickerItems((prev) => [newItem, ...prev.slice(0, 9)]);
+    }, 7000);
+
+    return () => clearInterval(interval);
+  }, [isPaused, projects]);
+
+  const handleManualSimulatePledge = () => {
+    const names = ['Vikram S.', 'Chloe M.', 'Priya N.', 'Jordan K.'];
+    const badges = ['💥 Live Pledge Boost', '⚡ Lightning Backer', '🌟 High Roller'];
+    const amounts = [50, 120, 199, 299];
+    const name = names[Math.floor(Math.random() * names.length)];
+    const badge = badges[Math.floor(Math.random() * badges.length)];
+    const amount = amounts[Math.floor(Math.random() * amounts.length)];
+    const proj = projects.length > 0 ? projects[Math.floor(Math.random() * projects.length)] : { title: 'Helix-68' };
+
+    const newItem = {
+      id: `t_${Date.now()}`,
+      name,
+      amount,
+      projectTitle: proj.title,
+      badge,
+      time: 'Just now',
+      avatar: name[0]
+    };
+
+    setTickerItems((prev) => [newItem, ...prev.slice(0, 9)]);
+    if (showToast) showToast(`⚡ New simulated pledge: ${name} backed ${proj.title} with ${formatCurrency(amount, currency)}!`, 'success');
+  };
+
+  return (
+    <div 
+      className="live-backer-ticker-wrapper"
+      onMouseEnter={() => setIsPaused(true)}
+      onMouseLeave={() => setIsPaused(false)}
+    >
+      <div className="ticker-header-badge">
+        <span className="pulse-indicator"></span>
+        <i className="fa-solid fa-bolt text-amber"></i>
+        <span>LIVE BACKER TICKER</span>
+      </div>
+
+      <div className="ticker-scroll-container">
+        <div className={`ticker-track ${isPaused ? 'paused' : ''}`}>
+          {tickerItems.concat(tickerItems).map((item, idx) => (
+            <div key={`${item.id}-${idx}`} className="ticker-pill-item">
+              <div className="ticker-avatar">{item.avatar}</div>
+              <div className="ticker-item-content">
+                <span className="ticker-user-name">{item.name}</span>
+                <span className="ticker-pledge-amt">{formatCurrency(item.amount, currency)}</span>
+                <span className="ticker-proj-name">on {item.projectTitle}</span>
+              </div>
+              <span className="ticker-badge-tag">{item.badge}</span>
+              <span className="ticker-time">{item.time}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <div className="ticker-controls">
+        <button 
+          type="button" 
+          className="ticker-control-btn"
+          onClick={() => setIsPaused(!isPaused)}
+          title={isPaused ? "Resume auto scroll" : "Pause scroll"}
+        >
+          <i className={`fa-solid ${isPaused ? 'fa-play' : 'fa-pause'}`}></i>
+        </button>
+        <button 
+          type="button"
+          className="ticker-simulate-btn"
+          onClick={handleManualSimulatePledge}
+          title="Simulate a live pledge notification"
+        >
+          <i className="fa-solid fa-plus"></i> Simulate Pledge
+        </button>
+      </div>
+    </div>
+  );
+}
+
+// ============================================================================
+// PLEDGE VELOCITY & CREATOR ANALYTICS COMPONENT
+// ============================================================================
+function PledgeVelocityAnalytics({ project, currency = 'USD', showToast }) {
+  const goal = project.goalAmount || 10000;
+  const raised = project.raisedAmount || 0;
+  const backers = project.backerCount || 1;
+  const daysLeft = project.daysLeft || 10;
+  const daysActive = Math.max(1, 30 - daysLeft);
+
+  const percentFunded = Math.round((raised / goal) * 100);
+  const avgPledge = Math.round(raised / Math.max(1, backers));
+  const dailyPledgeVelocity = (backers / daysActive).toFixed(1);
+  const dailyFundingRate = (raised / daysActive).toFixed(0);
+  const projectedTotal = Math.round(dailyFundingRate * 30);
+
+  const growthPoints = [
+    { day: 'Day 1', raised: Math.round(raised * 0.15), backers: Math.round(backers * 0.12) },
+    { day: 'Day 5', raised: Math.round(raised * 0.35), backers: Math.round(backers * 0.30) },
+    { day: 'Day 10', raised: Math.round(raised * 0.55), backers: Math.round(backers * 0.52) },
+    { day: 'Day 15', raised: Math.round(raised * 0.78), backers: Math.round(backers * 0.75) },
+    { day: `Day ${daysActive}`, raised: raised, backers: backers }
+  ];
+
+  const chartHeight = 120;
+  const chartWidth = 480;
+  const maxVal = Math.max(goal * 1.2, raised * 1.1);
+  const svgPoints = growthPoints.map((pt, i) => {
+    const x = (i / (growthPoints.length - 1)) * chartWidth;
+    const y = chartHeight - (pt.raised / maxVal) * chartHeight;
+    return `${x},${y}`;
+  }).join(' ');
+
+  const goalY = chartHeight - (goal / maxVal) * chartHeight;
+
+  const milestones = [
+    { id: 'm1', title: 'Launch Velocity', desc: 'First 50 backers joined within 48h', unlocked: backers >= 50, icon: 'fa-rocket' },
+    { id: 'm2', title: '50% Goal Reached', desc: 'Crossed 50% funding benchmark', unlocked: percentFunded >= 50, icon: 'fa-chart-pie' },
+    { id: 'm3', title: 'Fully Funded', desc: '100% target goal achieved', unlocked: percentFunded >= 100, icon: 'fa-trophy' },
+    { id: 'm4', title: 'Overfunded Tier', desc: 'Exceeded 125% stretch funding', unlocked: percentFunded >= 125, icon: 'fa-crown' }
+  ];
+
+  const exportAnalyticsCSV = () => {
+    const headers = ["Metric", "Value"];
+    const rows = [
+      ["Campaign Title", `"${project.title}"`],
+      ["Total Raised", `"${raised}"`],
+      ["Goal Amount", `"${goal}"`],
+      ["Funding Percentage", `"${percentFunded}%"`],
+      ["Backers Count", `"${backers}"`],
+      ["Average Pledge Value", `"${avgPledge}"`],
+      ["Pledge Velocity (Backers/Day)", `"${dailyPledgeVelocity}"`],
+      ["Projected 30-Day Total", `"${projectedTotal}"`]
+    ];
+    const csvContent = [headers.join(","), ...rows.map(r => r.join(","))].join("\n");
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `${project.title.replace(/\s+/g, '_')}_analytics_${Date.now()}.csv`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+    if (showToast) showToast("📊 Analytics report downloaded as CSV!", "success");
+  };
+
+  const exportAnalyticsJSON = () => {
+    const data = {
+      project: project.title,
+      category: project.category,
+      goal,
+      raised,
+      percentFunded,
+      backers,
+      avgPledge,
+      dailyPledgeVelocity,
+      dailyFundingRate,
+      projectedTotal,
+      growthHistory: growthPoints,
+      exportedAt: new Date().toISOString()
+    };
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `${project.title.replace(/\s+/g, '_')}_analytics_${Date.now()}.json`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+    if (showToast) showToast("📄 Analytics report exported as JSON!", "success");
+  };
+
+  return (
+    <div className="analytics-pane-wrapper">
+      <div className="analytics-pane-header">
+        <div>
+          <h3 className="analytics-title">
+            <i className="fa-solid fa-chart-line text-green"></i> Creator Analytics & Pledge Velocity
+          </h3>
+          <p className="analytics-subtitle">Real-time funding trajectory, pledge rate gauges, and backer milestones.</p>
+        </div>
+        <div className="analytics-export-buttons">
+          <button type="button" className="btn-secondary" onClick={exportAnalyticsCSV}>
+            <i className="fa-solid fa-file-csv text-green"></i> Export CSV
+          </button>
+          <button type="button" className="btn-secondary" onClick={exportAnalyticsJSON}>
+            <i className="fa-solid fa-file-code text-blue"></i> Export JSON
+          </button>
+        </div>
+      </div>
+
+      <div className="analytics-metrics-grid">
+        <div className="analytics-card metric-velocity">
+          <div className="analytics-card-icon">
+            <i className="fa-solid fa-gauge-high"></i>
+          </div>
+          <div className="analytics-card-info">
+            <span className="analytics-card-lbl">Pledge Velocity</span>
+            <span className="analytics-card-val">{dailyPledgeVelocity} <small style={{ fontSize: '0.75rem' }}>backers/day</small></span>
+            <span className="analytics-card-sub">⚡ Active daily engagement</span>
+          </div>
+        </div>
+
+        <div className="analytics-card metric-avg">
+          <div className="analytics-card-icon">
+            <i className="fa-solid fa-wallet"></i>
+          </div>
+          <div className="analytics-card-info">
+            <span className="analytics-card-lbl">Average Pledge Value</span>
+            <span className="analytics-card-val">{formatCurrency(avgPledge, currency)}</span>
+            <span className="analytics-card-sub">Across {backers} total backers</span>
+          </div>
+        </div>
+
+        <div className="analytics-card metric-rate">
+          <div className="analytics-card-icon">
+            <i className="fa-solid fa-fire"></i>
+          </div>
+          <div className="analytics-card-info">
+            <span className="analytics-card-lbl">Funding Speed</span>
+            <span className="analytics-card-val">{formatCurrency(dailyFundingRate, currency)} <small style={{ fontSize: '0.75rem' }}>/day</small></span>
+            <span className="analytics-card-sub">Mean daily raise rate</span>
+          </div>
+        </div>
+
+        <div className="analytics-card metric-projected">
+          <div className="analytics-card-icon">
+            <i className="fa-solid fa-bullseye"></i>
+          </div>
+          <div className="analytics-card-info">
+            <span className="analytics-card-lbl">Projected Campaign Total</span>
+            <span className="analytics-card-val">{formatCurrency(projectedTotal, currency)}</span>
+            <span className="analytics-card-sub">{projectedTotal >= goal ? '🎯 Target expected to pass!' : 'Pacing towards goal'}</span>
+          </div>
+        </div>
+      </div>
+
+      <div className="analytics-chart-box">
+        <div className="analytics-chart-header">
+          <div>
+            <h4 style={{ margin: 0, fontWeight: 800, color: 'var(--text-primary)', fontFamily: 'var(--font-heading)' }}>
+              Funding Progression Curve
+            </h4>
+            <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Historical raise growth vs target goal line</span>
+          </div>
+          <div className="chart-legend">
+            <span className="legend-item legend-actual">
+              <span className="legend-dot"></span> Pledged Growth
+            </span>
+            <span className="legend-item legend-target">
+              <span className="legend-line"></span> Goal Target ({formatCurrency(goal, currency)})
+            </span>
+          </div>
+        </div>
+
+        <div className="analytics-svg-container">
+          <svg viewBox="0 0 480 140" className="analytics-svg-chart">
+            <defs>
+              <linearGradient id="growthGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+                <stop offset="0%" stopColor="#00f59b" stopOpacity="0.4" />
+                <stop offset="100%" stopColor="#00f59b" stopOpacity="0.0" />
+              </linearGradient>
+            </defs>
+
+            <line x1="0" y1={goalY} x2="480" y2={goalY} stroke="var(--accent-amber)" strokeWidth="1.5" strokeDasharray="4,4" />
+            <polygon points={`0,140 ${svgPoints} 480,140`} fill="url(#growthGradient)" />
+            <polyline points={svgPoints} fill="none" stroke="#00f59b" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />
+
+            {growthPoints.map((pt, idx) => {
+              const x = (idx / (growthPoints.length - 1)) * chartWidth;
+              const y = chartHeight - (pt.raised / maxVal) * chartHeight;
+              return (
+                <g key={pt.day} className="chart-point-group">
+                  <circle cx={x} cy={y} r="5" fill="#00f59b" stroke="#0b0f19" strokeWidth="2" />
+                  <text x={x} y={y - 12} textAnchor="middle" fill="var(--text-secondary)" fontSize="9" fontWeight="700">
+                    {formatCurrency(pt.raised, currency)}
+                  </text>
+                  <text x={x} y="135" textAnchor="middle" fill="var(--text-muted)" fontSize="9">
+                    {pt.day}
+                  </text>
+                </g>
+              );
+            })}
+          </svg>
+        </div>
+      </div>
+
+      <div className="analytics-milestones-box">
+        <h4 style={{ margin: '0 0 1rem 0', fontWeight: 800, color: 'var(--text-primary)', fontFamily: 'var(--font-heading)' }}>
+          Campaign Milestone Badges
+        </h4>
+        <div className="milestones-grid">
+          {milestones.map(m => (
+            <div key={m.id} className={`milestone-badge-card ${m.unlocked ? 'unlocked' : 'locked'}`}>
+              <div className="milestone-icon">
+                <i className={`fa-solid ${m.icon}`}></i>
+              </div>
+              <div className="milestone-details">
+                <div className="milestone-title-row">
+                  <span className="milestone-name">{m.title}</span>
+                  <span className={`milestone-status-pill ${m.unlocked ? 'unlocked' : ''}`}>
+                    {m.unlocked ? '✓ Unlocked' : 'In Progress'}
+                  </span>
+                </div>
+                <span className="milestone-desc">{m.desc}</span>
+              </div>
+            </div>
+          ))}
+        </div>
       </div>
     </div>
   );
@@ -4077,6 +4447,11 @@ function CreatorDashboardView({ projects, donations, user, setView, currency, on
                     <span className="metric-value">{formatCurrency(project.raisedAmount * 0.80, currency)}</span>
                     <span className="metric-sub">Payout amount to startup wallet</span>
                   </div>
+                </div>
+
+                {/* Creator Pledge Velocity & Analytics Panel */}
+                <div style={{ margin: '1.5rem 0' }}>
+                  <PledgeVelocityAnalytics project={project} currency={currency} showToast={showToast} />
                 </div>
 
                 {/* Donation list */}
