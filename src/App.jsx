@@ -586,6 +586,8 @@ export default function App() {
         if (shortcutsOpen) setShortcutsOpen(false);
         if (authOpen) setAuthOpen(false);
         if (shareModalProject) setShareModalProject(null);
+        if (profileMenuOpen) setProfileMenuOpen(false);
+        if (mobileNavOpen) setMobileNavOpen(false);
         if (checkoutOpen) {
           setCheckoutOpen(false);
           setSelectedReward(null);
@@ -782,11 +784,43 @@ export default function App() {
       {/* Header */}
       <header className="vorynx-header">
         <div className="header-container">
-          <div className="logo-section" id="brand-logo-btn" onClick={() => { setView("home"); setSelectedProjectId(null); }}>
-            <span className="logo-icon">V</span>
-            <span className="logo-text">VORYNX</span>
+
+          {/* ── LEFT: Brand + Quick Links ── */}
+          <div className="nav-left">
+            <div className="logo-section" id="brand-logo-btn" onClick={() => { setView("home"); setSelectedProjectId(null); setMobileNavOpen(false); }}>
+              <span className="logo-icon">V</span>
+              <span className="logo-text">VORYNX</span>
+            </div>
+            <nav className="nav-quick-links">
+              <button className="nav-link-btn" onClick={() => { setView("home"); setSelectedProjectId(null); }}>
+                Explore
+              </button>
+              <button
+                className="nav-link-btn nav-link-with-badge"
+                onClick={() => { setView("home"); setSelectedCategory("Saved"); setSelectedProjectId(null); }}
+                title="Saved Campaigns"
+              >
+                <i className="fa-solid fa-heart" style={{ color: '#ef4444', fontSize: '0.85rem' }}></i>
+                Saved
+                {bookmarkedIds.length > 0 && (
+                  <span className="nav-badge nav-badge-red">{bookmarkedIds.length}</span>
+                )}
+              </button>
+              <button
+                className="nav-link-btn nav-link-with-badge"
+                onClick={() => setPortfolioOpen(true)}
+                title="My Pledges & Certificates"
+              >
+                <i className="fa-solid fa-receipt" style={{ color: '#10b981', fontSize: '0.85rem' }}></i>
+                My Pledges
+                {(donations.length > 0 || true) && (
+                  <span className="nav-badge nav-badge-green">{donations.length || 2}</span>
+                )}
+              </button>
+            </nav>
           </div>
 
+          {/* ── CENTER: Search ── */}
           <div className="search-bar-container">
             <i className="fa-solid fa-magnifying-glass search-icon"></i>
             <input
@@ -800,20 +834,13 @@ export default function App() {
               onBlur={() => setTimeout(() => setSearchFocused(false), 200)}
               onKeyDown={(e) => {
                 if (e.key === 'Enter') {
-                  if (searchQuery.trim()) {
-                    addRecentSearch(searchQuery);
-                  }
+                  if (searchQuery.trim()) addRecentSearch(searchQuery);
                   setSearchFocused(false);
                 }
               }}
             />
             {searchQuery ? (
-              <button 
-                type="button" 
-                className="search-clear-btn"
-                onClick={() => setSearchQuery("")}
-                title="Clear search"
-              >
+              <button type="button" className="search-clear-btn" onClick={() => setSearchQuery("")} title="Clear search">
                 <i className="fa-solid fa-xmark"></i>
               </button>
             ) : (
@@ -822,10 +849,7 @@ export default function App() {
 
             {/* Search Suggestions & History Popover */}
             {searchFocused && (
-              <div 
-                className="search-suggestions-popover"
-                onMouseDown={(e) => e.preventDefault()}
-              >
+              <div className="search-suggestions-popover" onMouseDown={(e) => e.preventDefault()}>
                 {recentSearches.length > 0 && (
                   <div className="search-popover-section">
                     <div className="search-popover-header">
@@ -834,16 +858,7 @@ export default function App() {
                     </div>
                     <div className="search-popover-items">
                       {recentSearches.map((term) => (
-                        <div 
-                          key={term} 
-                          className="search-popover-item"
-                          onClick={() => {
-                            setSearchQuery(term);
-                            addRecentSearch(term);
-                            setSearchFocused(false);
-                            if (view !== "home") setView("home");
-                          }}
-                        >
+                        <div key={term} className="search-popover-item" onClick={() => { setSearchQuery(term); addRecentSearch(term); setSearchFocused(false); if (view !== "home") setView("home"); }}>
                           <span style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                             <i className="fa-solid fa-magnifying-glass" style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}></i>
                             {term}
@@ -856,24 +871,13 @@ export default function App() {
                     </div>
                   </div>
                 )}
-
                 <div className="search-popover-section">
                   <div className="search-popover-header">
                     <span><i className="fa-solid fa-fire text-amber"></i> Trending Keywords</span>
                   </div>
                   <div className="search-popular-tags">
                     {["Keyboard", "Privacy", "Cyberpunk", "Modular", "Smart Home", "Ergonomics"].map((keyword) => (
-                      <button
-                        key={keyword}
-                        type="button"
-                        className="search-popular-tag-btn"
-                        onClick={() => {
-                          setSearchQuery(keyword);
-                          addRecentSearch(keyword);
-                          setSearchFocused(false);
-                          if (view !== "home") setView("home");
-                        }}
-                      >
+                      <button key={keyword} type="button" className="search-popular-tag-btn" onClick={() => { setSearchQuery(keyword); addRecentSearch(keyword); setSearchFocused(false); if (view !== "home") setView("home"); }}>
                         #{keyword}
                       </button>
                     ))}
@@ -883,124 +887,152 @@ export default function App() {
             )}
           </div>
 
-          <div className="nav-actions">
-            {/* Multi-Currency Toggle */}
-            <div className="currency-toggle-pill" title="Toggle Currency ($ USD / ₹ INR)">
-              <button 
-                className={`currency-pill-btn ${currency === 'USD' ? 'active' : ''}`}
-                onClick={() => { setCurrency('USD'); localStorage.setItem('vorynx_currency', 'USD'); }}
-              >
-                $ USD
-              </button>
-              <button 
-                className={`currency-pill-btn ${currency === 'INR' ? 'active' : ''}`}
-                onClick={() => { setCurrency('INR'); localStorage.setItem('vorynx_currency', 'INR'); }}
-              >
-                ₹ INR
-              </button>
+          {/* ── RIGHT: Actions + Profile Menu ── */}
+          <div className="nav-right">
+            {/* Currency Toggle */}
+            <div className="currency-toggle-pill" title="Toggle Currency">
+              <button className={`currency-pill-btn ${currency === 'USD' ? 'active' : ''}`} onClick={() => { setCurrency('USD'); localStorage.setItem('vorynx_currency', 'USD'); }}>$ USD</button>
+              <button className={`currency-pill-btn ${currency === 'INR' ? 'active' : ''}`} onClick={() => { setCurrency('INR'); localStorage.setItem('vorynx_currency', 'INR'); }}>₹ INR</button>
             </div>
 
-            {/* Light / Dark Mode Toggle */}
-            <button 
-              className="theme-toggle-btn"
-              onClick={toggleTheme}
-              title={`Switch to ${theme === 'dark' ? 'Light' : 'Dark'} Mode`}
-            >
-              <i className={`fa-solid ${theme === 'dark' ? 'fa-sun text-amber' : 'fa-moon text-blue'}`}></i>
-              <span>{theme === 'dark' ? 'Light' : 'Dark'}</span>
+            {/* Theme Toggle */}
+            <button className="nav-icon-btn" onClick={toggleTheme} title={`Switch to ${theme === 'dark' ? 'Light' : 'Dark'} Mode`}>
+              <i className={`fa-solid ${theme === 'dark' ? 'fa-sun' : 'fa-moon'}`}></i>
             </button>
 
-            {/* Keyboard Shortcuts Guide Button */}
-            <button
-              className="theme-toggle-btn"
-              onClick={() => setShortcutsOpen(true)}
-              title="Keyboard Shortcuts (?)"
-            >
-              <i className="fa-solid fa-keyboard text-purple" style={{ color: '#a855f7' }}></i>
-              <span>Shortcuts</span>
-            </button>
-
-            {/* Saved Bookmarks Navigation Button */}
-            <button 
-              className="btn-text"
-              style={{ display: 'inline-flex', alignItems: 'center', gap: '0.35rem' }}
-              onClick={() => { setView("home"); setSelectedCategory("Saved"); setSelectedProjectId(null); }}
-              title="View Saved Bookmarks"
-            >
-              <i className="fa-solid fa-heart" style={{ color: '#ef4444' }}></i>
-              <span>Saved</span>
-              {bookmarkedIds.length > 0 && (
-                <span style={{ 
-                  background: '#ef4444', 
-                  color: '#fff', 
-                  fontSize: '0.7rem', 
-                  fontWeight: 700, 
-                  padding: '0.1rem 0.45rem', 
-                  borderRadius: '999px',
-                  lineHeight: 1
-                }}>
-                  {bookmarkedIds.length}
-                </span>
-              )}
-            </button>
-
-            {/* My Pledges & Backer Portfolio Navigation Button */}
-            <button 
-              className="nav-pledges-btn"
-              onClick={() => setPortfolioOpen(true)}
-              title="My Pledges & Verified Certificates"
-            >
-              <i className="fa-solid fa-receipt text-green"></i>
-              <span>My Pledges</span>
-              <span className="nav-pledges-badge">{donations.length || 2}</span>
-            </button>
-
-            <button className="btn-text" onClick={() => { setView("qr-generator"); setSelectedProjectId(null); }}>
-              UPI QR Generator
-            </button>
-            {(simMode === "creator" || simMode === "admin") && (
-              <button className="btn-text" onClick={() => protectAction(() => setView("creator-dashboard"))}>
-                Creator Dashboard
-              </button>
-            )}
-            {simMode === "admin" && (
-              <button className="btn-text" onClick={() => setView("admin-panel")}>
-                Admin Panel
-              </button>
-            )}
-            <button className="btn-text" id="nav-start-campaign-btn" onClick={() => protectAction(() => setView("create"))}>
+            {/* Start a Campaign CTA */}
+            <button className="btn-primary" id="nav-start-campaign-btn" onClick={() => protectAction(() => setView("create"))} style={{ padding: '0.5rem 1.1rem', fontSize: '0.85rem', whiteSpace: 'nowrap' }}>
+              <i className="fa-solid fa-plus" style={{ fontSize: '0.8rem' }}></i>
               Start a Campaign
             </button>
+
+            {/* Profile / Sign In */}
             {user ? (
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                  <div className="creator-avatar">
+              <div className="profile-menu-wrapper">
+                <button
+                  className="profile-trigger-btn"
+                  id="nav-profile-btn"
+                  onClick={() => setProfileMenuOpen((v) => !v)}
+                  title="Account & Tools"
+                >
+                  <div className="creator-avatar" style={{ width: 32, height: 32, fontSize: '0.85rem' }}>
                     {(user.displayName || user.email || "U")[0].toUpperCase()}
                   </div>
-                  <span style={{ fontSize: '0.875rem', fontWeight: 600, color: 'var(--text-primary)', maxWidth: '120px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                    {user.displayName || user.email.split('@')[0]}
-                  </span>
-                </div>
-                <button
-                  className="btn-secondary"
-                  style={{ padding: '0.4rem 0.75rem', fontSize: '0.78rem', display: 'flex', alignItems: 'center', gap: '0.35rem' }}
-                  onClick={() => setTfaModalOpen(true)}
-                  title="Manage Two-Factor Authentication Security"
-                >
-                  <i className={`fa-solid ${user2faConfig?.enabled ? 'fa-user-shield text-green' : 'fa-shield'}`}></i>
-                  {user2faConfig?.enabled ? '2FA Active' : '2FA Setup'}
+                  <span className="profile-trigger-name">{user.displayName || user.email.split('@')[0]}</span>
+                  <i className={`fa-solid fa-chevron-down profile-chevron ${profileMenuOpen ? 'open' : ''}`}></i>
                 </button>
-                <button className="btn-secondary" id="nav-logout-btn" onClick={handleLogout}>
-                  Log Out
-                </button>
+
+                {profileMenuOpen && (
+                  <>
+                    <div className="profile-dropdown-backdrop" onClick={() => setProfileMenuOpen(false)} />
+                    <div className="profile-dropdown-menu">
+                      {/* User Info */}
+                      <div className="profile-dropdown-header">
+                        <div className="creator-avatar" style={{ width: 38, height: 38 }}>
+                          {(user.displayName || user.email || "U")[0].toUpperCase()}
+                        </div>
+                        <div>
+                          <div style={{ fontWeight: 700, fontSize: '0.9rem', color: 'var(--text-primary)' }}>{user.displayName || user.email.split('@')[0]}</div>
+                          <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{user.email}</div>
+                        </div>
+                      </div>
+
+                      <div className="profile-dropdown-divider" />
+
+                      {/* 2FA */}
+                      <button className="profile-dropdown-item" onClick={() => { setTfaModalOpen(true); setProfileMenuOpen(false); }}>
+                        <i className={`fa-solid ${user2faConfig?.enabled ? 'fa-user-shield' : 'fa-shield'}`} style={{ color: user2faConfig?.enabled ? '#10b981' : 'var(--text-muted)', width: 16 }}></i>
+                        <span>{user2faConfig?.enabled ? '2FA Active' : 'Set Up 2FA'}</span>
+                        {user2faConfig?.enabled && <span className="profile-dropdown-badge badge-green">Active</span>}
+                      </button>
+
+                      {/* UPI QR Generator */}
+                      <button className="profile-dropdown-item" onClick={() => { setView("qr-generator"); setSelectedProjectId(null); setProfileMenuOpen(false); }}>
+                        <i className="fa-solid fa-qrcode" style={{ color: 'var(--text-muted)', width: 16 }}></i>
+                        <span>UPI QR Generator</span>
+                      </button>
+
+                      {/* Keyboard Shortcuts */}
+                      <button className="profile-dropdown-item" onClick={() => { setShortcutsOpen(true); setProfileMenuOpen(false); }}>
+                        <i className="fa-solid fa-keyboard" style={{ color: '#a855f7', width: 16 }}></i>
+                        <span>Keyboard Shortcuts</span>
+                        <kbd style={{ fontSize: '0.65rem', background: 'var(--bg-main)', border: '1px solid var(--border-standard)', borderRadius: 4, padding: '0.1rem 0.35rem', color: 'var(--text-muted)', marginLeft: 'auto' }}>?</kbd>
+                      </button>
+
+                      {/* Sim-mode links */}
+                      {(simMode === 'creator' || simMode === 'admin') && (
+                        <button className="profile-dropdown-item" onClick={() => { protectAction(() => setView("creator-dashboard")); setProfileMenuOpen(false); }}>
+                          <i className="fa-solid fa-chart-line" style={{ color: 'var(--accent-brand)', width: 16 }}></i>
+                          <span>Creator Dashboard</span>
+                        </button>
+                      )}
+                      {simMode === 'admin' && (
+                        <button className="profile-dropdown-item" onClick={() => { setView("admin-panel"); setProfileMenuOpen(false); }}>
+                          <i className="fa-solid fa-user-shield" style={{ color: '#f59e0b', width: 16 }}></i>
+                          <span>Admin Panel</span>
+                        </button>
+                      )}
+
+                      <div className="profile-dropdown-divider" />
+
+                      {/* Log Out */}
+                      <button className="profile-dropdown-item profile-dropdown-item-danger" id="nav-logout-btn" onClick={() => { handleLogout(); setProfileMenuOpen(false); }}>
+                        <i className="fa-solid fa-arrow-right-from-bracket" style={{ width: 16 }}></i>
+                        <span>Log Out</span>
+                      </button>
+                    </div>
+                  </>
+                )}
               </div>
             ) : (
-              <button className="btn-primary" id="nav-sign-in-btn" onClick={() => setAuthOpen(true)}>
+              <button className="btn-primary" id="nav-sign-in-btn" onClick={() => setAuthOpen(true)} style={{ padding: '0.5rem 1.1rem', fontSize: '0.85rem' }}>
                 Sign In
               </button>
             )}
+
+            {/* Mobile hamburger */}
+            <button className="nav-hamburger-btn" onClick={() => setMobileNavOpen((v) => !v)} aria-label="Open menu">
+              <i className={`fa-solid ${mobileNavOpen ? 'fa-xmark' : 'fa-bars'}`}></i>
+            </button>
           </div>
         </div>
+
+        {/* Mobile Drawer */}
+        {mobileNavOpen && (
+          <div className="mobile-nav-drawer">
+            <button className="mobile-nav-item" onClick={() => { setView("home"); setSelectedProjectId(null); setMobileNavOpen(false); }}>
+              <i className="fa-solid fa-compass"></i> Explore
+            </button>
+            <button className="mobile-nav-item" onClick={() => { setView("home"); setSelectedCategory("Saved"); setSelectedProjectId(null); setMobileNavOpen(false); }}>
+              <i className="fa-solid fa-heart" style={{ color: '#ef4444' }}></i> Saved {bookmarkedIds.length > 0 && <span className="nav-badge nav-badge-red">{bookmarkedIds.length}</span>}
+            </button>
+            <button className="mobile-nav-item" onClick={() => { setPortfolioOpen(true); setMobileNavOpen(false); }}>
+              <i className="fa-solid fa-receipt" style={{ color: '#10b981' }}></i> My Pledges
+            </button>
+            <button className="mobile-nav-item" onClick={() => { protectAction(() => setView("create")); setMobileNavOpen(false); }}>
+              <i className="fa-solid fa-plus"></i> Start a Campaign
+            </button>
+            {user && (
+              <>
+                <button className="mobile-nav-item" onClick={() => { setTfaModalOpen(true); setMobileNavOpen(false); }}>
+                  <i className="fa-solid fa-shield"></i> {user2faConfig?.enabled ? '2FA Active' : 'Set Up 2FA'}
+                </button>
+                <button className="mobile-nav-item" onClick={() => { setView("qr-generator"); setSelectedProjectId(null); setMobileNavOpen(false); }}>
+                  <i className="fa-solid fa-qrcode"></i> UPI QR Generator
+                </button>
+                <div className="mobile-nav-divider" />
+                <button className="mobile-nav-item mobile-nav-danger" onClick={() => { handleLogout(); setMobileNavOpen(false); }}>
+                  <i className="fa-solid fa-arrow-right-from-bracket"></i> Log Out
+                </button>
+              </>
+            )}
+            {!user && (
+              <button className="mobile-nav-item" onClick={() => { setAuthOpen(true); setMobileNavOpen(false); }}>
+                <i className="fa-solid fa-right-to-bracket"></i> Sign In
+              </button>
+            )}
+          </div>
+        )}
       </header>
 
       {/* Main Area */}
