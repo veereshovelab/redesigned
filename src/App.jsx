@@ -21,6 +21,8 @@ import {
   sendPasswordResetEmail
 } from './firebaseConfig';
 import { supabase } from './supabaseClient';
+import TwoFactorModal from './components/TwoFactorModal';
+import { verifyTotpToken } from './utils/totp';
 
 // ==========================================
 // Friendly Error Message Helper
@@ -304,6 +306,8 @@ export default function App() {
     }
   });
   const [searchFocused, setSearchFocused] = useState(false);
+  const [profileMenuOpen, setProfileMenuOpen] = useState(false);
+  const [mobileNavOpen, setMobileNavOpen] = useState(false);
 
   const addRecentSearch = (term) => {
     if (!term || !term.trim()) return;
@@ -473,6 +477,79 @@ export default function App() {
   const [showScrollTop, setShowScrollTop] = useState(false);
   const [shortcutsOpen, setShortcutsOpen] = useState(false);
 
+  // 2FA Authentication States
+  const [tfaModalOpen, setTfaModalOpen] = useState(false);
+  const [tfaChallengeOpen, setTfaChallengeOpen] = useState(false);
+  const [tfaCodeInput, setTfaCodeInput] = useState("");
+  const [tfaChallengeError, setTfaChallengeError] = useState("");
+  const [user2faConfig, setUser2faConfig] = useState(null);
+
+  // Helper: Load user 2FA configuration from localStorage
+  const loadUser2FAConfig = (userObj) => {
+    if (!userObj || (!userObj.email && !userObj.uid)) return null;
+    const identifier = userObj.email || userObj.uid;
+    try {
+      const stored = localStorage.getItem(`vorynx_2fa_${identifier}`);
+      return stored ? JSON.parse(stored) : null;
+    } catch {
+      return null;
+    }
+  };
+
+  // Save or update 2FA configuration
+  const handleSave2FA = (config) => {
+    if (!user || (!user.email && !user.uid)) return;
+    const identifier = user.email || user.uid;
+    try {
+      if (config && config.enabled) {
+        localStorage.setItem(`vorynx_2fa_${identifier}`, JSON.stringify(config));
+        setUser2faConfig(config);
+        sessionStorage.setItem(`vorynx_2fa_verified_${user.uid || identifier}`, 'true');
+      } else {
+        localStorage.removeItem(`vorynx_2fa_${identifier}`);
+        sessionStorage.removeItem(`vorynx_2fa_verified_${user.uid || identifier}`);
+        setUser2faConfig(null);
+      }
+    } catch (e) {
+      console.error("Error saving 2FA settings:", e);
+    }
+  };
+
+  // Verify 2FA login challenge code (TOTP or single-use Backup Code)
+  const handleVerify2faChallenge = async (e) => {
+    e.preventDefault();
+    setTfaChallengeError("");
+    const cleanedCode = tfaCodeInput.trim();
+
+    if (!user2faConfig || !user2faConfig.secret) {
+      setTfaChallengeOpen(false);
+      return;
+    }
+
+    const isTotpValid = await verifyTotpToken(cleanedCode, user2faConfig.secret);
+    const backupIndex = user2faConfig.backupCodes ? user2faConfig.backupCodes.indexOf(cleanedCode) : -1;
+    const isBackupValid = backupIndex !== -1;
+
+    if (isTotpValid || isBackupValid) {
+      if (isBackupValid) {
+        const updatedBackup = [...user2faConfig.backupCodes];
+        updatedBackup.splice(backupIndex, 1);
+        const updatedConfig = { ...user2faConfig, backupCodes: updatedBackup };
+        handleSave2FA(updatedConfig);
+        showToast(`Backup code verified! ${updatedBackup.length} codes remaining.`);
+      } else {
+        showToast("Two-Factor Authentication verified successfully!");
+      }
+
+      const identifier = user?.uid || user?.email;
+      sessionStorage.setItem(`vorynx_2fa_verified_${identifier}`, 'true');
+      setTfaChallengeOpen(false);
+      setTfaCodeInput("");
+    } else {
+      setTfaChallengeError("Invalid 6-digit passcode or backup code. Please try again.");
+    }
+  };
+
   // Global Keyboard Shortcuts (/ for search, Escape for modals, ? for shortcut guide, Alt+T for theme, Alt+H for home)
   useEffect(() => {
     const handleKeyDown = (e) => {
@@ -561,6 +638,21 @@ export default function App() {
       setLoading(false);
       if (currentUser) {
         setAuthOpen(false); // Close sign-in popup if completed successfully
+        
+        // 2FA Enforcement Check
+        const config = loadUser2FAConfig(currentUser);
+        setUser2faConfig(config);
+
+        if (config?.enabled) {
+          const identifier = currentUser.uid || currentUser.email;
+          const isVerified = sessionStorage.getItem(`vorynx_2fa_verified_${identifier}`) === 'true';
+          if (!isVerified) {
+            setTfaChallengeOpen(true);
+          }
+        }
+      } else {
+        setUser2faConfig(null);
+        setTfaChallengeOpen(false);
       }
     });
     return () => unsubscribe();
@@ -597,7 +689,13 @@ export default function App() {
   }, [view, projects]);
 
   const handleLogout = () => {
+    if (user) {
+      const identifier = user.uid || user.email;
+      sessionStorage.removeItem(`vorynx_2fa_verified_${identifier}`);
+    }
     signOut(auth);
+    setTfaChallengeOpen(false);
+    setUser2faConfig(null);
     showToast("Logged out successfully.");
   };
 
@@ -874,7 +972,7 @@ export default function App() {
               Start a Campaign
             </button>
             {user ? (
-              <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                   <div className="creator-avatar">
                     {(user.displayName || user.email || "U")[0].toUpperCase()}
@@ -883,6 +981,15 @@ export default function App() {
                     {user.displayName || user.email.split('@')[0]}
                   </span>
                 </div>
+                <button
+                  className="btn-secondary"
+                  style={{ padding: '0.4rem 0.75rem', fontSize: '0.78rem', display: 'flex', alignItems: 'center', gap: '0.35rem' }}
+                  onClick={() => setTfaModalOpen(true)}
+                  title="Manage Two-Factor Authentication Security"
+                >
+                  <i className={`fa-solid ${user2faConfig?.enabled ? 'fa-user-shield text-green' : 'fa-shield'}`}></i>
+                  {user2faConfig?.enabled ? '2FA Active' : '2FA Setup'}
+                </button>
                 <button className="btn-secondary" id="nav-logout-btn" onClick={handleLogout}>
                   Log Out
                 </button>
@@ -1201,6 +1308,66 @@ export default function App() {
             <div className="auth-page-wrapper">
               <AuthPanel initialError={initialError} />
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal - 2FA Security Setup Wizard */}
+      {tfaModalOpen && (
+        <TwoFactorModal
+          user={user}
+          user2faStatus={user2faConfig}
+          onSave2FA={handleSave2FA}
+          onClose={() => setTfaModalOpen(false)}
+          showToast={showToast}
+        />
+      )}
+
+      {/* Modal - 2FA Verification Login Challenge */}
+      {tfaChallengeOpen && (
+        <div className="modal-backdrop" style={{ zIndex: 9999 }}>
+          <div className="tfa-modal-container" style={{ maxWidth: '420px' }}>
+            <div className="modal-header">
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                <div className="tfa-icon-shield">
+                  <i className="fa-solid fa-lock"></i>
+                </div>
+                <div>
+                  <h2 className="modal-title">2FA Security Check</h2>
+                  <p className="modal-subtitle">Enter standard 6-digit Authenticator or backup code.</p>
+                </div>
+              </div>
+            </div>
+
+            <form onSubmit={handleVerify2faChallenge} className="tfa-content-body" style={{ marginTop: '1rem' }}>
+              {tfaChallengeError && (
+                <p className="tfa-error-msg">
+                  <i className="fa-solid fa-circle-exclamation"></i> {tfaChallengeError}
+                </p>
+              )}
+
+              <div className="form-field" style={{ margin: '0 auto 1.5rem' }}>
+                <label className="form-label" style={{ textAlign: 'center' }}>Authenticator Passcode</label>
+                <input
+                  type="text"
+                  className="form-input tfa-code-input"
+                  placeholder="000000"
+                  value={tfaCodeInput}
+                  onChange={(e) => setTfaCodeInput(e.target.value)}
+                  autoFocus
+                  required
+                />
+              </div>
+
+              <div className="wizard-action-footer">
+                <button type="button" className="btn-secondary" onClick={handleLogout}>
+                  Sign Out
+                </button>
+                <button type="submit" className="btn-primary" disabled={!tfaCodeInput.trim()}>
+                  Verify Passcode
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}
@@ -2544,7 +2711,16 @@ function LiveBackerTicker({ projects = [], currency = 'USD', onSelectProject, sh
       <div className="ticker-scroll-container">
         <div className={`ticker-track ${isPaused ? 'paused' : ''}`}>
           {tickerItems.concat(tickerItems).map((item, idx) => (
-            <div key={`${item.id}-${idx}`} className="ticker-pill-item">
+            <div
+              key={`${item.id}-${idx}`}
+              className="ticker-pill-item"
+              style={{ cursor: 'pointer' }}
+              onClick={() => {
+                const matched = projects.find(p => p.title.toLowerCase().includes(item.projectTitle.toLowerCase()) || item.projectTitle.toLowerCase().includes(p.title.toLowerCase()));
+                if (matched && onSelectProject) onSelectProject(matched.id);
+              }}
+              title="Click to view campaign"
+            >
               <div className="ticker-avatar">{item.avatar}</div>
               <div className="ticker-item-content">
                 <span className="ticker-user-name">{item.name}</span>
@@ -4368,7 +4544,7 @@ function AuthPanel({ initialError }) {
 // ============================================================================
 // CREATOR DASHBOARD VIEW
 // ============================================================================
-function CreatorDashboardView({ projects, donations, user, setView, currency, onSelectProject }) {
+function CreatorDashboardView({ projects, donations, user, setView, currency, onSelectProject, showToast }) {
   const creatorName = user?.displayName || user?.email?.split('@')[0] || "";
   const myProjects = projects.filter(p => p.creator.name === creatorName);
 

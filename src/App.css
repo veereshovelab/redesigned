@@ -1917,3 +1917,191 @@
     color: var(--text-secondary);
     line-height: 1.35;
 }
+
+/* ==========================================
+   Two-Factor Authentication (2FA) Styles
+   ========================================== */
+.tfa-modal-container {
+    background: var(--bg-surface);
+    border: 1px solid var(--border-standard);
+    border-radius: 24px;
+    padding: 2rem;
+    max-width: 540px;
+    width: 92%;
+    box-shadow: 0 24px 48px rgba(0, 0, 0, 0.45);
+    position: relative;
+    animation: slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.tfa-icon-shield {
+    width: 44px;
+    height: 44px;
+    border-radius: 12px;
+    background: var(--accent-brand-light);
+    color: var(--accent-brand);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.25rem;
+}
+
+.tfa-status-banner {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.85rem;
+    padding: 1rem 1.25rem;
+    border-radius: 16px;
+    border: 1px solid var(--border-standard);
+    background: var(--bg-main);
+}
+
+.tfa-status-banner.active {
+    border-color: rgba(16, 185, 129, 0.4);
+    background: rgba(16, 185, 129, 0.06);
+}
+
+.tfa-step-wizard {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin: 1.25rem 0 1.5rem;
+    padding: 0 0.5rem;
+}
+
+.tfa-step-item {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    opacity: 0.5;
+    transition: all 0.2s ease;
+}
+
+.tfa-step-item.active {
+    opacity: 1;
+}
+
+.tfa-step-num {
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    background: var(--bg-main);
+    border: 1px solid var(--border-standard);
+    color: var(--text-muted);
+    font-size: 0.75rem;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.tfa-step-item.active .tfa-step-num {
+    background: var(--accent-brand);
+    color: #ffffff;
+    border-color: var(--accent-brand);
+}
+
+.tfa-step-label {
+    font-size: 0.8rem;
+    font-weight: 700;
+    color: var(--text-primary);
+}
+
+.tfa-step-line {
+    flex: 1;
+    height: 2px;
+    background: var(--border-standard);
+    margin: 0 0.75rem;
+}
+
+.tfa-qr-card {
+    background: var(--bg-main);
+    border: 1px solid var(--border-standard);
+    border-radius: 20px;
+    padding: 1.5rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1.25rem;
+}
+
+.tfa-qr-img {
+    width: 180px;
+    height: 180px;
+    border-radius: 12px;
+    border: 4px solid #ffffff;
+    box-shadow: var(--shadow-md);
+}
+
+.tfa-secret-box {
+    width: 100%;
+    text-align: center;
+    background: var(--bg-surface);
+    border: 1px solid var(--border-standard);
+    border-radius: 12px;
+    padding: 0.75rem;
+}
+
+.tfa-secret-code {
+    font-family: monospace;
+    font-size: 1rem;
+    font-weight: 700;
+    letter-spacing: 2px;
+    color: var(--accent-brand);
+}
+
+.tfa-code-input {
+    font-family: monospace !important;
+    font-size: 1.75rem !important;
+    letter-spacing: 0.6rem !important;
+    text-align: center !important;
+    font-weight: 800 !important;
+    padding: 0.75rem !important;
+    border-radius: 14px !important;
+}
+
+.tfa-error-msg {
+    color: #ef4444;
+    font-size: 0.825rem;
+    font-weight: 600;
+    background: rgba(239, 68, 68, 0.1);
+    border: 1px solid rgba(239, 68, 68, 0.3);
+    padding: 0.6rem 0.85rem;
+    border-radius: 10px;
+    margin-bottom: 1rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.tfa-backup-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 0.6rem;
+    background: var(--bg-main);
+    border: 1px solid var(--border-standard);
+    border-radius: 16px;
+    padding: 1rem;
+}
+
+.tfa-backup-pill {
+    background: var(--bg-surface);
+    border: 1px solid var(--border-standard);
+    border-radius: 10px;
+    padding: 0.5rem 0.75rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-family: monospace;
+    font-size: 0.88rem;
+    font-weight: 700;
+}
+
+.tfa-backup-idx {
+    color: var(--text-muted);
+    font-size: 0.75rem;
+}
+
+.tfa-backup-val {
+    color: var(--text-primary);
+    letter-spacing: 1px;
+}
