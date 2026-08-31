@@ -789,7 +789,7 @@ export default function App() {
           <div className="nav-left">
             <div className="logo-section" id="brand-logo-btn" onClick={() => { setView("home"); setSelectedProjectId(null); setMobileNavOpen(false); }}>
               <span className="logo-icon">V</span>
-              <span className="logo-text">VORYNX</span>
+              <span className="logo-text">VORYNX <span className="logo-beta">BETA</span></span>
             </div>
             <nav className="nav-quick-links">
               <button className="nav-link-btn" onClick={() => { setView("home"); setSelectedProjectId(null); }}>

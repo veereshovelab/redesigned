@@ -160,20 +160,39 @@ body {
     font-size: 1.4rem;
     font-weight: 800;
     font-family: var(--font-heading);
-    color: var(--accent-brand);
-    background: var(--accent-brand-light);
+    color: #ffffff;
+    background: linear-gradient(135deg, var(--accent-brand) 0%, #7c3aed 100%);
     width: 34px;
     height: 34px;
     display: flex;
     align-items: center;
     justify-content: center;
     border-radius: 9px;
-    box-shadow: var(--shadow-sm);
-    transition: transform 0.2s ease;
+    box-shadow: 0 2px 8px rgba(79, 70, 229, 0.35);
+    transition: transform 0.25s ease, box-shadow 0.25s ease;
+    position: relative;
+    overflow: hidden;
+}
+
+.logo-icon::after {
+    content: '';
+    position: absolute;
+    top: -60%;
+    left: -60%;
+    width: 60%;
+    height: 220%;
+    background: rgba(255, 255, 255, 0.25);
+    transform: skewX(-20deg) translateX(-100%);
+    transition: transform 0.45s ease;
 }
 
 .logo-section:hover .logo-icon {
     transform: rotate(-5deg) scale(1.08);
+    box-shadow: 0 4px 16px rgba(79, 70, 229, 0.5);
+}
+
+.logo-section:hover .logo-icon::after {
+    transform: skewX(-20deg) translateX(350%);
 }
 
 .logo-text {
@@ -182,6 +201,24 @@ body {
     font-family: var(--font-heading);
     letter-spacing: -0.5px;
     color: var(--text-primary);
+    display: flex;
+    align-items: center;
+    gap: 0.45rem;
+}
+
+.logo-beta {
+    font-size: 0.6rem;
+    font-weight: 700;
+    letter-spacing: 0.8px;
+    text-transform: uppercase;
+    color: var(--accent-brand);
+    background: var(--accent-brand-light);
+    border: 1px solid rgba(79, 70, 229, 0.25);
+    padding: 0.1rem 0.38rem;
+    border-radius: 4px;
+    line-height: 1.5;
+    align-self: center;
+    margin-top: 1px;
 }
 
 .nav-quick-links {
@@ -207,8 +244,14 @@ body {
 }
 
 .nav-link-btn:hover {
-    background: var(--border-light);
-    color: var(--text-primary);
+    background: var(--accent-brand-light);
+    color: var(--accent-brand);
+}
+
+.nav-link-btn.active {
+    color: var(--accent-brand);
+    background: var(--accent-brand-light);
+    font-weight: 600;
 }
 
 .nav-link-with-badge {
