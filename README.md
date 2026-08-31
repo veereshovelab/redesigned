@@ -1,5 +1,11 @@
 # Vorynx - Zero-Barrier Crowdfunding Platform
 
+![Last Updated](https://img.shields.io/badge/last%20updated-August%202026-blue?style=flat-square)
+![React](https://img.shields.io/badge/React-19-61DAFB?style=flat-square&logo=react)
+![Vite](https://img.shields.io/badge/Vite-latest-646CFF?style=flat-square&logo=vite)
+![Supabase](https://img.shields.io/badge/Supabase-realtime-3ECF8E?style=flat-square&logo=supabase)
+![Firebase](https://img.shields.io/badge/Firebase-auth-FFCA28?style=flat-square&logo=firebase)
+
 Vorynx is a modern crowdfunding and payment gateway platform built for creators, startups, and innovators. It seamlessly integrates direct UPI QR payment collection, transaction verification, and creator dashboards with Supabase and Firebase authentication.
 
 ## 🚀 Features
@@ -59,3 +65,17 @@ Vorynx is a modern crowdfunding and payment gateway platform built for creators,
    ```bash
    npm run dev
    ```
+
+## 🤝 Contributing
+
+Contributions, issues, and feature requests are welcome! Feel free to open a pull request or file an issue on GitHub.
+
+1. Fork the repository
+2. Create your feature branch: `git checkout -b feature/your-feature`
+3. Commit your changes: `git commit -m 'Add some feature'`
+4. Push to the branch: `git push origin feature/your-feature`
+5. Open a Pull Request
+
+## 📄 License
+
+This project is open source. See the repository for licensing details.
