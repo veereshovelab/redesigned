@@ -1,6 +1,6 @@
 # Vorynx - Zero-Barrier Crowdfunding Platform
 
-![Last Updated](https://img.shields.io/badge/last%20updated-August%202026-blue?style=flat-square)
+![Last Updated](https://img.shields.io/badge/last%20updated-September%202026-blue?style=flat-square)
 ![React](https://img.shields.io/badge/React-19-61DAFB?style=flat-square&logo=react)
 ![Vite](https://img.shields.io/badge/Vite-latest-646CFF?style=flat-square&logo=vite)
 ![Supabase](https://img.shields.io/badge/Supabase-realtime-3ECF8E?style=flat-square&logo=supabase)
@@ -79,3 +79,11 @@ Contributions, issues, and feature requests are welcome! Feel free to open a pul
 ## 📄 License
 
 This project is open source. See the repository for licensing details.
+
+---
+
+## 📝 Changelog
+
+### September 2026
+- Updated project documentation and badges
+- Ongoing improvements to UI/UX and platform stability
