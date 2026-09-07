@@ -38,6 +38,12 @@
     
     --font-heading: 'Outfit', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
     --font-body: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+
+    /* Custom Easing & Motion Tokens */
+    --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
+    --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+    --ease-smooth: cubic-bezier(0.4, 0, 0.2, 1);
+    --transition-theme: background-color 0.35s var(--ease-smooth), color 0.35s var(--ease-smooth), border-color 0.35s var(--ease-smooth), box-shadow 0.35s var(--ease-smooth);
 }
 
 [data-theme="dark"] {
@@ -73,6 +79,10 @@
     --shadow-xl: 0 20px 30px rgba(0, 0, 0, 0.6);
 }
 
+html {
+    scroll-behavior: smooth;
+}
+
 * {
     margin: 0;
     padding: 0;
@@ -87,6 +97,94 @@ body {
     overflow-x: hidden;
     line-height: 1.6;
     -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+    transition: var(--transition-theme);
+}
+
+/* Global Smooth Theme Transitions */
+.vorynx-app,
+.vorynx-header,
+.vorynx-main,
+.hero-spotlight,
+.profile-dropdown-menu,
+.shortcuts-modal-card,
+.modal-content,
+.tfa-modal-container,
+.calc-widget-card,
+.stretch-goals-container,
+.category-filter-bar {
+    transition: var(--transition-theme);
+}
+
+/* GPU Hardware Acceleration Helper */
+.gpu-accelerated {
+    will-change: transform, opacity;
+    transform: translateZ(0);
+    backface-visibility: hidden;
+}
+
+/* Skeleton Shimmer Loading Engine */
+.skeleton-box {
+    display: inline-block;
+    height: 1em;
+    position: relative;
+    overflow: hidden;
+    background-color: var(--border-light);
+    border-radius: 8px;
+    width: 100%;
+}
+
+.skeleton-box::after {
+    position: absolute;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    transform: translateX(-100%);
+    background-image: linear-gradient(
+        90deg,
+        rgba(255, 255, 255, 0) 0,
+        rgba(255, 255, 255, 0.2) 20%,
+        rgba(255, 255, 255, 0.4) 60%,
+        rgba(255, 255, 255, 0)
+    );
+    animation: shimmerWave 1.6s infinite var(--ease-smooth);
+    content: '';
+}
+
+[data-theme="dark"] .skeleton-box::after {
+    background-image: linear-gradient(
+        90deg,
+        rgba(255, 255, 255, 0) 0,
+        rgba(255, 255, 255, 0.05) 20%,
+        rgba(255, 255, 255, 0.12) 60%,
+        rgba(255, 255, 255, 0)
+    );
+}
+
+@keyframes shimmerWave {
+    100% {
+        transform: translateX(100%);
+    }
+}
+
+/* View Transition Fade/Scale Effects */
+.page-view-enter,
+.view-transition-enter {
+    animation: pageViewEnter 0.35s var(--ease-out-expo) forwards;
+    will-change: opacity, transform;
+}
+
+@keyframes pageViewEnter {
+    from {
+        opacity: 0;
+        transform: translateY(10px) scale(0.99);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
 }
 
 /* Custom Scrollbar */
@@ -556,12 +654,17 @@ body {
     font-size: 0.875rem;
     font-weight: 500;
     cursor: pointer;
-    transition: all 0.2s ease;
+    transition: all 0.25s var(--ease-out-expo);
 }
 
 .category-tab:hover {
     color: var(--text-primary);
     background: var(--border-light);
+    transform: translateY(-1px);
+}
+
+.category-tab:active {
+    transform: scale(0.96);
 }
 
 .category-tab.active {
@@ -569,9 +672,10 @@ body {
     background: var(--accent-brand-light);
     border-color: transparent;
     font-weight: 600;
+    box-shadow: 0 2px 8px rgba(79, 70, 229, 0.15);
 }
 
-/* Buttons */
+/* Buttons with Tactile Spring Press Physics */
 .btn-primary {
     background: var(--accent-brand);
     color: #ffffff;
@@ -582,22 +686,25 @@ body {
     padding: 0.6rem 1.4rem;
     border-radius: 8px;
     cursor: pointer;
-    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    transition: all 0.22s var(--ease-out-expo);
     display: inline-flex;
     align-items: center;
     justify-content: center;
     gap: 0.5rem;
     box-shadow: var(--shadow-sm);
+    will-change: transform, box-shadow;
 }
 
 .btn-primary:hover {
     background: var(--accent-brand-hover);
-    box-shadow: 0 4px 12px rgba(79, 70, 229, 0.2);
-    transform: translateY(-1px);
+    box-shadow: 0 6px 16px rgba(79, 70, 229, 0.3);
+    transform: translateY(-1.5px);
 }
 
 .btn-primary:active {
-    transform: translateY(0);
+    transform: scale(0.96) translateY(0);
+    box-shadow: 0 2px 6px rgba(79, 70, 229, 0.2);
+    transition: transform 0.1s var(--ease-out-expo);
 }
 
 .btn-secondary {
@@ -609,15 +716,23 @@ body {
     padding: 0.6rem 1.4rem;
     border-radius: 8px;
     cursor: pointer;
-    transition: all 0.2s ease;
+    transition: all 0.22s var(--ease-out-expo);
     display: inline-flex;
     align-items: center;
     justify-content: center;
+    will-change: transform, border-color, background;
 }
 
 .btn-secondary:hover {
     background: var(--border-light);
     border-color: #cbd5e1;
+    transform: translateY(-1.5px);
+    box-shadow: var(--shadow-sm);
+}
+
+.btn-secondary:active {
+    transform: scale(0.96) translateY(0);
+    transition: transform 0.1s var(--ease-out-expo);
 }
 
 .btn-text {
@@ -627,11 +742,16 @@ body {
     font-weight: 600;
     font-size: 0.875rem;
     cursor: pointer;
-    transition: all 0.2s ease;
+    transition: all 0.2s var(--ease-smooth);
 }
 
 .btn-text:hover {
     color: var(--accent-brand);
+    transform: translateY(-0.5px);
+}
+
+.btn-text:active {
+    transform: scale(0.97);
 }
 
 /* Main Container */
@@ -1304,32 +1424,38 @@ body {
 }
 
 /* Modals */
-.modal-overlay {
+.modal-overlay,
+.modal-backdrop {
     position: fixed;
     top: 0;
     left: 0;
     width: 100%;
     height: 100%;
-    background: rgba(15, 23, 42, 0.4);
-    backdrop-filter: blur(8px);
+    background: rgba(15, 23, 42, 0.45);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
     z-index: 1000;
     display: flex;
     align-items: center;
     justify-content: center;
     padding: 1.5rem;
-    animation: fadeIn 0.3s ease;
+    animation: fadeIn 0.3s var(--ease-out-expo);
+    will-change: opacity;
 }
 
-.modal-content {
+.modal-content,
+.tfa-modal-container,
+.shortcuts-modal-card {
     background: var(--bg-surface);
     border: 1px solid var(--border-standard);
     border-radius: 24px;
-    max-width: 520px;
+    max-width: 540px;
     width: 100%;
     padding: 2.5rem;
     box-shadow: var(--shadow-xl);
     position: relative;
-    animation: slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    animation: slideUp 0.35s var(--ease-out-expo);
+    will-change: transform, opacity;
 }
 
 .modal-close-btn {
@@ -1485,18 +1611,18 @@ select.form-input {
 
 /* Keyframes */
 @keyframes fadeIn {
-    from { opacity: 0; }
-    to { opacity: 1; }
+    from { opacity: 0; transform: scale(0.98); }
+    to { opacity: 1; transform: scale(1); }
 }
 
 @keyframes slideUp {
     from {
         opacity: 0;
-        transform: translateY(24px);
+        transform: translateY(20px) scale(0.97);
     }
     to {
         opacity: 1;
-        transform: translateY(0);
+        transform: translateY(0) scale(1);
     }
 }
 

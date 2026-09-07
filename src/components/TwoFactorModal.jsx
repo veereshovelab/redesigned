@@ -180,7 +180,7 @@ export default function TwoFactorModal({ user, user2faStatus, onSave2FA, onClose
 
             {/* Step 1: Scan QR Code */}
             {step === 1 && (
-              <div style={{ animation: 'fadeIn 0.3s ease' }}>
+              <div className="page-view-enter">
                 <p style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', marginBottom: '1.25rem' }}>
                   Use any authenticator application (e.g. <strong>Google Authenticator</strong>, <strong>Authy</strong>, <strong>1Password</strong>, or <strong>Microsoft Authenticator</strong>) to scan the QR code below:
                 </p>
@@ -189,7 +189,7 @@ export default function TwoFactorModal({ user, user2faStatus, onSave2FA, onClose
                   {qrCodeUrl ? (
                     <img src={qrCodeUrl} alt="2FA QR Code" className="tfa-qr-img" />
                   ) : (
-                    <div style={{ padding: '2rem', color: 'var(--text-muted)' }}>Generating QR Code...</div>
+                    <div style={{ padding: '2rem', color: 'var(--text-muted)' }} className="skeleton-box">Generating QR Code...</div>
                   )}
 
                   <div className="tfa-secret-box">
@@ -212,7 +212,7 @@ export default function TwoFactorModal({ user, user2faStatus, onSave2FA, onClose
 
             {/* Step 2: Verify Passcode */}
             {step === 2 && (
-              <form onSubmit={handleVerifyStep} style={{ animation: 'fadeIn 0.3s ease' }}>
+              <form onSubmit={handleVerifyStep} className="page-view-enter">
                 <p style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', marginBottom: '1.25rem' }}>
                   Enter the 6-digit code currently displayed in your Authenticator app to confirm setup:
                 </p>
@@ -244,7 +244,7 @@ export default function TwoFactorModal({ user, user2faStatus, onSave2FA, onClose
 
             {/* Step 3: Backup Recovery Codes */}
             {step === 3 && (
-              <div style={{ animation: 'fadeIn 0.3s ease' }}>
+              <div className="page-view-enter">
                 <div className="tfa-status-banner active" style={{ marginBottom: '1.25rem' }}>
                   <i className="fa-solid fa-circle-check text-green"></i>
                   <div>
