@@ -85,5 +85,6 @@ This project is open source. See the repository for licensing details.
 ## 📝 Changelog
 
 ### September 2026
+- Added Community Q&A filtering and upvote micro-interaction toast notifications
 - Updated project documentation and badges
 - Ongoing improvements to UI/UX and platform stability

@@ -5479,6 +5479,12 @@ function CommunityQnASection({ project, user, showToast }) {
   const [filter, setFilter] = useState("all");
   const [newQuestionText, setNewQuestionText] = useState("");
 
+  const filteredQuestions = questions.filter((q) => {
+    if (filter === "answered") return q.answer !== null;
+    if (filter === "unanswered") return q.answer === null;
+    return true;
+  });
+
   const handleAddQuestion = (e) => {
     e.preventDefault();
     if (!newQuestionText.trim()) return;
@@ -5501,14 +5507,27 @@ function CommunityQnASection({ project, user, showToast }) {
     if (showToast) showToast("Question posted to creator community Q&A!", "success");
   };
 
- const handleToggleUpvote = (id) => {
-  setQuestions((prev) => prev.map((q) => {
-    if (q.id === id) {
-      return { ...q, userUpvoted: !q.userUpvoted, upvotes: q.userUpvoted ? q.upvotes - 1 : q.upvotes + 1 };
-    }
-    return q;
-  }));
- }
+  const handleToggleUpvote = (id) => {
+    setQuestions((prev) =>
+      prev.map((q) => {
+        if (q.id === id) {
+          const nextUpvoted = !q.userUpvoted;
+          if (showToast) {
+            showToast(
+              nextUpvoted ? "Upvoted question!" : "Removed upvote from question.",
+              nextUpvoted ? "info" : "info"
+            );
+          }
+          return {
+            ...q,
+            userUpvoted: nextUpvoted,
+            upvotes: nextUpvoted ? q.upvotes + 1 : q.upvotes - 1
+          };
+        }
+        return q;
+      })
+    );
+  };
 
   return (
     <div className="tab-pane-content">
