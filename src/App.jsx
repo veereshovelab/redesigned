@@ -22,6 +22,7 @@ import {
 } from './firebaseConfig';
 import { supabase } from './supabaseClient';
 import TwoFactorModal from './components/TwoFactorModal';
+import CommandPalette from './components/CommandPalette';
 import { verifyTotpToken } from './utils/totp';
 
 // ==========================================
@@ -258,6 +259,7 @@ export default function App() {
   // Certificate & Backer Portfolio States
   const [activeCertificate, setActiveCertificate] = useState(null);
   const [portfolioOpen, setPortfolioOpen] = useState(false);
+  const [commandPaletteOpen, setCommandPaletteOpen] = useState(false);
 
   const toggleCompare = (projectId, e) => {
     if (e) {
@@ -562,6 +564,11 @@ export default function App() {
         }
       }
 
+      if ((e.metaKey || e.ctrlKey) && (e.key === 'k' || e.key === 'K')) {
+        e.preventDefault();
+        setCommandPaletteOpen((prev) => !prev);
+      }
+
       if ((e.key === '?' || (e.shiftKey && e.key === '?')) && !isInputActive) {
         e.preventDefault();
         setShortcutsOpen((prev) => !prev);
@@ -579,6 +586,7 @@ export default function App() {
       }
 
       if (e.key === 'Escape') {
+        if (commandPaletteOpen) setCommandPaletteOpen(false);
         if (activeCertificate) setActiveCertificate(null);
         if (portfolioOpen) setPortfolioOpen(false);
         if (shortcutsOpen) setShortcutsOpen(false);
@@ -594,7 +602,7 @@ export default function App() {
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [authOpen, shareModalProject, checkoutOpen, shortcutsOpen, theme]);
+  }, [authOpen, shareModalProject, checkoutOpen, shortcutsOpen, theme, commandPaletteOpen]);
 
   // Scroll listener for floating scroll-to-top button
   useEffect(() => {
@@ -916,6 +924,16 @@ export default function App() {
             >
               <i className="fa-solid fa-keyboard text-purple" style={{ color: '#a855f7' }}></i>
               <span>Shortcuts</span>
+            </button>
+
+            {/* Global Command Palette Button */}
+            <button
+              className="theme-toggle-btn cmd-palette-nav-btn"
+              onClick={() => setCommandPaletteOpen(true)}
+              title="Global Command Palette (Ctrl+K / Cmd+K)"
+            >
+              <i className="fa-solid fa-terminal" style={{ color: 'var(--accent-brand)' }}></i>
+              <span>Cmd+K</span>
             </button>
 
             {/* Saved Bookmarks Navigation Button */}
@@ -1320,6 +1338,30 @@ export default function App() {
           showToast={showToast}
         />
       )}
+
+      {/* Modal - Global Command Palette (Ctrl+K / Cmd+K) */}
+      <CommandPalette
+        isOpen={commandPaletteOpen}
+        onClose={() => setCommandPaletteOpen(false)}
+        projects={projects}
+        setView={setView}
+        onSelectProject={(id) => {
+          setSelectedProjectId(id);
+          setView("details");
+        }}
+        theme={theme}
+        toggleTheme={toggleTheme}
+        currency={currency}
+        setCurrency={(curr) => {
+          setCurrency(curr);
+          localStorage.setItem('vorynx_currency', curr);
+        }}
+        setTfaModalOpen={setTfaModalOpen}
+        setPortfolioOpen={setPortfolioOpen}
+        setShortcutsOpen={setShortcutsOpen}
+        showToast={showToast}
+        protectAction={protectAction}
+      />
 
       {/* Modal - 2FA Verification Login Challenge */}
       {tfaChallengeOpen && (
