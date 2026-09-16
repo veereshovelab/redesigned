@@ -27,6 +27,7 @@ Vorynx is a modern crowdfunding and payment gateway platform built for creators,
 - **Creator Dashboard**: Monitor campaign metrics, track gross/net proceeds, platform fee breakdown, and transaction status.
 - **Admin Approval Console**: Review campaign proposals, verify funder UTR transaction IDs, and approve live campaigns.
 - **Multi-Auth Support**: Email/password, passwordless email links, Google, and GitHub OAuth powered by Firebase Auth.
+- **Two-Factor Authentication (2FA)**: RFC 6238 TOTP authenticator integration (Google Authenticator, Authy, 1Password) with dynamic QR code setup wizard, 6-digit verification, and downloadable single-use backup recovery codes.
 - **Serverless Payment Webhooks**: HMAC-SHA256 signature verification for Razorpay and Cashfree gateway webhooks to automatically mark donations as successful and update project funding metrics.
 - **Real-time Database**: Powered by Supabase for real-time campaign status and donation tracking.
 - **Responsive Modern UI**: Sleek dark/light theme, micro-animations, and mobile-responsive layouts.
@@ -84,7 +85,9 @@ This project is open source. See the repository for licensing details.
 
 ## 📝 Changelog
 
-### September 2026
-- Added Community Q&A filtering and upvote micro-interaction toast notifications
-- Updated project documentation and badges
-- Ongoing improvements to UI/UX and platform stability
+### Version 0.2.0 (September 2026)
+- Added RFC 6238 Two-Factor Authentication (2FA) setup wizard with live QR Code rendering, 6-digit TOTP validation, and downloadable backup recovery codes.
+- Added project [CHANGELOG.md](CHANGELOG.md) documenting release history and version tracking.
+- Ongoing UI/UX micro-interaction and security enhancements.
+
+See [CHANGELOG.md](CHANGELOG.md) for full release history.

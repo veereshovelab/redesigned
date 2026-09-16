@@ -1,0 +1,37 @@
+# Changelog
+
+All notable changes to the **Vorynx** project will be documented in this file.
+
+The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
+and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+
+---
+
+## [0.2.0] - 2026-09-16
+
+### 🚀 Added
+- **Two-Factor Authentication (2FA) & TOTP Integration**:
+  - Full RFC 6238 Time-Based One-Time Password (TOTP) standard implementation compatible with Google Authenticator, Authy, 1Password, and Microsoft Authenticator.
+  - Interactive multi-step setup wizard featuring live QR Code rendering, manual secret key display with 1-click clipboard copy, and code verification.
+  - Clock skew window tolerance (±30s) verification for reliable authentication.
+  - Single-use 8-character backup recovery codes with 1-click clipboard copy and downloadable `.txt` backup file export.
+  - Reactive 2FA activation status banner and security revocation controls in user account settings.
+
+### 🎨 Security & UX Improvements
+- Integrated context-aware toast notifications for 2FA activation, disabling, and code verification steps.
+- Security badge indicator and responsive modal dialogs.
+
+---
+
+## [0.1.0] - 2026-09-09
+
+### 🚀 Added
+- **Community Q&A Filtering & Toast Notifications**:
+  - Community question and answer section with reactive category filters and search.
+  - Instant upvote micro-interactions with context-aware toast alerts.
+- **UI Smoothness & Micro-Interactions Upgrade**:
+  - Smooth page view transition animations and dynamic hover effects.
+- **Navbar Styling**:
+  - Gradient logo icon, background shine animations, and BETA status badge.
+- **Documentation**:
+  - Standardized badges, contributing guidelines, and setup documentation in `README.md`.
