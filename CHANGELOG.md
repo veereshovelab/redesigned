@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.3.0] - 2026-09-16
+
+### 🚀 Added
+- **Global Command Palette (`Ctrl+K` / `Cmd+K`)**:
+  - Spotlight-style glassmorphic command search modal with instant fuzzy search across platform actions and live campaigns.
+  - Keyboard navigation controls (Arrow Up / Arrow Down, Enter to execute, Escape to dismiss).
+  - Quick action commands: Navigation (Home, Start Campaign, Creator Dashboard, Admin Console, UPI QR), Security (2FA, Portfolio, Shortcuts), and Preferences (Theme toggle, USD/INR currency switches).
+  - Dynamic campaign discovery: search and jump straight to any approved campaign detail view.
+  - Added dedicated `Cmd+K` trigger button in the main navigation header.
+
+---
+
 ## [0.2.0] - 2026-09-16
 
 ### 🚀 Added

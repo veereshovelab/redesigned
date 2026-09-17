@@ -62,6 +62,14 @@ const formatCurrency = (amount, currency = 'USD') => {
     const inr = Math.round(num * 85);
     return `₹${inr.toLocaleString('en-IN')}`;
   }
+  if (currency === 'EUR') {
+    const eur = Math.round(num * 0.92);
+    return `€${eur.toLocaleString('de-DE')}`;
+  }
+  if (currency === 'GBP') {
+    const gbp = Math.round(num * 0.78);
+    return `£${gbp.toLocaleString('en-GB')}`;
+  }
   return `$${Math.round(num).toLocaleString('en-US')}`;
 };
 
@@ -204,7 +212,7 @@ export default function App() {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("All");
 
-  // Currency State ($ USD or ₹ INR)
+  // Currency State ($ USD, ₹ INR, € EUR, £ GBP)
   const [currency, setCurrency] = useState(() => {
     try {
       return localStorage.getItem('vorynx_currency') || 'USD';
@@ -212,6 +220,19 @@ export default function App() {
       return 'USD';
     }
   });
+
+  // Notification Center State
+  const [notifOpen, setNotifOpen] = useState(false);
+  const [notifications, setNotifications] = useState([
+    { id: "n1", type: "success", title: "Helix-68 unlocked 100% Stretch Goal!", time: "10 mins ago", read: false },
+    { id: "n2", type: "info", title: "New backer joined Aura Hub project", time: "1 hour ago", read: false },
+    { id: "n3", type: "amber", title: "2FA Security check enabled for your account", time: "3 hours ago", read: true }
+  ]);
+
+  const markAllNotificationsRead = () => {
+    setNotifications(prev => prev.map(n => ({ ...n, read: true })));
+    showToast("All notifications marked as read.", "info");
+  };
 
   // Theme State ('light' | 'dark')
   const [theme, setTheme] = useState(() => {

@@ -22,7 +22,8 @@ Vorynx is a modern crowdfunding and payment gateway platform built for creators,
 - **Stretch-Goal Unlock Milestones**: Interactive 100%, 125%, 150%, and 200% community funding goal tiers with live unlock badges and remaining targets in active currency.
 - **Pledge Impact Calculator**: Real-time calculator widget enabling prospective backers to simulate custom pledge amounts and preview immediate funding % boosts and milestone progression.
 - **Backers & Receipts CSV Export**: 1-click export of transactions, UTR IDs, amounts, and dates in Creator and Admin consoles.
-- **Keyboard Shortcuts & Power UX**: Press `/` anywhere to instantly focus discovery search, press `Escape` to close active modals, and use the floating smooth scroll-to-top button.
+- **Global Command Palette (`Ctrl+K` / `Cmd+K`)**: Spotlight-style glassmorphic command search modal with arrow key navigation, instant fuzzy filtering for views, 2FA security, theme/currency settings, and live campaign discovery.
+- **Keyboard Shortcuts & Power UX**: Press `Ctrl+K` or `Cmd+K` for the command palette, press `/` anywhere to focus search, press `Escape` to close active modals, and use floating smooth scroll-to-top.
 - **Quick Pledge Boost Presets**: Instant +$5, +$10, +$25, +$50, and +$100 one-click pledge increments in checkout with real-time currency calculation.
 - **Creator Dashboard**: Monitor campaign metrics, track gross/net proceeds, platform fee breakdown, and transaction status.
 - **Admin Approval Console**: Review campaign proposals, verify funder UTR transaction IDs, and approve live campaigns.
@@ -85,9 +86,9 @@ This project is open source. See the repository for licensing details.
 
 ## 📝 Changelog
 
-### Version 0.2.0 (September 2026)
-- Added RFC 6238 Two-Factor Authentication (2FA) setup wizard with live QR Code rendering, 6-digit TOTP validation, and downloadable backup recovery codes.
-- Added project [CHANGELOG.md](CHANGELOG.md) documenting release history and version tracking.
-- Ongoing UI/UX micro-interaction and security enhancements.
+### Version 0.3.0 (September 2026)
+- Added **Global Command Palette (`Ctrl+K` / `Cmd+K`)** spotlight search modal for rapid keyboard navigation, theme/currency switching, 2FA settings, and live campaign discovery.
+- Added dedicated `Cmd+K` navigation header trigger button.
+- Updated project [CHANGELOG.md](CHANGELOG.md) documenting release history and version tracking.
 
 See [CHANGELOG.md](CHANGELOG.md) for full release history.
