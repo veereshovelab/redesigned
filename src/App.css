@@ -2451,3 +2451,64 @@
         color: #0f172a !important;
     }
 }
+
+/* ==========================================
+   Glassmorphism & Neon Glow Visual Upgrades
+   ========================================== */
+.hero-spotlight {
+    position: relative;
+    background: linear-gradient(135deg, rgba(15, 23, 42, 0.8) 0%, rgba(30, 27, 75, 0.75) 100%) !important;
+    backdrop-filter: blur(20px) !important;
+    -webkit-backdrop-filter: blur(20px) !important;
+    border: 1px solid rgba(99, 102, 241, 0.3) !important;
+    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.45), 0 0 35px rgba(99, 102, 241, 0.2) !important;
+    overflow: hidden;
+}
+
+.hero-spotlight::after {
+    content: '';
+    position: absolute;
+    top: -50%;
+    left: -50%;
+    width: 200%;
+    height: 200%;
+    background: radial-gradient(circle, rgba(99, 102, 241, 0.15) 0%, rgba(16, 185, 129, 0.08) 35%, transparent 70%);
+    animation: rotateAura 18s linear infinite;
+    pointer-events: none;
+    z-index: 0;
+}
+
+@keyframes rotateAura {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+.project-card {
+    background: rgba(15, 23, 42, 0.65) !important;
+    backdrop-filter: blur(16px) !important;
+    -webkit-backdrop-filter: blur(16px) !important;
+    border: 1px solid rgba(255, 255, 255, 0.12) !important;
+    transition: all 0.35s cubic-bezier(0.16, 1, 0.3, 1) !important;
+}
+
+.project-card:hover {
+    transform: translateY(-8px) scale(1.015) !important;
+    border-color: rgba(99, 102, 241, 0.65) !important;
+    box-shadow: 0 22px 45px rgba(0, 0, 0, 0.45), 0 0 30px rgba(99, 102, 241, 0.4) !important;
+}
+
+.card-badge {
+    background: rgba(15, 23, 42, 0.85) !important;
+    backdrop-filter: blur(10px) !important;
+    border: 1px solid rgba(99, 102, 241, 0.4) !important;
+    box-shadow: 0 0 12px rgba(99, 102, 241, 0.3) !important;
+}
+
+.tag-chip.active {
+    box-shadow: 0 0 18px rgba(99, 102, 241, 0.45) !important;
+    border-color: rgba(99, 102, 241, 0.7) !important;
+}
+
+.btn-primary:hover {
+    box-shadow: 0 0 25px rgba(99, 102, 241, 0.55), 0 6px 20px rgba(79, 70, 229, 0.4) !important;
+}

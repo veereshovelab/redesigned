@@ -19,6 +19,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - 1-click **Copy Pitch Summary Text** for instant email and update sharing.
   - Integrated "Pitch Report" button in campaign detail view and spotlight action in Global Command Palette (`Ctrl+K`).
 
+### 🎨 Visual Aesthetics & UX Upgrade
+- **Glassmorphism & Neon Glow Styling**:
+  - Implemented translucent backdrop glassmorphism on campaign cards, hero spotlight, and overlay modals.
+  - Added multi-color neon glow border hover physics and subtle animated aura lighting on curated spotlight cards.
+  - Enhanced category tag chip active glow states and button hover reflections.
+
 ---
 
 ## [0.3.0] - 2026-09-16

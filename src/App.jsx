@@ -1801,7 +1801,7 @@ function HomepageView({ projects, searchQuery, selectedCategory, setSelectedCate
             </span>
           </div>
           <div className="hero-spotlight reveal-on-scroll">
-            <div className="hero-media">
+            <div className="hero-media" style={{ position: 'relative', zIndex: 1 }}>
               <span className="hero-tag">Staff Pick</span>
               <button 
                 className={`card-compare-btn ${comparedProjectIds.includes(spotlightProj.id) ? 'active' : ''}`}
@@ -1821,7 +1821,7 @@ function HomepageView({ projects, searchQuery, selectedCategory, setSelectedCate
               </button>
               <img src={spotlightProj.image} alt={spotlightProj.title} />
             </div>
-            <div className="hero-details">
+            <div className="hero-details" style={{ position: 'relative', zIndex: 1 }}>
               <span className="hero-category">{spotlightProj.category}</span>
               <h1 className="hero-title">{spotlightProj.title}</h1>
               <p className="hero-desc">{spotlightProj.subtitle}</p>
