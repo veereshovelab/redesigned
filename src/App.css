@@ -2406,3 +2406,48 @@
     border-color: var(--accent-brand);
     color: var(--accent-brand);
 }
+
+/* ==========================================
+   Executive Pitch Summary Modal & Print Styles
+   ========================================== */
+.exec-summary-backdrop {
+    animation: fadeIn 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.exec-summary-modal {
+    animation: slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@media print {
+    body {
+        background: #ffffff !important;
+        color: #0f172a !important;
+    }
+    .modal-overlay.exec-summary-backdrop {
+        position: static !important;
+        background: transparent !important;
+        backdrop-filter: none !important;
+        padding: 0 !important;
+    }
+    .modal-card.exec-summary-modal {
+        max-width: 100% !important;
+        width: 100% !important;
+        max-height: none !important;
+        box-shadow: none !important;
+        border: none !important;
+        background: #ffffff !important;
+        color: #0f172a !important;
+        padding: 1rem !important;
+    }
+    .no-print {
+        display: none !important;
+    }
+    .exec-summary-body div {
+        background: #ffffff !important;
+        border-color: #e2e8f0 !important;
+        color: #0f172a !important;
+    }
+    .exec-summary-body p, .exec-summary-body span, .exec-summary-body h2 {
+        color: #0f172a !important;
+    }
+}

@@ -7,6 +7,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.4.0] - 2026-09-21
+
+### 🚀 Added
+- **Executive Pitch & Summary Report Generator**:
+  - Interactive printable PDF pitch deck & summary report modal (`ExecutiveSummaryModal`) for all campaigns.
+  - Performance & velocity metrics breakdown (Pledged, Goal, % Funded, Backers, Daily Velocity).
+  - Dynamic NPCI QR Code rendering for direct UPI donation support.
+  - 1-click **Print / Save PDF** export action formatted with clean `@media print` CSS rules.
+  - 1-click **Export JSON Summary** downloading full structured campaign pitch payload (`.json`).
+  - 1-click **Copy Pitch Summary Text** for instant email and update sharing.
+  - Integrated "Pitch Report" button in campaign detail view and spotlight action in Global Command Palette (`Ctrl+K`).
+
+---
+
 ## [0.3.0] - 2026-09-16
 
 ### 🚀 Added

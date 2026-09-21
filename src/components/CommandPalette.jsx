@@ -13,6 +13,7 @@ export default function CommandPalette({
   setTfaModalOpen,
   setPortfolioOpen,
   setShortcutsOpen,
+  onOpenPitchReport,
   showToast,
   protectAction
 }) {
@@ -129,6 +130,19 @@ export default function CommandPalette({
       shortcut: '?',
       action: () => {
         setShortcutsOpen?.(true);
+      }
+    },
+    {
+      id: 'doc-pitch-report',
+      category: '📄 Reports & Pitch Decks',
+      title: 'Export Executive Pitch Summary Report',
+      subtitle: 'Generate clean PDF pitch summary and JSON report for campaigns',
+      icon: 'fa-solid fa-file-contract',
+      iconColor: '#10b981',
+      action: () => {
+        if (projects && projects.length > 0) {
+          onOpenPitchReport?.(projects[0]);
+        }
       }
     },
 

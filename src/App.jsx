@@ -1,5 +1,5 @@
 /**
- * Vorynx - Zero-Barrier Crowdfunding Platform (v0.3.0)
+ * Vorynx - Zero-Barrier Crowdfunding Platform (v0.4.0)
  * Main Application Component & Router Interface
  */
 
@@ -23,6 +23,7 @@ import {
 import { supabase } from './supabaseClient';
 import TwoFactorModal from './components/TwoFactorModal';
 import CommandPalette from './components/CommandPalette';
+import ExecutiveSummaryModal from './components/ExecutiveSummaryModal';
 import { verifyTotpToken } from './utils/totp';
 
 // ==========================================
@@ -281,6 +282,7 @@ export default function App() {
   const [activeCertificate, setActiveCertificate] = useState(null);
   const [portfolioOpen, setPortfolioOpen] = useState(false);
   const [commandPaletteOpen, setCommandPaletteOpen] = useState(false);
+  const [summaryModalProject, setSummaryModalProject] = useState(null);
 
   const toggleCompare = (projectId, e) => {
     if (e) {
@@ -981,6 +983,16 @@ export default function App() {
               )}
             </button>
 
+            {/* Command Palette Trigger Button */}
+            <button
+              className="nav-pledges-btn cmd-palette-nav-btn"
+              onClick={() => setCommandPaletteOpen(true)}
+              title="Global Command Palette (Ctrl+K)"
+            >
+              <i className="fa-solid fa-terminal" style={{ color: '#a855f7' }}></i>
+              <span>Cmd+K</span>
+            </button>
+
             {/* My Pledges & Backer Portfolio Navigation Button */}
             <button 
               className="nav-pledges-btn"
@@ -1082,6 +1094,7 @@ export default function App() {
               toggleCompare={toggleCompare}
               showToast={showToast}
               onShare={(p) => setShareModalProject(p)}
+              onOpenPitchReport={(p) => setSummaryModalProject(p)}
               onPledge={(reward) => {
                 protectAction(() => {
                   setSelectedReward(reward);
@@ -1586,6 +1599,39 @@ export default function App() {
               setCheckoutOpen(true);
             });
           }}
+        />
+      )}
+
+      {/* Global Command Palette (Ctrl+K / Cmd+K) */}
+      <CommandPalette
+        isOpen={commandPaletteOpen}
+        onClose={() => setCommandPaletteOpen(false)}
+        projects={projects}
+        setView={setView}
+        onSelectProject={(id) => {
+          setSelectedProjectId(id);
+          setView("details");
+        }}
+        theme={theme}
+        toggleTheme={toggleTheme}
+        currency={currency}
+        setCurrency={setCurrency}
+        setTfaModalOpen={setTfaModalOpen}
+        setPortfolioOpen={setPortfolioOpen}
+        setShortcutsOpen={setShortcutsOpen}
+        onOpenPitchReport={(proj) => setSummaryModalProject(proj)}
+        showToast={showToast}
+        protectAction={protectAction}
+      />
+
+      {/* Executive Pitch & Summary Report Modal */}
+      {summaryModalProject && (
+        <ExecutiveSummaryModal
+          project={summaryModalProject}
+          isOpen={!!summaryModalProject}
+          onClose={() => setSummaryModalProject(null)}
+          currency={currency}
+          showToast={showToast}
         />
       )}
 
@@ -2094,7 +2140,7 @@ const getCategoryDetails = (category) => {
   }
 };
 
-function ProjectDetailView({ project, onBack, user, onPledge, onAddComment, onDeleteProject, currency, bookmarkedIds, toggleBookmark, onShare, comparedProjectIds = [], toggleCompare, showToast }) {
+function ProjectDetailView({ project, onBack, user, onPledge, onAddComment, onDeleteProject, currency, bookmarkedIds, toggleBookmark, onShare, onOpenPitchReport, comparedProjectIds = [], toggleCompare, showToast }) {
   const [activeTab, setActiveTab] = useState("story"); // 'story' | 'updates' | 'comments' | 'qna'
   const [commentInput, setCommentInput] = useState("");
 
@@ -2124,6 +2170,15 @@ function ProjectDetailView({ project, onBack, user, onPledge, onAddComment, onDe
         </span>
 
         <div className="detail-action-buttons-row">
+          <button 
+            type="button" 
+            className="btn-secondary"
+            onClick={() => onOpenPitchReport && onOpenPitchReport(project)}
+            title="Export Executive Pitch Summary (PDF/JSON)"
+          >
+            <i className="fa-solid fa-file-contract" style={{ color: '#10b981' }}></i>
+            <span>Pitch Report</span>
+          </button>
           <button 
             type="button" 
             className={`btn-secondary ${isCompared ? 'active' : ''}`}
