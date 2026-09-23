@@ -1,5 +1,6 @@
 # Vorynx - Zero-Barrier Crowdfunding Platform
 
+![Version](https://img.shields.io/badge/version-v0.4.0-10B981?style=flat-square)
 ![Last Updated](https://img.shields.io/badge/last%20updated-September%202026-blue?style=flat-square)
 ![React](https://img.shields.io/badge/React-19-61DAFB?style=flat-square&logo=react)
 ![Vite](https://img.shields.io/badge/Vite-latest-646CFF?style=flat-square&logo=vite)
