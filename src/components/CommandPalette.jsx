@@ -14,6 +14,7 @@ export default function CommandPalette({
   setPortfolioOpen,
   setShortcutsOpen,
   onOpenPitchReport,
+  onOpenAnalytics,
   showToast,
   protectAction
 }) {
@@ -142,6 +143,19 @@ export default function CommandPalette({
       action: () => {
         if (projects && projects.length > 0) {
           onOpenPitchReport?.(projects[0]);
+        }
+      }
+    },
+    {
+      id: 'doc-analytics-sim',
+      category: '📄 Reports & Pitch Decks',
+      title: 'Campaign Analytics & Velocity Simulator',
+      subtitle: 'Simulate funding growth, stretch goals, and daily run rates',
+      icon: 'fa-solid fa-chart-line',
+      iconColor: '#a855f7',
+      action: () => {
+        if (projects && projects.length > 0) {
+          onOpenAnalytics?.(projects[0]);
         }
       }
     },

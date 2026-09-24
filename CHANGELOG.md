@@ -7,6 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.5.0] - 2026-09-24
+
+### 🚀 Added
+- **Campaign Velocity & Goal Forecast Simulator (`CampaignAnalyticsModal`)**:
+  - Interactive funding velocity analytics & trajectory projection modal for all campaigns.
+  - Interactive sliders for **Daily New Backers Rate** (1 - 50 backers/day) and **Projected Average Pledge Amount** ($5 - $500).
+  - Real-time funding outcomes forecasting: Projected Total Raised, Goal Surplus/Deficit, Final Backer Count, and Stretch Goal Unlocks (100%, 125%, 150%, 200%).
+  - Multi-currency support across USD ($), INR (₹), EUR (€), and GBP (£).
+  - 1-click **Copy Forecast Report** action for pitch sharing.
+  - Integrated "Analytics" action button on campaign detail views and spotlight command item in Global Command Palette (`Ctrl+K`).
+
+---
+
 ## [0.4.0] - 2026-09-21
 
 ### 🚀 Added

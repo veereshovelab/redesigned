@@ -24,6 +24,7 @@ import { supabase } from './supabaseClient';
 import TwoFactorModal from './components/TwoFactorModal';
 import CommandPalette from './components/CommandPalette';
 import ExecutiveSummaryModal from './components/ExecutiveSummaryModal';
+import CampaignAnalyticsModal from './components/CampaignAnalyticsModal';
 import { verifyTotpToken } from './utils/totp';
 
 // ==========================================
@@ -283,6 +284,7 @@ export default function App() {
   const [portfolioOpen, setPortfolioOpen] = useState(false);
   const [commandPaletteOpen, setCommandPaletteOpen] = useState(false);
   const [summaryModalProject, setSummaryModalProject] = useState(null);
+  const [analyticsModalProject, setAnalyticsModalProject] = useState(null);
 
   const toggleCompare = (projectId, e) => {
     if (e) {
@@ -1095,6 +1097,7 @@ export default function App() {
               showToast={showToast}
               onShare={(p) => setShareModalProject(p)}
               onOpenPitchReport={(p) => setSummaryModalProject(p)}
+              onOpenAnalytics={(p) => setAnalyticsModalProject(p)}
               onPledge={(reward) => {
                 protectAction(() => {
                   setSelectedReward(reward);
@@ -1620,6 +1623,7 @@ export default function App() {
         setPortfolioOpen={setPortfolioOpen}
         setShortcutsOpen={setShortcutsOpen}
         onOpenPitchReport={(proj) => setSummaryModalProject(proj)}
+        onOpenAnalytics={(proj) => setAnalyticsModalProject(proj)}
         showToast={showToast}
         protectAction={protectAction}
       />
@@ -1630,6 +1634,17 @@ export default function App() {
           project={summaryModalProject}
           isOpen={!!summaryModalProject}
           onClose={() => setSummaryModalProject(null)}
+          currency={currency}
+          showToast={showToast}
+        />
+      )}
+
+      {/* Campaign Analytics & Velocity Simulator Modal */}
+      {analyticsModalProject && (
+        <CampaignAnalyticsModal
+          project={analyticsModalProject}
+          isOpen={!!analyticsModalProject}
+          onClose={() => setAnalyticsModalProject(null)}
           currency={currency}
           showToast={showToast}
         />
@@ -2140,7 +2155,7 @@ const getCategoryDetails = (category) => {
   }
 };
 
-function ProjectDetailView({ project, onBack, user, onPledge, onAddComment, onDeleteProject, currency, bookmarkedIds, toggleBookmark, onShare, onOpenPitchReport, comparedProjectIds = [], toggleCompare, showToast }) {
+function ProjectDetailView({ project, onBack, user, onPledge, onAddComment, onDeleteProject, currency, bookmarkedIds, toggleBookmark, onShare, onOpenPitchReport, onOpenAnalytics, comparedProjectIds = [], toggleCompare, showToast }) {
   const [activeTab, setActiveTab] = useState("story"); // 'story' | 'updates' | 'comments' | 'qna'
   const [commentInput, setCommentInput] = useState("");
 
@@ -2170,6 +2185,15 @@ function ProjectDetailView({ project, onBack, user, onPledge, onAddComment, onDe
         </span>
 
         <div className="detail-action-buttons-row">
+          <button 
+            type="button" 
+            className="btn-secondary"
+            onClick={() => onOpenAnalytics && onOpenAnalytics(project)}
+            title="Simulate funding velocity & stretch goals"
+          >
+            <i className="fa-solid fa-chart-line" style={{ color: '#a855f7' }}></i>
+            <span>Analytics</span>
+          </button>
           <button 
             type="button" 
             className="btn-secondary"
