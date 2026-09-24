@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.6.0] - 2026-09-24
+
+### 🚀 Added
+- **Backer Hall of Fame & Supporter Leaderboard (`BackerHallOfFameModal`)**:
+  - Interactive community supporter wall modal displaying top contributor rankings with custom badges (Gold Crown #1, Silver Shield #2, Bronze Star #3).
+  - Real-time backer activity stream feed showing verified pledges and timestamps.
+  - Community Achievement Trophy milestones (e.g. *First 100 Backers*, *50% Funding Threshold*, *100% Core Funded*, *Super Backer Club*).
+  - 1-click **Copy Leaderboard Roster** for campaign creator updates and social announcements.
+  - Integrated "Hall of Fame" button on campaign detail views and spotlight command item in Global Command Palette (`Ctrl+K`).
+
+---
+
 ## [0.5.0] - 2026-09-24
 
 ### 🚀 Added

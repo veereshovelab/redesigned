@@ -15,6 +15,7 @@ export default function CommandPalette({
   setShortcutsOpen,
   onOpenPitchReport,
   onOpenAnalytics,
+  onOpenHallOfFame,
   showToast,
   protectAction
 }) {
@@ -156,6 +157,19 @@ export default function CommandPalette({
       action: () => {
         if (projects && projects.length > 0) {
           onOpenAnalytics?.(projects[0]);
+        }
+      }
+    },
+    {
+      id: 'doc-backer-hof',
+      category: '📄 Reports & Pitch Decks',
+      title: 'Backer Hall of Fame & Supporter Leaderboard',
+      subtitle: 'View top contributors, live pledge stream, and community trophies',
+      icon: 'fa-solid fa-trophy',
+      iconColor: '#f59e0b',
+      action: () => {
+        if (projects && projects.length > 0) {
+          onOpenHallOfFame?.(projects[0]);
         }
       }
     },

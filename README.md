@@ -23,6 +23,7 @@ Vorynx is a modern crowdfunding and payment gateway platform built for creators,
 - **Stretch-Goal Unlock Milestones**: Interactive 100%, 125%, 150%, and 200% community funding goal tiers with live unlock badges and remaining targets in active currency.
 - **Pledge Impact Calculator**: Real-time calculator widget enabling prospective backers to simulate custom pledge amounts and preview immediate funding % boosts and milestone progression.
 - **Backers & Receipts CSV Export**: 1-click export of transactions, UTR IDs, amounts, and dates in Creator and Admin consoles.
+- **Backer Hall of Fame & Community Leaderboard**: Interactive supporter wall modal (`BackerHallOfFameModal`) ranking top contributors, displaying live activity pledge feeds, and tracking community achievement trophies.
 - **Campaign Velocity & Goal Forecast Analytics**: Interactive funding simulator modal (`CampaignAnalyticsModal`) enabling creators & backers to adjust daily backer rates and pledge sizes to forecast deadline outcomes, stretch goal unlock Tiers (100%, 125%, 150%, 200%), and export summary reports.
 - **Executive Pitch & Summary Report Generator**: Printable PDF pitch report and JSON export modal with velocity metrics, QR code, and 1-click clipboard summary copy.
 - **Global Command Palette (`Ctrl+K` / `Cmd+K`)**: Spotlight-style glassmorphic command search modal with arrow key navigation, instant fuzzy filtering for views, 2FA security, theme/currency settings, and live campaign discovery.

@@ -25,6 +25,7 @@ import TwoFactorModal from './components/TwoFactorModal';
 import CommandPalette from './components/CommandPalette';
 import ExecutiveSummaryModal from './components/ExecutiveSummaryModal';
 import CampaignAnalyticsModal from './components/CampaignAnalyticsModal';
+import BackerHallOfFameModal from './components/BackerHallOfFameModal';
 import { verifyTotpToken } from './utils/totp';
 
 // ==========================================
@@ -285,6 +286,7 @@ export default function App() {
   const [commandPaletteOpen, setCommandPaletteOpen] = useState(false);
   const [summaryModalProject, setSummaryModalProject] = useState(null);
   const [analyticsModalProject, setAnalyticsModalProject] = useState(null);
+  const [hallOfFameModalProject, setHallOfFameModalProject] = useState(null);
 
   const toggleCompare = (projectId, e) => {
     if (e) {
@@ -1098,6 +1100,7 @@ export default function App() {
               onShare={(p) => setShareModalProject(p)}
               onOpenPitchReport={(p) => setSummaryModalProject(p)}
               onOpenAnalytics={(p) => setAnalyticsModalProject(p)}
+              onOpenHallOfFame={(p) => setHallOfFameModalProject(p)}
               onPledge={(reward) => {
                 protectAction(() => {
                   setSelectedReward(reward);
@@ -1624,6 +1627,7 @@ export default function App() {
         setShortcutsOpen={setShortcutsOpen}
         onOpenPitchReport={(proj) => setSummaryModalProject(proj)}
         onOpenAnalytics={(proj) => setAnalyticsModalProject(proj)}
+        onOpenHallOfFame={(proj) => setHallOfFameModalProject(proj)}
         showToast={showToast}
         protectAction={protectAction}
       />
@@ -1645,6 +1649,18 @@ export default function App() {
           project={analyticsModalProject}
           isOpen={!!analyticsModalProject}
           onClose={() => setAnalyticsModalProject(null)}
+          currency={currency}
+          showToast={showToast}
+        />
+      )}
+
+      {/* Backer Hall of Fame & Community Leaderboard Modal */}
+      {hallOfFameModalProject && (
+        <BackerHallOfFameModal
+          project={hallOfFameModalProject}
+          donations={donations}
+          isOpen={!!hallOfFameModalProject}
+          onClose={() => setHallOfFameModalProject(null)}
           currency={currency}
           showToast={showToast}
         />
@@ -2155,7 +2171,7 @@ const getCategoryDetails = (category) => {
   }
 };
 
-function ProjectDetailView({ project, onBack, user, onPledge, onAddComment, onDeleteProject, currency, bookmarkedIds, toggleBookmark, onShare, onOpenPitchReport, onOpenAnalytics, comparedProjectIds = [], toggleCompare, showToast }) {
+function ProjectDetailView({ project, onBack, user, onPledge, onAddComment, onDeleteProject, currency, bookmarkedIds, toggleBookmark, onShare, onOpenPitchReport, onOpenAnalytics, onOpenHallOfFame, comparedProjectIds = [], toggleCompare, showToast }) {
   const [activeTab, setActiveTab] = useState("story"); // 'story' | 'updates' | 'comments' | 'qna'
   const [commentInput, setCommentInput] = useState("");
 
@@ -2185,6 +2201,15 @@ function ProjectDetailView({ project, onBack, user, onPledge, onAddComment, onDe
         </span>
 
         <div className="detail-action-buttons-row">
+          <button 
+            type="button" 
+            className="btn-secondary"
+            onClick={() => onOpenHallOfFame && onOpenHallOfFame(project)}
+            title="View Backer Leaderboard & Community Trophies"
+          >
+            <i className="fa-solid fa-trophy" style={{ color: '#f59e0b' }}></i>
+            <span>Hall of Fame</span>
+          </button>
           <button 
             type="button" 
             className="btn-secondary"
