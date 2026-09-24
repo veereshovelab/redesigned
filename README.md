@@ -47,8 +47,8 @@ Vorynx is a modern crowdfunding and payment gateway platform built for creators,
 
 1. Clone the repository:
    ```bash
-   git clone https://github.com/your-username/Vorynx.git
-   cd Vorynx
+   git clone https://github.com/veereshovelab/redesigned.git
+   cd redesigned
    ```
 
 2. Install dependencies:
@@ -87,6 +87,11 @@ This project is open source. See the repository for licensing details.
 ---
 
 ## 📝 Changelog
+
+### Version 0.4.0 (September 2026)
+- Added **Executive Pitch & Summary Report Generator** (`ExecutiveSummaryModal`) with printable PDF formatting, dynamic velocity metrics, NPCI QR code, and JSON payload export.
+- Enhanced **Glassmorphism & Neon Glow Styling** with translucent backdrop cards, glowing border physics, and dynamic micro-animations.
+- Added 1-click clipboard summary copy for rapid investor and backer communication.
 
 ### Version 0.3.0 (September 2026)
 - Added **Global Command Palette (`Ctrl+K` / `Cmd+K`)** spotlight search modal for rapid keyboard navigation, theme/currency switching, 2FA settings, and live campaign discovery.
