@@ -24,7 +24,7 @@ export default async function handler(req, res) {
   let rawInput = (queryUtr || bodyUtr || '').toString().trim();
 
   if (!rawInput) {
-    return res.status(400).json({ 
+    return res.status(400).json({
       error: 'Missing query parameter: "utr" or "certHash" is required.',
       example: '/api/verify-receipt?utr=103488274910'
     });
@@ -110,9 +110,9 @@ export default async function handler(req, res) {
     });
   } catch (err) {
     console.error('Error in verify-receipt API:', err);
-    return res.status(500).json({ 
+    return res.status(500).json({
       error: 'Internal server error while verifying receipt',
-      details: err.message 
+      details: err.message
     });
   }
 }
