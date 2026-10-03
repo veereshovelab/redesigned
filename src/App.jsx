@@ -205,6 +205,7 @@ const INITIAL_PROJECTS = [
 ];
 
 export default function App() {
+  const navMenuRef = useRef(null);
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const [initialError, setInitialError] = useState("");
@@ -255,6 +256,17 @@ export default function App() {
     }
   }, [theme]);
 
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (navMenuRef.current && !navMenuRef.current.contains(event.target)) {
+        setNavMoreOpen(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
   const toggleTheme = () => {
     const nextTheme = theme === 'dark' ? 'light' : 'dark';
     setTheme(nextTheme);
@@ -284,6 +296,7 @@ export default function App() {
   const [activeCertificate, setActiveCertificate] = useState(null);
   const [portfolioOpen, setPortfolioOpen] = useState(false);
   const [commandPaletteOpen, setCommandPaletteOpen] = useState(false);
+  const [navMoreOpen, setNavMoreOpen] = useState(false);
   const [summaryModalProject, setSummaryModalProject] = useState(null);
   const [analyticsModalProject, setAnalyticsModalProject] = useState(null);
   const [hallOfFameModalProject, setHallOfFameModalProject] = useState(null);
@@ -917,8 +930,23 @@ export default function App() {
           </div>
 
           <div className="nav-actions">
-            {/* Multi-Currency Toggle */}
-            <div className="currency-toggle-pill" title="Toggle Currency ($ USD / ₹ INR)">
+            <div ref={navMenuRef} className={`nav-more-menu ${navMoreOpen ? 'is-open' : ''}`}>
+              <button
+                className="nav-more-trigger"
+                onClick={() => setNavMoreOpen((open) => !open)}
+                aria-expanded={navMoreOpen}
+                aria-label="Open more navigation options"
+              >
+                <i className="fa-solid fa-ellipsis"></i>
+                <span>More</span>
+                <i className="fa-solid fa-chevron-down nav-more-chevron"></i>
+              </button>
+
+              <div className="nav-more-panel">
+                {/* Multi-Currency Toggle */}
+                <div className="nav-more-item nav-more-currency">
+              <span className="nav-more-label">Currency</span>
+              <div className="currency-toggle-pill" title="Toggle Currency ($ USD / ₹ INR)">
               <button 
                 className={`currency-pill-btn ${currency === 'USD' ? 'active' : ''}`}
                 onClick={() => { setCurrency('USD'); localStorage.setItem('vorynx_currency', 'USD'); }}
@@ -931,71 +959,68 @@ export default function App() {
               >
                 ₹ INR
               </button>
+              </div>
             </div>
 
             {/* Light / Dark Mode Toggle */}
             <button 
-              className="theme-toggle-btn"
+              className="nav-more-item nav-more-action"
               onClick={toggleTheme}
               title={`Switch to ${theme === 'dark' ? 'Light' : 'Dark'} Mode`}
             >
               <i className={`fa-solid ${theme === 'dark' ? 'fa-sun text-amber' : 'fa-moon text-blue'}`}></i>
-              <span>{theme === 'dark' ? 'Light' : 'Dark'}</span>
+              <span>{theme === 'dark' ? 'Light mode' : 'Dark mode'}</span>
             </button>
 
             {/* Keyboard Shortcuts Guide Button */}
             <button
-              className="theme-toggle-btn"
-              onClick={() => setShortcutsOpen(true)}
+              className="nav-more-item nav-more-action"
+              onClick={() => { setShortcutsOpen(true); setNavMoreOpen(false); }}
               title="Keyboard Shortcuts (?)"
             >
               <i className="fa-solid fa-keyboard text-purple" style={{ color: '#a855f7' }}></i>
-              <span>Shortcuts</span>
+              <span>Keyboard shortcuts</span>
             </button>
 
             {/* Global Command Palette Button */}
             <button
-              className="theme-toggle-btn cmd-palette-nav-btn"
-              onClick={() => setCommandPaletteOpen(true)}
+              className="nav-more-item nav-more-action"
+              onClick={() => { setCommandPaletteOpen(true); setNavMoreOpen(false); }}
               title="Global Command Palette (Ctrl+K / Cmd+K)"
             >
               <i className="fa-solid fa-terminal" style={{ color: 'var(--accent-brand)' }}></i>
-              <span>Cmd+K</span>
+              <span>Command palette <kbd>Ctrl K</kbd></span>
             </button>
 
             {/* Saved Bookmarks Navigation Button */}
             <button 
-              className="btn-text"
-              style={{ display: 'inline-flex', alignItems: 'center', gap: '0.35rem' }}
-              onClick={() => { setView("home"); setSelectedCategory("Saved"); setSelectedProjectId(null); }}
+              className="nav-more-item nav-more-action"
+              onClick={() => { setView("home"); setSelectedCategory("Saved"); setSelectedProjectId(null); setNavMoreOpen(false); }}
               title="View Saved Bookmarks"
             >
               <i className="fa-solid fa-heart" style={{ color: '#ef4444' }}></i>
-              <span>Saved</span>
-              {bookmarkedIds.length > 0 && (
-                <span style={{ 
-                  background: '#ef4444', 
-                  color: '#fff', 
-                  fontSize: '0.7rem', 
-                  fontWeight: 700, 
-                  padding: '0.1rem 0.45rem', 
-                  borderRadius: '999px',
-                  lineHeight: 1
-                }}>
-                  {bookmarkedIds.length}
-                </span>
-              )}
+              <span>Saved campaigns</span>
+              {bookmarkedIds.length > 0 && <span className="nav-more-badge">{bookmarkedIds.length}</span>}
             </button>
 
-            {/* Command Palette Trigger Button */}
-            <button
-              className="nav-pledges-btn cmd-palette-nav-btn"
-              onClick={() => setCommandPaletteOpen(true)}
-              title="Global Command Palette (Ctrl+K)"
-            >
-              <i className="fa-solid fa-terminal" style={{ color: '#a855f7' }}></i>
-              <span>Cmd+K</span>
+            <button className="nav-more-item nav-more-action" onClick={() => { setView("qr-generator"); setSelectedProjectId(null); setNavMoreOpen(false); }}>
+              <i className="fa-solid fa-qrcode"></i>
+              <span>UPI QR Generator</span>
             </button>
+            {(simMode === "creator" || simMode === "admin") && (
+              <button className="nav-more-item nav-more-action" onClick={() => { protectAction(() => setView("creator-dashboard")); setNavMoreOpen(false); }}>
+                <i className="fa-solid fa-chart-line"></i>
+                <span>Creator Dashboard</span>
+              </button>
+            )}
+            {simMode === "admin" && (
+              <button className="nav-more-item nav-more-action" onClick={() => { setView("admin-panel"); setNavMoreOpen(false); }}>
+                <i className="fa-solid fa-user-shield"></i>
+                <span>Admin Panel</span>
+              </button>
+            )}
+              </div>
+            </div>
 
             {/* My Pledges & Backer Portfolio Navigation Button */}
             <button 
@@ -1008,19 +1033,6 @@ export default function App() {
               <span className="nav-pledges-badge">{donations.length || 2}</span>
             </button>
 
-            <button className="btn-text" onClick={() => { setView("qr-generator"); setSelectedProjectId(null); }}>
-              UPI QR Generator
-            </button>
-            {(simMode === "creator" || simMode === "admin") && (
-              <button className="btn-text" onClick={() => protectAction(() => setView("creator-dashboard"))}>
-                Creator Dashboard
-              </button>
-            )}
-            {simMode === "admin" && (
-              <button className="btn-text" onClick={() => setView("admin-panel")}>
-                Admin Panel
-              </button>
-            )}
             <button className="btn-text" id="nav-start-campaign-btn" onClick={() => protectAction(() => setView("create"))}>
               Start a Campaign
             </button>
