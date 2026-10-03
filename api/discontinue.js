@@ -36,16 +36,20 @@ export default async function handler(req, res) {
   }
 
   const { projectId } = req.body || {};
-  if (!projectId) {
+  if (typeof projectId !== 'string' || !projectId.trim()) {
     return res.status(400).json({ error: 'Project ID is required' });
   }
 
   const authHeader = req.headers.authorization;
-  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+  const bearerMatch = typeof authHeader === 'string'
+    ? authHeader.match(/^Bearer\s+(\S+)$/i)
+    : null;
+
+  if (!bearerMatch) {
     return res.status(401).json({ error: 'Missing authorization token' });
   }
 
-  const token = authHeader.split('Bearer ')[1];
+  const token = bearerMatch[1];
 
   try {
     // 1. Initialize Supabase Admin client securely
@@ -64,7 +68,7 @@ export default async function handler(req, res) {
     const { data: project, error: fetchError } = await dbAdmin
       .from('projects')
       .select('*')
-      .eq('id', projectId)
+      .eq('id', projectId.trim())
       .single();
 
     if (fetchError || !project) {
