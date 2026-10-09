@@ -26,16 +26,16 @@ export default function CommandPalette({
 
   // Autofocus input on open & handle key navigation
   useEffect(() => {
-    if (isOpen) {
+    if (!isOpen) return undefined;
+
+    const resetTimeout = setTimeout(() => {
       setQuery('');
       setSelectedIndex(0);
-      setTimeout(() => {
-        inputRef.current?.focus();
-      }, 50);
-    }
-  }, [isOpen]);
+      inputRef.current?.focus();
+    }, 50);
 
-  if (!isOpen) return null;
+    return () => clearTimeout(resetTimeout);
+  }, [isOpen]);
 
   // Base Commands Definition
   const baseCommands = [
@@ -276,6 +276,8 @@ export default function CommandPalette({
       }
     }
   }, [selectedIndex]);
+
+  if (!isOpen) return null;
 
   // Group items by category for visual display
   const groupedCategories = filteredItems.reduce((acc, item) => {

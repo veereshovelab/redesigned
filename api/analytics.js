@@ -31,7 +31,7 @@ export default async function handler(req, res) {
 
     // Default fallback data if DB is empty
     const activeProjects = projects && projects.length > 0 ? projects : [
-      { id: 'keyboard', title: 'Helix-68 Keyboard', category: 'Design', goal_amount: 15000, raised_amount: 12450, backer_count: 138, status: 'approved' },
+      { id: 'keyboard', title: 'Helix-68 Keyboard', category: 'Design', goal_Amount: 15000, raised_amount: 12450, backer_count: 138, status: 'approved' },
       { id: 'smarthub', title: 'Aura Hub Assistant', category: 'Tech', goal_amount: 45000, raised_amount: 49200, backer_count: 384, status: 'approved' },
       { id: 'game', title: 'Cyberpunk RPG', category: 'Games', goal_amount: 20000, raised_amount: 8200, backer_count: 95, status: 'approved' },
       { id: 'backpack', title: 'Nomad Pro Backpack', category: 'Design', goal_amount: 10000, raised_amount: 34200, backer_count: 280, status: 'approved' }

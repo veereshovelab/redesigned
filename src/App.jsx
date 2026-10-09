@@ -225,19 +225,6 @@ export default function App() {
     }
   });
 
-  // Notification Center State
-  const [notifOpen, setNotifOpen] = useState(false);
-  const [notifications, setNotifications] = useState([
-    { id: "n1", type: "success", title: "Helix-68 unlocked 100% Stretch Goal!", time: "10 mins ago", read: false },
-    { id: "n2", type: "info", title: "New backer joined Aura Hub project", time: "1 hour ago", read: false },
-    { id: "n3", type: "amber", title: "2FA Security check enabled for your account", time: "3 hours ago", read: true }
-  ]);
-
-  const markAllNotificationsRead = () => {
-    setNotifications(prev => prev.map(n => ({ ...n, read: true })));
-    showToast("All notifications marked as read.", "info");
-  };
-
   // Theme State ('light' | 'dark')
   const [theme, setTheme] = useState(() => {
     try {
