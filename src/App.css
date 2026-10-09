@@ -5,9 +5,16 @@
     align-items: center;
     justify-content: center;
     flex-direction: column;
-    min-height: calc(100vh - 150px);
+    min-height: 0;
     width: 100%;
-    padding: 1.5rem 1rem;
+    padding: 0;
+}
+
+.auth-modal-shell {
+    position: relative;
+    width: min(768px, calc(100vw - 2rem));
+    max-height: calc(100vh - 2rem);
+    overflow: auto;
 }
 
 .container {
@@ -336,6 +343,11 @@
 
 /* Mobile AuthPanel responsiveness */
 @media (max-width: 768px) {
+    .auth-modal-shell {
+        width: min(420px, calc(100vw - 1rem));
+        max-height: calc(100vh - 1rem);
+    }
+
     .container {
         width: 100%;
         max-width: 420px;

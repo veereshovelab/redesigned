@@ -20,7 +20,7 @@ import {
   updateProfile,
   sendPasswordResetEmail
 } from './firebaseConfig';
-import { supabase } from './supabaseClient';
+import { isSupabaseConfigured, supabase } from './supabaseClient';
 import TwoFactorModal from './components/TwoFactorModal';
 import CommandPalette from './components/CommandPalette';
 import ExecutiveSummaryModal from './components/ExecutiveSummaryModal';
@@ -233,6 +233,7 @@ export default function App() {
       return 'dark';
     }
   });
+  const [navMoreOpen, setNavMoreOpen] = useState(false);
 
   useEffect(() => {
     document.documentElement.setAttribute('data-theme', theme);
@@ -283,7 +284,6 @@ export default function App() {
   const [activeCertificate, setActiveCertificate] = useState(null);
   const [portfolioOpen, setPortfolioOpen] = useState(false);
   const [commandPaletteOpen, setCommandPaletteOpen] = useState(false);
-  const [navMoreOpen, setNavMoreOpen] = useState(false);
   const [summaryModalProject, setSummaryModalProject] = useState(null);
   const [analyticsModalProject, setAnalyticsModalProject] = useState(null);
   const [hallOfFameModalProject, setHallOfFameModalProject] = useState(null);
@@ -493,6 +493,11 @@ export default function App() {
   };
 
   const refreshData = async () => {
+    if (!isSupabaseConfigured) {
+      setProjects(INITIAL_PROJECTS);
+      setDonations([]);
+      return;
+    }
     await fetchProjects();
     await fetchDonations();
   };
@@ -1358,8 +1363,8 @@ export default function App() {
       {/* Modal - Firebase sliding AuthPanel wrapper */}
       {authOpen && (
         <div className="modal-overlay" onClick={() => setAuthOpen(false)}>
-          <div className="modal-content" style={{ maxWidth: '800px', width: '90%', padding: '0px', overflow: 'hidden' }} onClick={(e) => e.stopPropagation()}>
-            <button className="modal-close-btn" style={{ top: '1.5rem', right: '1.5rem', zIndex: 2000, color: '#9ca3af' }} onClick={() => setAuthOpen(false)}>&times;</button>
+          <div className="auth-modal-shell" onClick={(e) => e.stopPropagation()}>
+            <button className="modal-close-btn" style={{ top: '1rem', right: '1rem', zIndex: 2000, color: '#9ca3af' }} onClick={() => setAuthOpen(false)}>&times;</button>
             <div className="auth-page-wrapper">
               <AuthPanel initialError={initialError} />
             </div>

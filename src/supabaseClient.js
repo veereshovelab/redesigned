@@ -10,6 +10,8 @@ if (!isValidUrl || !isValidKey) {
   console.warn("Supabase credentials missing or unconfigured. Operating in local sandbox mode.");
 }
 
+export const isSupabaseConfigured = isValidUrl && isValidKey;
+
 // Fallback dummy credentials prevent createClient from throwing uncaught startup exception
 const supabaseUrl = isValidUrl ? rawUrl : 'https://placeholder.supabase.co';
 const supabaseAnonKey = isValidKey ? rawKey : 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBsYWNlaG9sZGVyIiwicm9sZSI6ImFub24iLCJpYXQiOjE2MDAwMDAwMDAsImV4cCI6MjAwMDAwMDAwMH0.placeholder';
