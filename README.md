@@ -58,7 +58,7 @@ Vorynx is a modern crowdfunding and payment gateway platform built for creators,
    npm install
    ```
 
-3. Configure environment variables in `.env`:
+3. Configure environment variables in `.env`. Start from the tracked [`.env.example`](.env.example) file and replace every placeholder with values from your Firebase and Supabase projects:
    ```env
    VITE_FIREBASE_API_KEY=your_firebase_api_key
    VITE_FIREBASE_AUTH_DOMAIN=your_project.firebaseapp.com
@@ -66,6 +66,8 @@ Vorynx is a modern crowdfunding and payment gateway platform built for creators,
    VITE_SUPABASE_URL=your_supabase_url
    VITE_SUPABASE_ANON_KEY=your_supabase_anon_key
    ```
+
+   In Firebase Console, enable Email/Password, Google, and GitHub under **Authentication > Sign-in method**. Keep `.env` local; it is ignored by Git.
 
 4. Start development server:
    ```bash
