@@ -1698,9 +1698,15 @@ function HomepageView({ projects, searchQuery, selectedCategory, setSelectedCate
 
   // Filtering Logic
   const filteredProjects = projects.filter(proj => {
-    const matchesSearch = proj.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      proj.subtitle.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      proj.description.toLowerCase().includes(searchQuery.toLowerCase());
+    const normalizedSearch = searchQuery.trim().toLowerCase();
+    const searchableText = [
+      proj.title,
+      proj.subtitle,
+      proj.description,
+      proj.category,
+      ...(proj.tags || [])
+    ].join(' ').toLowerCase();
+    const matchesSearch = searchableText.includes(normalizedSearch);
 
     const matchesCategory = selectedCategory === "All"
       ? true
