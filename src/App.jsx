@@ -1694,6 +1694,7 @@ function HomepageView({ projects, searchQuery, selectedCategory, setSelectedCate
   const [selectedTag, setSelectedTag] = useState("All Tags");
 
   const POPULAR_TAGS = ["All Tags", "#Hardware", "#Privacy", "#Tabletop", "#Ergonomics", "#Travel", "#Wireless"];
+  const isVisibleProject = (project) => !project.status || project.status === 'approved' || project.status === 'live';
 
   // Filtering Logic
   const filteredProjects = projects.filter(proj => {
@@ -1714,9 +1715,7 @@ function HomepageView({ projects, searchQuery, selectedCategory, setSelectedCate
         .includes(selectedTag.replace('#', '').toLowerCase())
     );
 
-    const isApproved = proj.status === 'approved' || proj.status === 'live';
-
-    return matchesSearch && matchesCategory && matchesTag && isApproved;
+    return matchesSearch && matchesCategory && matchesTag && isVisibleProject(proj);
   });
 
   // Sorting Logic
@@ -1733,7 +1732,7 @@ function HomepageView({ projects, searchQuery, selectedCategory, setSelectedCate
   });
 
   // Spotlight is the first trending project
-  const spotlightProj = projects.find(p => p.trending && (p.status === 'approved' || p.status === 'live')) || projects.find(p => p.status === 'approved' || p.status === 'live');
+  const spotlightProj = projects.find(p => p.trending && isVisibleProject(p)) || projects.find(isVisibleProject);
 
   const handleExploreClick = () => {
     document.getElementById("discover-section")?.scrollIntoView({ behavior: "smooth" });
