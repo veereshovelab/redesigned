@@ -1746,6 +1746,22 @@ function HomepageView({ projects, searchQuery, selectedCategory, setSelectedCate
 
   const totalRaised = projects.reduce((acc, p) => acc + (p.raisedAmount || 0), 0);
   const totalBackers = projects.reduce((acc, p) => acc + (p.backerCount || 0), 0);
+  const activeCampaigns = projects.filter(isVisibleProject).length;
+  const averageProgress = activeCampaigns > 0
+    ? Math.round(
+        projects
+          .filter(isVisibleProject)
+          .reduce((acc, p) => acc + ((p.raisedAmount || 0) / Math.max(p.goalAmount || 1, 1)) * 100, 0) /
+          activeCampaigns
+      )
+    : 0;
+  const categoryCounts = projects
+    .filter(isVisibleProject)
+    .reduce((counts, project) => {
+      counts[project.category] = (counts[project.category] || 0) + 1;
+      return counts;
+    }, {});
+  const leadingCategory = Object.entries(categoryCounts).sort(([, a], [, b]) => b - a)[0]?.[0] || "New ideas";
 
   return (
     <div>
@@ -1782,6 +1798,37 @@ function HomepageView({ projects, searchQuery, selectedCategory, setSelectedCate
           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
             <span style={{ fontFamily: 'var(--font-heading)', fontSize: '1.4rem', fontWeight: 800, color: '#a855f7' }}>98.6%</span>
             <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.5px', fontWeight: 700 }}>Fulfillment Rate</span>
+          </div>
+        </div>
+
+        <div className="momentum-snapshot" aria-label="Community momentum snapshot">
+          <div className="momentum-snapshot-heading">
+            <span className="momentum-live-dot" aria-hidden="true"></span>
+            <span>Community momentum</span>
+            <span className="momentum-updated">Updated just now</span>
+          </div>
+          <div className="momentum-grid">
+            <div className="momentum-item">
+              <i className="fa-solid fa-rocket" aria-hidden="true"></i>
+              <div>
+                <strong>{activeCampaigns}</strong>
+                <span>Live campaigns</span>
+              </div>
+            </div>
+            <div className="momentum-item">
+              <i className="fa-solid fa-chart-line" aria-hidden="true"></i>
+              <div>
+                <strong>{averageProgress}%</strong>
+                <span>Average progress</span>
+              </div>
+            </div>
+            <div className="momentum-item">
+              <i className="fa-solid fa-compass" aria-hidden="true"></i>
+              <div>
+                <strong>{leadingCategory}</strong>
+                <span>Leading category</span>
+              </div>
+            </div>
           </div>
         </div>
       </section>
