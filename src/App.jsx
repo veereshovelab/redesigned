@@ -821,7 +821,7 @@ export default function App() {
       <header className="vorynx-header">
         <div className="header-container">
           <div className="logo-section" id="brand-logo-btn" onClick={() => { setView("home"); setSelectedProjectId(null); }}>
-            <span className="logo-icon">V</span>
+            <span className="logo-icon" aria-hidden="true"><i className="fa-solid fa-gem"></i></span>
             <span className="logo-text">VORYNX</span>
           </div>
 
@@ -3583,7 +3583,7 @@ function BackerCertificateModal({ certificate, onClose, currency = 'USD', showTo
             {/* Header Brand */}
             <div className="certificate-header-brand">
               <div className="certificate-logo-wrapper">
-                <span className="logo-icon" style={{ width: '32px', height: '32px', fontSize: '1rem' }}>V</span>
+                <span className="logo-icon" aria-hidden="true" style={{ width: '32px', height: '32px', fontSize: '1rem' }}><i className="fa-solid fa-gem"></i></span>
                 <span className="logo-text" style={{ fontSize: '1.2rem' }}>VORYNX</span>
               </div>
               <div className="certificate-seal-badge">
