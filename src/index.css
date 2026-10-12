@@ -1153,6 +1153,20 @@ body {
     letter-spacing: -0.5px;
 }
 
+.empty-discovery-state {
+    padding: 5rem 1rem;
+    text-align: center;
+    background: var(--bg-surface);
+    border: 1px solid var(--border-standard);
+    border-radius: 24px;
+    color: var(--text-secondary);
+    box-shadow: var(--shadow-sm);
+}
+
+.empty-discovery-action {
+    margin-top: 1.25rem;
+}
+
 /* Project Cards Grid */
 .projects-grid {
     display: grid;

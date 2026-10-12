@@ -1075,6 +1075,7 @@ export default function App() {
             <HomepageView
               projects={projects}
               searchQuery={searchQuery}
+              setSearchQuery={setSearchQuery}
               selectedCategory={selectedCategory}
               setSelectedCategory={setSelectedCategory}
               onSelectProject={(id) => { setSelectedProjectId(id); setView("details"); }}
@@ -1689,7 +1690,7 @@ export default function App() {
 // ============================================================================
 // HOMEPAGE VIEW COMPONENT
 // ============================================================================
-function HomepageView({ projects, searchQuery, selectedCategory, setSelectedCategory, onSelectProject, protectAction, setView, currency, bookmarkedIds, toggleBookmark, comparedProjectIds = [], toggleCompare }) {
+function HomepageView({ projects, searchQuery, setSearchQuery, selectedCategory, setSelectedCategory, onSelectProject, protectAction, setView, currency, bookmarkedIds, toggleBookmark, comparedProjectIds = [], toggleCompare }) {
   const [sortBy, setSortBy] = useState("trending");
   const [selectedTag, setSelectedTag] = useState("All Tags");
 
@@ -1742,6 +1743,12 @@ function HomepageView({ projects, searchQuery, selectedCategory, setSelectedCate
 
   const handleExploreClick = () => {
     document.getElementById("discover-section")?.scrollIntoView({ behavior: "smooth" });
+  };
+
+  const clearDiscoveryFilters = () => {
+    setSearchQuery("");
+    setSelectedCategory("All");
+    setSelectedTag("All Tags");
   };
 
   const totalRaised = projects.reduce((acc, p) => acc + (p.raisedAmount || 0), 0);
@@ -1992,7 +1999,7 @@ function HomepageView({ projects, searchQuery, selectedCategory, setSelectedCate
       </div>
 
       {filteredProjects.length === 0 ? (
-        <div style={{ textAlign: 'center', padding: '5rem 1rem', background: 'var(--bg-surface)', border: '1px solid var(--border-standard)', borderRadius: '24px', color: 'var(--text-secondary)', boxShadow: 'var(--shadow-sm)' }}>
+        <div className="empty-discovery-state">
           <i className={selectedCategory === "Saved" ? "fa-solid fa-heart-crack" : "fa-solid fa-magnifying-glass"} style={{ fontSize: '3rem', marginBottom: '1.25rem', color: 'var(--text-light)' }}></i>
           <h3 style={{ fontSize: '1.25rem', fontWeight: 700, color: 'var(--text-primary)' }}>
             {selectedCategory === "Saved" ? "No Saved Campaigns Yet" : "No Campaigns Found"}
@@ -2002,6 +2009,12 @@ function HomepageView({ projects, searchQuery, selectedCategory, setSelectedCate
               ? "Click the heart icon on any campaign to save it to your bookmarks for quick access anytime!" 
               : "We couldn't find any projects matching your search. Try adjusting filters or searching for key words."}
           </p>
+          {selectedCategory !== "Saved" && (
+            <button type="button" className="btn-secondary empty-discovery-action" onClick={clearDiscoveryFilters}>
+              <i className="fa-solid fa-rotate-left"></i>
+              Clear filters
+            </button>
+          )}
         </div>
       ) : (
         <div className="projects-grid">
