@@ -581,6 +581,14 @@ body {
     transform: translateY(-1px);
 }
 
+.nav-icon-btn:focus-visible,
+.card-bookmark-btn:focus-visible,
+.card-compare-btn:focus-visible,
+.search-clear-btn:focus-visible {
+    outline: 3px solid var(--border-focus);
+    outline-offset: 3px;
+}
+
 /* Modern-classic icon language: crisp glyphs, quiet circular surfaces, and tactile hover states. */
 .btn-primary > i,
 .btn-secondary > i,

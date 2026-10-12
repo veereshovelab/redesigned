@@ -1901,6 +1901,7 @@ function HomepageView({ projects, searchQuery, setSearchQuery, selectedCategory,
                 className={`card-compare-btn ${comparedProjectIds.includes(spotlightProj.id) ? 'active' : ''}`}
                 onClick={(e) => toggleCompare && toggleCompare(spotlightProj.id, e)}
                 title={comparedProjectIds.includes(spotlightProj.id) ? "Remove from comparison matrix" : "Compare campaign side-by-side"}
+                aria-label={comparedProjectIds.includes(spotlightProj.id) ? "Remove featured campaign from comparison" : "Compare featured campaign"}
                 style={{ top: '1.25rem', right: '4.25rem', zIndex: 10 }}
               >
                 <i className="fa-solid fa-code-compare"></i>
@@ -1909,6 +1910,7 @@ function HomepageView({ projects, searchQuery, setSearchQuery, selectedCategory,
                 className={`card-bookmark-btn ${bookmarkedIds.includes(spotlightProj.id) ? 'bookmarked' : ''}`}
                 onClick={(e) => toggleBookmark(spotlightProj.id, e)}
                 title={bookmarkedIds.includes(spotlightProj.id) ? "Remove from bookmarks" : "Save campaign"}
+                aria-label={bookmarkedIds.includes(spotlightProj.id) ? "Remove featured campaign from bookmarks" : "Save featured campaign"}
                 style={{ top: '1.25rem', right: '1.25rem', zIndex: 10 }}
               >
                 <i className={bookmarkedIds.includes(spotlightProj.id) ? "fa-solid fa-heart" : "fa-regular fa-heart"}></i>
@@ -2030,6 +2032,7 @@ function HomepageView({ projects, searchQuery, setSearchQuery, selectedCategory,
                     className={`card-compare-btn ${isCompared ? 'active' : ''}`}
                     onClick={(e) => toggleCompare && toggleCompare(proj.id, e)}
                     title={isCompared ? "Remove from comparison matrix" : "Compare campaign side-by-side"}
+                    aria-label={isCompared ? `Remove ${proj.title} from comparison` : `Compare ${proj.title}`}
                   >
                     <i className="fa-solid fa-code-compare"></i>
                   </button>
@@ -2037,6 +2040,7 @@ function HomepageView({ projects, searchQuery, setSearchQuery, selectedCategory,
                     className={`card-bookmark-btn ${isSaved ? 'bookmarked' : ''}`}
                     onClick={(e) => toggleBookmark(proj.id, e)}
                     title={isSaved ? "Remove from bookmarks" : "Save campaign"}
+                    aria-label={isSaved ? `Remove ${proj.title} from bookmarks` : `Save ${proj.title}`}
                   >
                     <i className={isSaved ? "fa-solid fa-heart" : "fa-regular fa-heart"}></i>
                   </button>
