@@ -584,6 +584,10 @@ body {
 .nav-icon-btn:focus-visible,
 .card-bookmark-btn:focus-visible,
 .card-compare-btn:focus-visible,
+.card-share-btn:focus-visible,
+.layout-toggle-btn:focus-visible,
+.status-chip:focus-visible,
+.list-action-btn:focus-visible,
 .search-clear-btn:focus-visible {
     outline: 3px solid var(--border-focus);
     outline-offset: 3px;
@@ -3727,4 +3731,382 @@ body {
     border-color: #ef4444;
     color: #ef4444;
     background: #fef2f2;
+}
+
+/* ==========================================================================
+   Discovery Layout Switcher & Compact List View
+   ========================================================================== */
+.card-share-btn {
+    position: absolute;
+    top: 1rem;
+    left: 3.6rem;
+    z-index: 5;
+    background: rgba(255, 255, 255, 0.92);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    border: 1px solid rgba(226, 232, 240, 0.8);
+    width: 34px;
+    height: 34px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--text-muted);
+    font-size: 0.82rem;
+    cursor: pointer;
+    box-shadow: var(--shadow-sm);
+    transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+[data-theme="dark"] .card-share-btn {
+    background: rgba(15, 23, 42, 0.75);
+    border-color: rgba(255, 255, 255, 0.15);
+    color: rgba(255, 255, 255, 0.8);
+}
+
+.card-share-btn:hover {
+    transform: scale(1.12);
+    color: var(--accent-brand);
+    background: #ffffff;
+    box-shadow: 0 4px 12px rgba(79, 70, 229, 0.2);
+}
+
+[data-theme="dark"] .card-share-btn:hover {
+    background: var(--accent-brand);
+    color: #ffffff;
+    border-color: var(--accent-brand);
+}
+
+.discovery-layout-toggle {
+    display: inline-flex;
+    align-items: center;
+    background: var(--bg-surface);
+    border: 1px solid var(--border-standard);
+    border-radius: 10px;
+    padding: 3px;
+    gap: 3px;
+    box-shadow: var(--shadow-sm);
+}
+
+.layout-toggle-btn {
+    background: transparent;
+    border: none;
+    color: var(--text-muted);
+    width: 32px;
+    height: 32px;
+    border-radius: 7px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.85rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.layout-toggle-btn:hover {
+    color: var(--text-primary);
+    background: var(--accent-brand-light);
+}
+
+.layout-toggle-btn.active {
+    background: var(--accent-brand);
+    color: #ffffff;
+    box-shadow: 0 2px 8px rgba(79, 70, 229, 0.3);
+}
+
+/* Status Filter Bar */
+.status-filter-bar {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+    margin-bottom: 1.5rem;
+    padding-bottom: 0.5rem;
+}
+
+.status-filter-label {
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: var(--text-muted);
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+    margin-right: 0.25rem;
+}
+
+.status-chip {
+    background: var(--bg-surface);
+    border: 1px solid var(--border-standard);
+    color: var(--text-secondary);
+    padding: 0.4rem 0.9rem;
+    border-radius: 9999px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+}
+
+.status-chip:hover {
+    border-color: var(--accent-brand);
+    color: var(--text-primary);
+    transform: translateY(-1px);
+}
+
+.status-chip.active {
+    background: var(--accent-brand);
+    color: #ffffff;
+    border-color: var(--accent-brand);
+    box-shadow: 0 3px 10px rgba(79, 70, 229, 0.25);
+}
+
+.status-chip-clear {
+    background: rgba(239, 68, 68, 0.1);
+    color: #ef4444;
+    border-color: rgba(239, 68, 68, 0.25);
+}
+
+.status-chip-clear:hover {
+    background: #ef4444;
+    color: #ffffff;
+    border-color: #ef4444;
+}
+
+/* Card Milestone Pill */
+.card-milestone-pill {
+    position: absolute;
+    bottom: 0.75rem;
+    left: 0.75rem;
+    z-index: 5;
+    padding: 0.25rem 0.65rem;
+    border-radius: 6px;
+    font-size: 0.72rem;
+    font-weight: 700;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+}
+
+.card-milestone-pill.funded {
+    background: rgba(16, 185, 129, 0.9);
+    color: #ffffff;
+    box-shadow: 0 2px 8px rgba(16, 185, 129, 0.4);
+}
+
+.card-milestone-pill.urgent {
+    background: rgba(245, 158, 11, 0.9);
+    color: #0f172a;
+    box-shadow: 0 2px 8px rgba(245, 158, 11, 0.4);
+}
+
+/* Compact Discovery List View */
+.discovery-list-container {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    margin-bottom: 3.5rem;
+}
+
+.discovery-list-card {
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+    background: var(--bg-surface);
+    border: 1px solid var(--border-standard);
+    border-radius: 16px;
+    padding: 1rem 1.25rem;
+    cursor: pointer;
+    transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+    box-shadow: var(--shadow-sm);
+}
+
+.discovery-list-card:hover {
+    transform: translateY(-3px);
+    border-color: var(--accent-brand);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12), 0 0 16px var(--border-glow);
+}
+
+.list-card-media {
+    position: relative;
+    width: 130px;
+    height: 90px;
+    flex-shrink: 0;
+    border-radius: 10px;
+    overflow: hidden;
+}
+
+.list-card-media img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.3s ease;
+}
+
+.discovery-list-card:hover .list-card-media img {
+    transform: scale(1.05);
+}
+
+.list-card-badge {
+    position: absolute;
+    top: 6px;
+    left: 6px;
+    font-size: 0.65rem;
+    font-weight: 700;
+    padding: 0.15rem 0.45rem;
+    border-radius: 4px;
+    backdrop-filter: blur(6px);
+}
+
+.list-card-badge.funded {
+    background: rgba(16, 185, 129, 0.92);
+    color: #ffffff;
+}
+
+.list-card-badge.trending {
+    background: rgba(99, 102, 241, 0.92);
+    color: #ffffff;
+}
+
+.list-card-main {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+}
+
+.list-card-header {
+    display: flex;
+    align-items: center;
+    gap: 0.65rem;
+}
+
+.list-card-category {
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: var(--accent-brand);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.list-card-urgent {
+    font-size: 0.72rem;
+    font-weight: 700;
+    color: #f59e0b;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+}
+
+.list-card-title {
+    font-family: var(--font-heading);
+    font-size: 1.05rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    margin: 0;
+}
+
+.list-card-desc {
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    margin: 0 0 0.4rem 0;
+}
+
+.list-card-progress {
+    width: 100%;
+}
+
+.list-card-metrics {
+    display: flex;
+    align-items: center;
+    gap: 2rem;
+    flex-shrink: 0;
+    padding: 0 1rem;
+    border-left: 1px solid var(--border-standard);
+    border-right: 1px solid var(--border-standard);
+}
+
+.list-metric-item {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+}
+
+.list-metric-item strong {
+    font-size: 0.95rem;
+    color: var(--text-primary);
+}
+
+.list-metric-item span {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+}
+
+.list-card-actions {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    flex-shrink: 0;
+}
+
+.list-action-btn {
+    width: 34px;
+    height: 34px;
+    border-radius: 8px;
+    background: transparent;
+    border: 1px solid var(--border-standard);
+    color: var(--text-secondary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.85rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.list-action-btn:hover {
+    background: var(--accent-brand-light);
+    color: var(--accent-brand);
+    border-color: var(--accent-brand);
+}
+
+.list-action-btn.active {
+    background: #a855f7;
+    color: #ffffff;
+    border-color: #a855f7;
+}
+
+.list-action-btn.bookmarked {
+    color: #ef4444;
+    border-color: rgba(239, 68, 68, 0.3);
+    background: rgba(239, 68, 68, 0.08);
+}
+
+@media (max-width: 900px) {
+    .discovery-list-card {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .list-card-metrics {
+        border-left: none;
+        border-right: none;
+        border-top: 1px solid var(--border-standard);
+        padding: 0.75rem 0;
+        justify-content: space-between;
+    }
+
+    .list-card-actions {
+        justify-content: flex-end;
+    }
 }

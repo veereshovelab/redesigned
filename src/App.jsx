@@ -1086,6 +1086,7 @@ export default function App() {
               toggleBookmark={toggleBookmark}
               comparedProjectIds={comparedProjectIds}
               toggleCompare={toggleCompare}
+              onShare={(p) => setShareModalProject(p)}
             />
           </div>
         )}
@@ -1690,9 +1691,26 @@ export default function App() {
 // ============================================================================
 // HOMEPAGE VIEW COMPONENT
 // ============================================================================
-function HomepageView({ projects, searchQuery, setSearchQuery, selectedCategory, setSelectedCategory, onSelectProject, protectAction, setView, currency, bookmarkedIds, toggleBookmark, comparedProjectIds = [], toggleCompare }) {
+function HomepageView({ projects, searchQuery, setSearchQuery, selectedCategory, setSelectedCategory, onSelectProject, protectAction, setView, currency, bookmarkedIds, toggleBookmark, comparedProjectIds = [], toggleCompare, onShare }) {
   const [sortBy, setSortBy] = useState("trending");
   const [selectedTag, setSelectedTag] = useState("All Tags");
+  const [statusFilter, setStatusFilter] = useState("all");
+  const [layoutMode, setLayoutMode] = useState(() => {
+    try {
+      return localStorage.getItem('vorynx_discovery_layout') || 'grid';
+    } catch {
+      return 'grid';
+    }
+  });
+
+  const handleLayoutChange = (mode) => {
+    setLayoutMode(mode);
+    try {
+      localStorage.setItem('vorynx_discovery_layout', mode);
+    } catch {
+      // ignore
+    }
+  };
 
   const POPULAR_TAGS = ["All Tags", "#Hardware", "#Privacy", "#Tabletop", "#Ergonomics", "#Travel", "#Wireless"];
   const isVisibleProject = (project) => !project.status || project.status === 'approved' || project.status === 'live';
@@ -1722,7 +1740,14 @@ function HomepageView({ projects, searchQuery, setSearchQuery, selectedCategory,
         .includes(selectedTag.replace('#', '').toLowerCase())
     );
 
-    return matchesSearch && matchesCategory && matchesTag && isVisibleProject(proj);
+    const pct = Math.round((proj.raisedAmount / Math.max(proj.goalAmount, 1)) * 100);
+    const matchesStatus =
+      statusFilter === "all" ? true :
+      statusFilter === "nearly_funded" ? (pct >= 75 && pct < 100) :
+      statusFilter === "funded" ? (pct >= 100) :
+      statusFilter === "ending_soon" ? (proj.daysLeft <= 10) : true;
+
+    return matchesSearch && matchesCategory && matchesTag && matchesStatus && isVisibleProject(proj);
   });
 
   // Sorting Logic
@@ -1749,6 +1774,7 @@ function HomepageView({ projects, searchQuery, setSearchQuery, selectedCategory,
     setSearchQuery("");
     setSelectedCategory("All");
     setSelectedTag("All Tags");
+    setStatusFilter("all");
   };
 
   const totalRaised = projects.reduce((acc, p) => acc + (p.raisedAmount || 0), 0);
@@ -1898,6 +1924,18 @@ function HomepageView({ projects, searchQuery, setSearchQuery, selectedCategory,
             <div className="hero-media" style={{ position: 'relative', zIndex: 1 }}>
               <span className="hero-tag">Staff Pick</span>
               <button 
+                className="card-share-btn"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onShare && onShare(spotlightProj);
+                }}
+                title="Share featured campaign"
+                aria-label="Share featured campaign"
+                style={{ top: '1.25rem', right: '7.25rem', zIndex: 10 }}
+              >
+                <i className="fa-solid fa-share-nodes"></i>
+              </button>
+              <button 
                 className={`card-compare-btn ${comparedProjectIds.includes(spotlightProj.id) ? 'active' : ''}`}
                 onClick={(e) => toggleCompare && toggleCompare(spotlightProj.id, e)}
                 title={comparedProjectIds.includes(spotlightProj.id) ? "Remove from comparison matrix" : "Compare campaign side-by-side"}
@@ -1980,24 +2018,92 @@ function HomepageView({ projects, searchQuery, setSearchQuery, selectedCategory,
           </span>
         </div>
 
-        {/* Sort Controls */}
-        <div className="sort-controls-box">
-          <label className="sort-control-label">
-            <i className="fa-solid fa-arrow-down-wide-short"></i> Sort:
-          </label>
-          <select 
-            className="sort-select-dropdown" 
-            value={sortBy} 
-            onChange={(e) => setSortBy(e.target.value)}
-          >
-            <option value="trending">🔥 Trending / Featured</option>
-            <option value="funded_desc">💰 Most Funded</option>
-            <option value="pct_desc">📈 % Funded (High to Low)</option>
-            <option value="days_asc">⏳ Ending Soonest</option>
-            <option value="backers_desc">👥 Most Backers</option>
-            <option value="newest">✨ Newest</option>
-          </select>
+        {/* Sort Controls & View Mode Toggle */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap' }}>
+          <div className="discovery-layout-toggle" role="group" aria-label="Campaign display layout">
+            <button
+              type="button"
+              className={`layout-toggle-btn ${layoutMode === 'grid' ? 'active' : ''}`}
+              onClick={() => handleLayoutChange('grid')}
+              title="Grid view"
+              aria-label="Grid view"
+            >
+              <i className="fa-solid fa-table-cells-large"></i>
+            </button>
+            <button
+              type="button"
+              className={`layout-toggle-btn ${layoutMode === 'list' ? 'active' : ''}`}
+              onClick={() => handleLayoutChange('list')}
+              title="Compact list view"
+              aria-label="Compact list view"
+            >
+              <i className="fa-solid fa-list"></i>
+            </button>
+          </div>
+
+          <div className="sort-controls-box">
+            <label className="sort-control-label">
+              <i className="fa-solid fa-arrow-down-wide-short"></i> Sort:
+            </label>
+            <select 
+              className="sort-select-dropdown" 
+              value={sortBy} 
+              onChange={(e) => setSortBy(e.target.value)}
+            >
+              <option value="trending">🔥 Trending / Featured</option>
+              <option value="funded_desc">💰 Most Funded</option>
+              <option value="pct_desc">📈 % Funded (High to Low)</option>
+              <option value="days_asc">⏳ Ending Soonest</option>
+              <option value="backers_desc">👥 Most Backers</option>
+              <option value="newest">✨ Newest</option>
+            </select>
+          </div>
         </div>
+      </div>
+
+      {/* 4b. STATUS QUICK FILTERS */}
+      <div className="status-filter-bar">
+        <span className="status-filter-label">
+          <i className="fa-solid fa-filter"></i> Status:
+        </span>
+        <button
+          type="button"
+          className={`status-chip ${statusFilter === 'all' ? 'active' : ''}`}
+          onClick={() => setStatusFilter('all')}
+        >
+          All Stages
+        </button>
+        <button
+          type="button"
+          className={`status-chip ${statusFilter === 'nearly_funded' ? 'active' : ''}`}
+          onClick={() => setStatusFilter(statusFilter === 'nearly_funded' ? 'all' : 'nearly_funded')}
+        >
+          <i className="fa-solid fa-bullseye text-amber"></i> Nearly Funded (75%+)
+        </button>
+        <button
+          type="button"
+          className={`status-chip ${statusFilter === 'funded' ? 'active' : ''}`}
+          onClick={() => setStatusFilter(statusFilter === 'funded' ? 'all' : 'funded')}
+        >
+          <i className="fa-solid fa-circle-check text-green"></i> 100%+ Funded
+        </button>
+        <button
+          type="button"
+          className={`status-chip ${statusFilter === 'ending_soon' ? 'active' : ''}`}
+          onClick={() => setStatusFilter(statusFilter === 'ending_soon' ? 'all' : 'ending_soon')}
+        >
+          <i className="fa-solid fa-hourglass-half text-purple"></i> Ending Soon (≤10d)
+        </button>
+        {statusFilter !== 'all' && (
+          <button
+            type="button"
+            className="status-chip status-chip-clear"
+            onClick={() => setStatusFilter('all')}
+            title="Reset status filter"
+          >
+            <i className="fa-solid fa-xmark"></i> Clear Status
+          </button>
+        )}
       </div>
 
       {filteredProjects.length === 0 ? (
@@ -2011,12 +2117,88 @@ function HomepageView({ projects, searchQuery, setSearchQuery, selectedCategory,
               ? "Click the heart icon on any campaign to save it to your bookmarks for quick access anytime!" 
               : "We couldn't find any projects matching your search. Try adjusting filters or searching for key words."}
           </p>
-          {selectedCategory !== "Saved" && (
+          {(selectedCategory !== "Saved" || statusFilter !== "all" || selectedTag !== "All Tags" || searchQuery !== "") && (
             <button type="button" className="btn-secondary empty-discovery-action" onClick={clearDiscoveryFilters}>
               <i className="fa-solid fa-rotate-left"></i>
               Clear filters
             </button>
           )}
+        </div>
+      ) : layoutMode === 'list' ? (
+        <div className="discovery-list-container">
+          {filteredProjects.map((proj, idx) => {
+            const pct = Math.round((proj.raisedAmount / proj.goalAmount) * 100);
+            const isSaved = bookmarkedIds.includes(proj.id);
+            const isCompared = comparedProjectIds.includes(proj.id);
+            return (
+              <div key={proj.id} className={`discovery-list-card reveal-on-scroll stagger-${(idx % 3) + 1}`} onClick={() => onSelectProject(proj.id)}>
+                <div className="list-card-media">
+                  <img src={proj.image} alt={proj.title} />
+                  {pct >= 100 ? (
+                    <span className="list-card-badge funded"><i className="fa-solid fa-check"></i> 100%+</span>
+                  ) : proj.trending ? (
+                    <span className="list-card-badge trending"><i className="fa-solid fa-bolt"></i> Hot</span>
+                  ) : null}
+                </div>
+                <div className="list-card-main">
+                  <div className="list-card-header">
+                    <span className="list-card-category">{proj.category}</span>
+                    {proj.daysLeft <= 5 && <span className="list-card-urgent"><i className="fa-solid fa-clock"></i> {proj.daysLeft}d left</span>}
+                  </div>
+                  <h3 className="list-card-title">{proj.title}</h3>
+                  <p className="list-card-desc">{proj.subtitle}</p>
+                  <div className="list-card-progress">
+                    <div className="progress-container" style={{ height: '6px' }}>
+                      <div className="progress-fill" style={{ width: `${Math.min(100, pct)}%` }}></div>
+                    </div>
+                  </div>
+                </div>
+                <div className="list-card-metrics">
+                  <div className="list-metric-item">
+                    <strong>{formatCurrency(proj.raisedAmount, currency)}</strong>
+                    <span>{pct}% of {formatCurrency(proj.goalAmount, currency)}</span>
+                  </div>
+                  <div className="list-metric-item">
+                    <strong>{proj.backerCount.toLocaleString()}</strong>
+                    <span>Backers</span>
+                  </div>
+                  <div className="list-metric-item">
+                    <strong>{proj.daysLeft}</strong>
+                    <span>Days Left</span>
+                  </div>
+                </div>
+                <div className="list-card-actions" onClick={(e) => e.stopPropagation()}>
+                  <button
+                    type="button"
+                    className="list-action-btn"
+                    onClick={() => onShare && onShare(proj)}
+                    title="Share campaign"
+                    aria-label={`Share ${proj.title}`}
+                  >
+                    <i className="fa-solid fa-share-nodes"></i>
+                  </button>
+                  <button
+                    type="button"
+                    className={`list-action-btn ${isCompared ? 'active' : ''}`}
+                    onClick={(e) => toggleCompare && toggleCompare(proj.id, e)}
+                    title={isCompared ? "Remove from comparison matrix" : "Compare campaign"}
+                    aria-label={isCompared ? `Remove ${proj.title} from comparison` : `Compare ${proj.title}`}
+                  >
+                    <i className="fa-solid fa-code-compare"></i>
+                  </button>
+                  <button
+                    type="button"
+                    className={`list-action-btn ${isSaved ? 'bookmarked' : ''}`}
+                    onClick={(e) => toggleBookmark(proj.id, e)}
+                    title={isSaved ? "Remove from bookmarks" : "Save campaign"}
+                    aria-label={isSaved ? `Remove ${proj.title} from bookmarks` : `Save ${proj.title}`}
+                  >
+                    <i className={isSaved ? "fa-solid fa-heart" : "fa-regular fa-heart"}></i>
+                  </button>
+                </div>
+              </div>
+            );
+          })}
         </div>
       ) : (
         <div className="projects-grid">
@@ -2028,6 +2210,27 @@ function HomepageView({ projects, searchQuery, setSearchQuery, selectedCategory,
               <div key={proj.id} className={`project-card reveal-on-scroll stagger-${(idx % 3) + 1}`} onClick={() => onSelectProject(proj.id)}>
                 <div className="card-media">
                   {proj.trending && <span className="card-badge"><i className="fa-solid fa-bolt text-green"></i> Trending</span>}
+                  {pct >= 100 && (
+                    <span className="card-milestone-pill funded" title="Project reached 100% of its funding goal">
+                      <i className="fa-solid fa-circle-check"></i> 100%+
+                    </span>
+                  )}
+                  {pct < 100 && proj.daysLeft <= 5 && (
+                    <span className="card-milestone-pill urgent" title="Less than 5 days remaining">
+                      <i className="fa-solid fa-clock"></i> {proj.daysLeft}d left
+                    </span>
+                  )}
+                  <button 
+                    className="card-share-btn"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onShare && onShare(proj);
+                    }}
+                    title="Share campaign"
+                    aria-label={`Share ${proj.title}`}
+                  >
+                    <i className="fa-solid fa-share-nodes"></i>
+                  </button>
                   <button 
                     className={`card-compare-btn ${isCompared ? 'active' : ''}`}
                     onClick={(e) => toggleCompare && toggleCompare(proj.id, e)}

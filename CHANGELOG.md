@@ -7,6 +7,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.7.0] - 2026-10-18
+
+### 🚀 Added
+- **Discovery Dual View Mode Switcher**:
+  - Added Grid View vs. Compact List View layout switcher for trending discovery campaigns.
+  - Streamlined horizontal list view showing live funding progress, category badges, funding metrics, and quick action controls.
+  - Persistent layout preference saved directly in browser local storage (`vorynx_discovery_layout`).
+- **Campaign Stage & Funding Status Quick Filters**:
+  - Filter discovery campaigns instantly by funding progress: *All Stages*, *Nearly Funded (75%+)*, *100%+ Funded*, and *Ending Soon (≤10 Days)*.
+  - Reactive clear filters button with real-time matching counter.
+- **1-Click Card Quick Share**:
+  - Integrated 1-click share action on both featured spotlight and discovery campaign cards.
+  - Instantly summons the glassmorphic Share Modal featuring dynamic NPCI / UPI QR code generation and instant clipboard copy.
+- **Real-Time Campaign Milestone Badges**:
+  - Visual status pill indicators for *100%+ Funded* milestone celebrations and *Ending Soon* countdown alerts.
+
+---
+
 ## [0.6.0] - 2026-09-24
 
 ### 🚀 Added
