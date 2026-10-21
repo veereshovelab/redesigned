@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.9.0] - 2026-10-21
+
+### 🎬 Animations
+- **GSAP Integration (`gsap` v3)**:
+  - Installed `gsap` as a production dependency.
+  - **Modal Entrance**: `CampaignAnalyticsModal` card animates in with a slide-up + scale + fade (`power3.out`, 0.5s) via `useLayoutEffect`.
+  - **Stat Card Stagger**: All 5 Live Performance Snapshot stat cards cascade in with a staggered fade-up (`stagger: 0.08`, `power2.out`) 200ms after the modal opens.
+  - **Velocity Grade Pop**: The A+→F letter grade springs into view with a `back.out(2)` scale bounce whenever the grade changes (e.g. slider moved to a new tier).
+  - **Slider Label Pulse**: The *backers/day* and *avg pledge* value labels scale-pop and flash violet → brand-color (`power2.out`, 0.35s) on every slider movement for instant tactile feedback.
+
+---
+
 ## [0.8.0] - 2026-10-21
 
 ### 🚀 Added

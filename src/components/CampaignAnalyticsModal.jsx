@@ -1,4 +1,5 @@
-import { useState } from 'react';
+import { useState, useEffect, useRef, useLayoutEffect } from 'react';
+import { gsap } from 'gsap';
 
 /**
  * Campaign Analytics & Goal Forecast Simulator Modal
@@ -30,6 +31,60 @@ export default function CampaignAnalyticsModal({ project, isOpen, onClose, curre
     return Math.max(10, Math.round(avg));
   });
   const [copied, setCopied] = useState(false);
+
+  // GSAP refs
+  const modalCardRef  = useRef(null);
+  const statCardsRef  = useRef([]);
+  const gradeRef      = useRef(null);
+  const backerLabelRef = useRef(null);
+  const pledgeLabelRef = useRef(null);
+  const prevGrade     = useRef(null);
+
+  // ── Modal entrance: slide-up + fade when modal opens ──────────────────────
+  useLayoutEffect(() => {
+    if (!isOpen || !modalCardRef.current) return;
+    const ctx = gsap.context(() => {
+      // Card entrance
+      gsap.fromTo(
+        modalCardRef.current,
+        { y: 60, opacity: 0, scale: 0.96 },
+        { y: 0,  opacity: 1, scale: 1, duration: 0.5, ease: 'power3.out' }
+      );
+      // Stat cards stagger
+      if (statCardsRef.current.length) {
+        gsap.fromTo(
+          statCardsRef.current.filter(Boolean),
+          { y: 30, opacity: 0 },
+          { y: 0,  opacity: 1, duration: 0.45, ease: 'power2.out', stagger: 0.08, delay: 0.2 }
+        );
+      }
+    });
+    return () => ctx.revert();
+  }, [isOpen]);
+
+  // ── Velocity grade pop when grade changes ─────────────────────────────────
+  useEffect(() => {
+    if (!gradeRef.current) return;
+    const currentGrade = gradeRef.current.dataset.grade;
+    if (prevGrade.current && prevGrade.current !== currentGrade) {
+      gsap.fromTo(
+        gradeRef.current,
+        { scale: 0.6, opacity: 0.4 },
+        { scale: 1,   opacity: 1, duration: 0.4, ease: 'back.out(2)' }
+      );
+    }
+    prevGrade.current = currentGrade;
+  });
+
+  // ── Slider label pulse on change ──────────────────────────────────────────
+  const pulseLabel = (ref) => {
+    if (!ref.current) return;
+    gsap.fromTo(
+      ref.current,
+      { scale: 1.22, color: '#a78bfa' },
+      { scale: 1,    color: 'var(--accent-brand)', duration: 0.35, ease: 'power2.out' }
+    );
+  };
 
   if (!isOpen || !project) return null;
 
@@ -95,8 +150,9 @@ Forecast Generated via Vorynx Crowdfunding Analytics`;
 
   return (
     <div className="modal-overlay" onClick={onClose} style={{ zIndex: 10600 }}>
-      <div 
-        className="modal-card exec-summary-modal" 
+      <div
+        ref={modalCardRef}
+        className="modal-card exec-summary-modal"
         onClick={(e) => e.stopPropagation()}
         style={{
           maxWidth: '860px',
@@ -155,7 +211,7 @@ Forecast Generated via Vorynx Crowdfunding Analytics`;
             ⚡ Live Performance Snapshot
           </div>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: '1rem', marginBottom: '1rem' }}>
-            <div style={{ background: 'var(--bg-surface)', padding: '0.85rem', borderRadius: '12px', border: '1px solid var(--border-standard)' }}>
+            <div ref={el => statCardsRef.current[0] = el} style={{ background: 'var(--bg-surface)', padding: '0.85rem', borderRadius: '12px', border: '1px solid var(--border-standard)' }}>
               <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>Current Raised</div>
               <div style={{ fontSize: '1.35rem', fontWeight: 800, color: 'var(--accent-brand)', fontFamily: 'var(--font-heading)' }}>
                 {formatCurrencyVal(currentRaised, currency)}
@@ -163,7 +219,7 @@ Forecast Generated via Vorynx Crowdfunding Analytics`;
               <div style={{ fontSize: '0.7rem', color: '#10b981', fontWeight: 600 }}>{currentFundedPct}% of Goal</div>
             </div>
 
-            <div style={{ background: 'var(--bg-surface)', padding: '0.85rem', borderRadius: '12px', border: '1px solid var(--border-standard)' }}>
+            <div ref={el => statCardsRef.current[1] = el} style={{ background: 'var(--bg-surface)', padding: '0.85rem', borderRadius: '12px', border: '1px solid var(--border-standard)' }}>
               <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>Funding Goal</div>
               <div style={{ fontSize: '1.35rem', fontWeight: 800, color: 'var(--text-primary)', fontFamily: 'var(--font-heading)' }}>
                 {formatCurrencyVal(goal, currency)}
@@ -171,7 +227,7 @@ Forecast Generated via Vorynx Crowdfunding Analytics`;
               <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>Target Deadline</div>
             </div>
 
-            <div style={{ background: 'var(--bg-surface)', padding: '0.85rem', borderRadius: '12px', border: '1px solid var(--border-standard)' }}>
+            <div ref={el => statCardsRef.current[2] = el} style={{ background: 'var(--bg-surface)', padding: '0.85rem', borderRadius: '12px', border: '1px solid var(--border-standard)' }}>
               <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>Verified Backers</div>
               <div style={{ fontSize: '1.35rem', fontWeight: 800, color: 'var(--text-primary)', fontFamily: 'var(--font-heading)' }}>
                 {(project.backerCount || 0).toLocaleString()}
@@ -179,7 +235,7 @@ Forecast Generated via Vorynx Crowdfunding Analytics`;
               <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>{daysLeft} Days Remaining</div>
             </div>
 
-            <div style={{ background: 'var(--bg-surface)', padding: '0.85rem', borderRadius: '12px', border: '1px solid var(--border-standard)' }}>
+            <div ref={el => statCardsRef.current[3] = el} style={{ background: 'var(--bg-surface)', padding: '0.85rem', borderRadius: '12px', border: '1px solid var(--border-standard)' }}>
               <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>Avg Backer Pledge</div>
               <div style={{ fontSize: '1.35rem', fontWeight: 800, color: '#f59e0b', fontFamily: 'var(--font-heading)' }}>
                 {formatCurrencyVal(project.backerCount ? Math.round(currentRaised / project.backerCount) : 45, currency)}
@@ -188,7 +244,7 @@ Forecast Generated via Vorynx Crowdfunding Analytics`;
             </div>
 
             {/* Velocity Score Card */}
-            <div style={{
+            <div ref={el => statCardsRef.current[4] = el} style={{
               background: velocityScore.glow,
               padding: '0.85rem',
               borderRadius: '12px',
@@ -200,13 +256,18 @@ Forecast Generated via Vorynx Crowdfunding Analytics`;
             }}>
               <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>Velocity Score</div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                <span style={{
-                  fontSize: '1.65rem',
-                  fontWeight: 900,
-                  color: velocityScore.color,
-                  fontFamily: 'var(--font-heading)',
-                  lineHeight: 1
-                }}>
+                <span
+                  ref={gradeRef}
+                  data-grade={velocityScore.grade}
+                  style={{
+                    fontSize: '1.65rem',
+                    fontWeight: 900,
+                    color: velocityScore.color,
+                    fontFamily: 'var(--font-heading)',
+                    lineHeight: 1,
+                    display: 'inline-block'
+                  }}
+                >
                   {velocityScore.grade}
                 </span>
               </div>
@@ -231,14 +292,14 @@ Forecast Generated via Vorynx Crowdfunding Analytics`;
             <div>
               <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-primary)', marginBottom: '0.5rem' }}>
                 <span>Daily New Backers</span>
-                <span style={{ color: 'var(--accent-brand)', fontWeight: 800 }}>{dailyBackerRate} backers / day</span>
+                <span ref={backerLabelRef} style={{ color: 'var(--accent-brand)', fontWeight: 800 }}>{dailyBackerRate} backers / day</span>
               </div>
               <input 
                 type="range" 
                 min="1" 
                 max="50" 
                 value={dailyBackerRate} 
-                onChange={(e) => setDailyBackerRate(Number(e.target.value))}
+                onChange={(e) => { setDailyBackerRate(Number(e.target.value)); pulseLabel(backerLabelRef); }}
                 style={{ width: '100%', accentColor: 'var(--accent-brand)', cursor: 'pointer' }}
               />
               <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.7rem', color: 'var(--text-muted)', marginTop: '0.25rem' }}>
@@ -252,7 +313,7 @@ Forecast Generated via Vorynx Crowdfunding Analytics`;
             <div>
               <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-primary)', marginBottom: '0.5rem' }}>
                 <span>Projected Avg Pledge</span>
-                <span style={{ color: '#10b981', fontWeight: 800 }}>{formatCurrencyVal(avgPledgeAmount, currency)}</span>
+                <span ref={pledgeLabelRef} style={{ color: '#10b981', fontWeight: 800 }}>{formatCurrencyVal(avgPledgeAmount, currency)}</span>
               </div>
               <input 
                 type="range" 
@@ -260,7 +321,7 @@ Forecast Generated via Vorynx Crowdfunding Analytics`;
                 max="500" 
                 step="5"
                 value={avgPledgeAmount} 
-                onChange={(e) => setAvgPledgeAmount(Number(e.target.value))}
+                onChange={(e) => { setAvgPledgeAmount(Number(e.target.value)); pulseLabel(pledgeLabelRef); }}
                 style={{ width: '100%', accentColor: '#10b981', cursor: 'pointer' }}
               />
               <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.7rem', color: 'var(--text-muted)', marginTop: '0.25rem' }}>
