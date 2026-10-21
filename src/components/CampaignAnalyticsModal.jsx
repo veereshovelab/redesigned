@@ -46,6 +46,22 @@ export default function CampaignAnalyticsModal({ project, isOpen, onClose, curre
   const totalProjectedBackers = (project.backerCount || 0) + projectedBackersAdded;
   const surplusDeficit = projectedTotalRaised - goal;
 
+  // Velocity Score (A+ → F) — measures current daily funding rate vs required rate
+  const requiredDailyRate = daysLeft > 0 ? (goal - currentRaised) / daysLeft : Infinity;
+  const currentDailyRate = project.backerCount && daysLeft
+    ? (currentRaised / Math.max(1, (project.campaignDays || 30) - daysLeft))
+    : dailyBackerRate * avgPledgeAmount;
+  const velocityRatio = requiredDailyRate > 0 ? currentDailyRate / requiredDailyRate : 2;
+  const getVelocityScore = (ratio) => {
+    if (ratio >= 1.5) return { grade: 'A+', label: 'Blazing 🔥', color: '#10b981', glow: 'rgba(16,185,129,0.25)' };
+    if (ratio >= 1.0) return { grade: 'A',  label: 'On Track ✅', color: '#22c55e', glow: 'rgba(34,197,94,0.2)' };
+    if (ratio >= 0.75) return { grade: 'B', label: 'Good 👍',    color: '#84cc16', glow: 'rgba(132,204,22,0.2)' };
+    if (ratio >= 0.5) return { grade: 'C',  label: 'Steady ⚡',  color: '#f59e0b', glow: 'rgba(245,158,11,0.2)' };
+    if (ratio >= 0.25) return { grade: 'D', label: 'Lagging ⚠️', color: '#f97316', glow: 'rgba(249,115,22,0.2)' };
+    return { grade: 'F', label: 'Critical 🚨',                  color: '#ef4444', glow: 'rgba(239,68,68,0.25)' };
+  };
+  const velocityScore = getVelocityScore(velocityRatio);
+
   // Stretch Goals
   const stretch100 = goal;
   const stretch125 = Math.round(goal * 1.25);
@@ -169,6 +185,32 @@ Forecast Generated via Vorynx Crowdfunding Analytics`;
                 {formatCurrencyVal(project.backerCount ? Math.round(currentRaised / project.backerCount) : 45, currency)}
               </div>
               <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>Historical Average</div>
+            </div>
+
+            {/* Velocity Score Card */}
+            <div style={{
+              background: velocityScore.glow,
+              padding: '0.85rem',
+              borderRadius: '12px',
+              border: `1px solid ${velocityScore.color}55`,
+              boxShadow: `0 0 14px ${velocityScore.glow}`,
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '0.2rem'
+            }}>
+              <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>Velocity Score</div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                <span style={{
+                  fontSize: '1.65rem',
+                  fontWeight: 900,
+                  color: velocityScore.color,
+                  fontFamily: 'var(--font-heading)',
+                  lineHeight: 1
+                }}>
+                  {velocityScore.grade}
+                </span>
+              </div>
+              <div style={{ fontSize: '0.7rem', color: velocityScore.color, fontWeight: 700 }}>{velocityScore.label}</div>
             </div>
           </div>
         </div>

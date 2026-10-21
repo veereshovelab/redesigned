@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.8.0] - 2026-10-21
+
+### 🚀 Added
+- **Campaign Velocity Score Badge (`CampaignAnalyticsModal`)**:
+  - Added a new **Velocity Score** stat card in the Live Performance Snapshot section.
+  - Computes an A+→F letter grade by comparing the campaign's current daily funding rate against the required daily rate to hit its goal.
+  - Card dynamically changes color and emits a color-coded neon glow (green for A+/A, yellow/amber for B/C, orange for D, red for F).
+  - Includes a plain-English momentum label (e.g. *Blazing 🔥*, *On Track ✅*, *Lagging ⚠️*, *Critical 🚨*) for at-a-glance status.
+
+---
+
 ## [0.7.0] - 2026-10-18
 
 ### 🚀 Added
