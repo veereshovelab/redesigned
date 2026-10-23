@@ -381,7 +381,7 @@ export default function App() {
   const [projects, setProjects] = useState([]);
   
   // Sandbox Modes
-  const [simMode, setSimMode] = useState("funder"); // 'funder' | 'creator' | 'admin'
+  const [simMode, setSimMode] = useState("creator"); // 'creator' (only mode)
   const [donations, setDonations] = useState([]);
 
   // Alerts
@@ -770,37 +770,7 @@ export default function App() {
         <div className="ambient-glow-blob ambient-glow-blob-2"></div>
       </div>
 
-      {/* Sandbox Simulation Toolbar */}
-      <div className="sim-toolbar">
-        <div className="sim-toolbar-container">
-          <div className="sim-title">
-            <i className="fa-solid fa-flask"></i> Vorynx Sandbox Simulator
-          </div>
-          <div className="sim-role-badges">
-            <button 
-              className={`sim-role-btn ${simMode === 'funder' ? 'active' : ''}`}
-              onClick={() => { setSimMode('funder'); setView('home'); setSelectedProjectId(null); }}
-            >
-              <i className="fa-solid fa-wallet"></i> Funder View
-            </button>
-            <button 
-              className={`sim-role-btn ${simMode === 'creator' ? 'active' : ''}`}
-              onClick={() => { 
-                setSimMode('creator'); 
-                protectAction(() => setView('creator-dashboard'));
-              }}
-            >
-              <i className="fa-solid fa-chart-line"></i> Creator Mode
-            </button>
-            <button 
-              className={`sim-role-btn ${simMode === 'admin' ? 'active' : ''}`}
-              onClick={() => { setSimMode('admin'); setView('admin-panel'); }}
-            >
-              <i className="fa-solid fa-user-shield"></i> Admin Mode
-            </button>
-          </div>
-        </div>
-      </div>
+
 
       {/* Toast Alert Notification */}
       {toast && (
@@ -999,18 +969,10 @@ export default function App() {
               <i className="fa-solid fa-qrcode"></i>
               <span>UPI QR Generator</span>
             </button>
-            {(simMode === "creator" || simMode === "admin") && (
-              <button className="nav-more-item nav-more-action" onClick={() => { protectAction(() => setView("creator-dashboard")); setNavMoreOpen(false); }}>
+            <button className="nav-more-item nav-more-action" onClick={() => { protectAction(() => setView("creator-dashboard")); setNavMoreOpen(false); }}>
                 <i className="fa-solid fa-chart-line"></i>
                 <span>Creator Dashboard</span>
               </button>
-            )}
-            {simMode === "admin" && (
-              <button className="nav-more-item nav-more-action" onClick={() => { setView("admin-panel"); setNavMoreOpen(false); }}>
-                <i className="fa-solid fa-user-shield"></i>
-                <span>Admin Panel</span>
-              </button>
-            )}
               </div>
             </div>
 
