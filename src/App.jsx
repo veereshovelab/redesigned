@@ -379,9 +379,9 @@ export default function App() {
 
   // App Dynamic Project Database State
   const [projects, setProjects] = useState([]);
-  
+
   // Sandbox Modes
-  const [simMode, setSimMode] = useState("creator"); // 'creator' (only mode)
+  const [simMode, setSimMode] = useState("funder"); // 'funder' | 'creator' | 'admin'
   const [donations, setDonations] = useState([]);
 
   // Alerts
@@ -676,7 +676,7 @@ export default function App() {
       setLoading(false);
       if (currentUser) {
         setAuthOpen(false); // Close sign-in popup if completed successfully
-        
+
         // 2FA Enforcement Check
         const config = loadUser2FAConfig(currentUser);
         setUser2faConfig(config);
@@ -770,16 +770,45 @@ export default function App() {
         <div className="ambient-glow-blob ambient-glow-blob-2"></div>
       </div>
 
-
+      {/* Sandbox Simulation Toolbar */}
+      <div className="sim-toolbar">
+        <div className="sim-toolbar-container">
+          <div className="sim-title">
+            <i className="fa-solid fa-flask"></i> Vorynx Sandbox Simulator
+          </div>
+          <div className="sim-role-badges">
+            <button
+              className={`sim-role-btn ${simMode === 'funder' ? 'active' : ''}`}
+              onClick={() => { setSimMode('funder'); setView('home'); setSelectedProjectId(null); }}
+            >
+              <i className="fa-solid fa-wallet"></i> Funder View
+            </button>
+            <button
+              className={`sim-role-btn ${simMode === 'creator' ? 'active' : ''}`}
+              onClick={() => {
+                setSimMode('creator');
+                protectAction(() => setView('creator-dashboard'));
+              }}
+            >
+              <i className="fa-solid fa-chart-line"></i> Creator Mode
+            </button>
+            <button
+              className={`sim-role-btn ${simMode === 'admin' ? 'active' : ''}`}
+              onClick={() => { setSimMode('admin'); setView('admin-panel'); }}
+            >
+              <i className="fa-solid fa-user-shield"></i> Admin Mode
+            </button>
+          </div>
+        </div>
+      </div>
 
       {/* Toast Alert Notification */}
       {toast && (
         <div className={`toast-notification-card toast-${toast.type || 'info'}`}>
-          <i className={`fa-solid ${
-            toast.type === 'success' ? 'fa-circle-check text-green' :
+          <i className={`fa-solid ${toast.type === 'success' ? 'fa-circle-check text-green' :
             toast.type === 'warning' ? 'fa-triangle-exclamation text-amber' :
-            'fa-circle-info text-blue'
-          }`} style={{ fontSize: '1.1rem' }}></i>
+              'fa-circle-info text-blue'
+            }`} style={{ fontSize: '1.1rem' }}></i>
           <span style={{ fontSize: '0.9rem', fontWeight: 500, color: '#fff' }}>{toast.message}</span>
           <button className="toast-close-btn" onClick={() => setToast(null)} title="Dismiss">
             <i className="fa-solid fa-xmark"></i>
@@ -816,8 +845,8 @@ export default function App() {
               }}
             />
             {searchQuery ? (
-              <button 
-                type="button" 
+              <button
+                type="button"
                 className="search-clear-btn"
                 onClick={() => setSearchQuery("")}
                 title="Clear search"
@@ -830,7 +859,7 @@ export default function App() {
 
             {/* Search Suggestions & History Popover */}
             {searchFocused && (
-              <div 
+              <div
                 className="search-suggestions-popover"
                 onMouseDown={(e) => e.preventDefault()}
               >
@@ -842,8 +871,8 @@ export default function App() {
                     </div>
                     <div className="search-popover-items">
                       {recentSearches.map((term) => (
-                        <div 
-                          key={term} 
+                        <div
+                          key={term}
                           className="search-popover-item"
                           onClick={() => {
                             setSearchQuery(term);
@@ -907,77 +936,85 @@ export default function App() {
               <div className="nav-more-panel">
                 {/* Multi-Currency Toggle */}
                 <div className="nav-more-item nav-more-currency">
-              <span className="nav-more-label">Currency</span>
-              <div className="currency-toggle-pill" title="Toggle Currency ($ USD / ₹ INR)">
-              <button 
-                className={`currency-pill-btn ${currency === 'USD' ? 'active' : ''}`}
-                onClick={() => { setCurrency('USD'); localStorage.setItem('vorynx_currency', 'USD'); }}
-              >
-                $ USD
-              </button>
-              <button 
-                className={`currency-pill-btn ${currency === 'INR' ? 'active' : ''}`}
-                onClick={() => { setCurrency('INR'); localStorage.setItem('vorynx_currency', 'INR'); }}
-              >
-                ₹ INR
-              </button>
-              </div>
-            </div>
+                  <span className="nav-more-label">Currency</span>
+                  <div className="currency-toggle-pill" title="Toggle Currency ($ USD / ₹ INR)">
+                    <button
+                      className={`currency-pill-btn ${currency === 'USD' ? 'active' : ''}`}
+                      onClick={() => { setCurrency('USD'); localStorage.setItem('vorynx_currency', 'USD'); }}
+                    >
+                      $ USD
+                    </button>
+                    <button
+                      className={`currency-pill-btn ${currency === 'INR' ? 'active' : ''}`}
+                      onClick={() => { setCurrency('INR'); localStorage.setItem('vorynx_currency', 'INR'); }}
+                    >
+                      ₹ INR
+                    </button>
+                  </div>
+                </div>
 
-            {/* Light / Dark Mode Toggle */}
-            <button 
-              className="nav-more-item nav-more-action"
-              onClick={toggleTheme}
-              title={`Switch to ${theme === 'dark' ? 'Light' : 'Dark'} Mode`}
-            >
-              <i className={`fa-solid ${theme === 'dark' ? 'fa-sun text-amber' : 'fa-moon text-blue'}`}></i>
-              <span>{theme === 'dark' ? 'Light mode' : 'Dark mode'}</span>
-            </button>
+                {/* Light / Dark Mode Toggle */}
+                <button
+                  className="nav-more-item nav-more-action"
+                  onClick={toggleTheme}
+                  title={`Switch to ${theme === 'dark' ? 'Light' : 'Dark'} Mode`}
+                >
+                  <i className={`fa-solid ${theme === 'dark' ? 'fa-sun text-amber' : 'fa-moon text-blue'}`}></i>
+                  <span>{theme === 'dark' ? 'Light mode' : 'Dark mode'}</span>
+                </button>
 
-            {/* Keyboard Shortcuts Guide Button */}
-            <button
-              className="nav-more-item nav-more-action"
-              onClick={() => { setShortcutsOpen(true); setNavMoreOpen(false); }}
-              title="Keyboard Shortcuts (?)"
-            >
-              <i className="fa-solid fa-keyboard text-purple" style={{ color: '#a855f7' }}></i>
-              <span>Keyboard shortcuts</span>
-            </button>
+                {/* Keyboard Shortcuts Guide Button */}
+                <button
+                  className="nav-more-item nav-more-action"
+                  onClick={() => { setShortcutsOpen(true); setNavMoreOpen(false); }}
+                  title="Keyboard Shortcuts (?)"
+                >
+                  <i className="fa-solid fa-keyboard text-purple" style={{ color: '#a855f7' }}></i>
+                  <span>Keyboard shortcuts</span>
+                </button>
 
-            {/* Global Command Palette Button */}
-            <button
-              className="nav-more-item nav-more-action"
-              onClick={() => { setCommandPaletteOpen(true); setNavMoreOpen(false); }}
-              title="Global Command Palette (Ctrl+K / Cmd+K)"
-            >
-              <i className="fa-solid fa-terminal" style={{ color: 'var(--accent-brand)' }}></i>
-              <span>Command palette <kbd>Ctrl K</kbd></span>
-            </button>
+                {/* Global Command Palette Button */}
+                <button
+                  className="nav-more-item nav-more-action"
+                  onClick={() => { setCommandPaletteOpen(true); setNavMoreOpen(false); }}
+                  title="Global Command Palette (Ctrl+K / Cmd+K)"
+                >
+                  <i className="fa-solid fa-terminal" style={{ color: 'var(--accent-brand)' }}></i>
+                  <span>Command palette <kbd>Ctrl K</kbd></span>
+                </button>
 
-            {/* Saved Bookmarks Navigation Button */}
-            <button 
-              className="nav-more-item nav-more-action"
-              onClick={() => { setView("home"); setSelectedCategory("Saved"); setSelectedProjectId(null); setNavMoreOpen(false); }}
-              title="View Saved Bookmarks"
-            >
-              <i className="fa-solid fa-heart" style={{ color: '#ef4444' }}></i>
-              <span>Saved campaigns</span>
-              {bookmarkedIds.length > 0 && <span className="nav-more-badge">{bookmarkedIds.length}</span>}
-            </button>
+                {/* Saved Bookmarks Navigation Button */}
+                <button
+                  className="nav-more-item nav-more-action"
+                  onClick={() => { setView("home"); setSelectedCategory("Saved"); setSelectedProjectId(null); setNavMoreOpen(false); }}
+                  title="View Saved Bookmarks"
+                >
+                  <i className="fa-solid fa-heart" style={{ color: '#ef4444' }}></i>
+                  <span>Saved campaigns</span>
+                  {bookmarkedIds.length > 0 && <span className="nav-more-badge">{bookmarkedIds.length}</span>}
+                </button>
 
-            <button className="nav-more-item nav-more-action" onClick={() => { setView("qr-generator"); setSelectedProjectId(null); setNavMoreOpen(false); }}>
-              <i className="fa-solid fa-qrcode"></i>
-              <span>UPI QR Generator</span>
-            </button>
-            <button className="nav-more-item nav-more-action" onClick={() => { protectAction(() => setView("creator-dashboard")); setNavMoreOpen(false); }}>
-                <i className="fa-solid fa-chart-line"></i>
-                <span>Creator Dashboard</span>
-              </button>
+                <button className="nav-more-item nav-more-action" onClick={() => { setView("qr-generator"); setSelectedProjectId(null); setNavMoreOpen(false); }}>
+                  <i className="fa-solid fa-qrcode"></i>
+                  <span>UPI QR Generator</span>
+                </button>
+                {(simMode === "creator" || simMode === "admin") && (
+                  <button className="nav-more-item nav-more-action" onClick={() => { protectAction(() => setView("creator-dashboard")); setNavMoreOpen(false); }}>
+                    <i className="fa-solid fa-chart-line"></i>
+                    <span>Creator Dashboard</span>
+                  </button>
+                )}
+                {simMode === "admin" && (
+                  <button className="nav-more-item nav-more-action" onClick={() => { setView("admin-panel"); setNavMoreOpen(false); }}>
+                    <i className="fa-solid fa-user-shield"></i>
+                    <span>Admin Panel</span>
+                  </button>
+                )}
               </div>
             </div>
 
             {/* My Pledges & Backer Portfolio Navigation Button */}
-            <button 
+            <button
               className="nav-pledges-btn"
               onClick={() => setPortfolioOpen(true)}
               title="My Pledges & Verified Certificates"
@@ -1629,7 +1666,7 @@ export default function App() {
 
       {/* Floating Scroll to Top Button */}
       {showScrollTop && (
-        <button 
+        <button
           type="button"
           className="scroll-top-btn"
           onClick={scrollToTop}
@@ -1685,22 +1722,22 @@ function HomepageView({ projects, searchQuery, setSearchQuery, selectedCategory,
     const matchesCategory = selectedCategory === "All"
       ? true
       : selectedCategory === "Saved"
-      ? bookmarkedIds.includes(proj.id)
-      : proj.category === selectedCategory;
+        ? bookmarkedIds.includes(proj.id)
+        : proj.category === selectedCategory;
 
     const matchesTag = selectedTag === "All Tags" || (
       proj.tags ? proj.tags.includes(selectedTag) :
-      (proj.title + " " + proj.subtitle + " " + proj.description + " " + proj.category)
-        .toLowerCase()
-        .includes(selectedTag.replace('#', '').toLowerCase())
+        (proj.title + " " + proj.subtitle + " " + proj.description + " " + proj.category)
+          .toLowerCase()
+          .includes(selectedTag.replace('#', '').toLowerCase())
     );
 
     const pct = Math.round((proj.raisedAmount / Math.max(proj.goalAmount, 1)) * 100);
     const matchesStatus =
       statusFilter === "all" ? true :
-      statusFilter === "nearly_funded" ? (pct >= 75 && pct < 100) :
-      statusFilter === "funded" ? (pct >= 100) :
-      statusFilter === "ending_soon" ? (proj.daysLeft <= 10) : true;
+        statusFilter === "nearly_funded" ? (pct >= 75 && pct < 100) :
+          statusFilter === "funded" ? (pct >= 100) :
+            statusFilter === "ending_soon" ? (proj.daysLeft <= 10) : true;
 
     return matchesSearch && matchesCategory && matchesTag && matchesStatus && isVisibleProject(proj);
   });
@@ -1737,11 +1774,11 @@ function HomepageView({ projects, searchQuery, setSearchQuery, selectedCategory,
   const activeCampaigns = projects.filter(isVisibleProject).length;
   const averageProgress = activeCampaigns > 0
     ? Math.round(
-        projects
-          .filter(isVisibleProject)
-          .reduce((acc, p) => acc + ((p.raisedAmount || 0) / Math.max(p.goalAmount || 1, 1)) * 100, 0) /
-          activeCampaigns
-      )
+      projects
+        .filter(isVisibleProject)
+        .reduce((acc, p) => acc + ((p.raisedAmount || 0) / Math.max(p.goalAmount || 1, 1)) * 100, 0) /
+      activeCampaigns
+    )
     : 0;
   const categoryCounts = projects
     .filter(isVisibleProject)
@@ -1878,7 +1915,7 @@ function HomepageView({ projects, searchQuery, setSearchQuery, selectedCategory,
           <div className="hero-spotlight reveal-on-scroll">
             <div className="hero-media" style={{ position: 'relative', zIndex: 1 }}>
               <span className="hero-tag">Staff Pick</span>
-              <button 
+              <button
                 className="card-share-btn"
                 onClick={(e) => {
                   e.stopPropagation();
@@ -1890,7 +1927,7 @@ function HomepageView({ projects, searchQuery, setSearchQuery, selectedCategory,
               >
                 <i className="fa-solid fa-share-nodes"></i>
               </button>
-              <button 
+              <button
                 className={`card-compare-btn ${comparedProjectIds.includes(spotlightProj.id) ? 'active' : ''}`}
                 onClick={(e) => toggleCompare && toggleCompare(spotlightProj.id, e)}
                 title={comparedProjectIds.includes(spotlightProj.id) ? "Remove from comparison matrix" : "Compare campaign side-by-side"}
@@ -1899,7 +1936,7 @@ function HomepageView({ projects, searchQuery, setSearchQuery, selectedCategory,
               >
                 <i className="fa-solid fa-code-compare"></i>
               </button>
-              <button 
+              <button
                 className={`card-bookmark-btn ${bookmarkedIds.includes(spotlightProj.id) ? 'bookmarked' : ''}`}
                 onClick={(e) => toggleBookmark(spotlightProj.id, e)}
                 title={bookmarkedIds.includes(spotlightProj.id) ? "Remove from bookmarks" : "Save campaign"}
@@ -1946,7 +1983,7 @@ function HomepageView({ projects, searchQuery, setSearchQuery, selectedCategory,
                 <button className="btn-primary" onClick={() => onSelectProject(spotlightProj.id)}>
                   View Campaign
                 </button>
-                <button 
+                <button
                   className={`btn-secondary ${comparedProjectIds.includes(spotlightProj.id) ? 'active' : ''}`}
                   onClick={(e) => toggleCompare && toggleCompare(spotlightProj.id, e)}
                 >
@@ -2000,9 +2037,9 @@ function HomepageView({ projects, searchQuery, setSearchQuery, selectedCategory,
             <label className="sort-control-label">
               <i className="fa-solid fa-arrow-down-wide-short"></i> Sort:
             </label>
-            <select 
-              className="sort-select-dropdown" 
-              value={sortBy} 
+            <select
+              className="sort-select-dropdown"
+              value={sortBy}
               onChange={(e) => setSortBy(e.target.value)}
             >
               <option value="trending">🔥 Trending / Featured</option>
@@ -2068,8 +2105,8 @@ function HomepageView({ projects, searchQuery, setSearchQuery, selectedCategory,
             {selectedCategory === "Saved" ? "No Saved Campaigns Yet" : "No Campaigns Found"}
           </h3>
           <p style={{ marginTop: '0.5rem', fontSize: '0.95rem', maxWidth: '400px', margin: '0.5rem auto 0' }}>
-            {selectedCategory === "Saved" 
-              ? "Click the heart icon on any campaign to save it to your bookmarks for quick access anytime!" 
+            {selectedCategory === "Saved"
+              ? "Click the heart icon on any campaign to save it to your bookmarks for quick access anytime!"
               : "We couldn't find any projects matching your search. Try adjusting filters or searching for key words."}
           </p>
           {(selectedCategory !== "Saved" || statusFilter !== "all" || selectedTag !== "All Tags" || searchQuery !== "") && (
@@ -2175,7 +2212,7 @@ function HomepageView({ projects, searchQuery, setSearchQuery, selectedCategory,
                       <i className="fa-solid fa-clock"></i> {proj.daysLeft}d left
                     </span>
                   )}
-                  <button 
+                  <button
                     className="card-share-btn"
                     onClick={(e) => {
                       e.stopPropagation();
@@ -2186,7 +2223,7 @@ function HomepageView({ projects, searchQuery, setSearchQuery, selectedCategory,
                   >
                     <i className="fa-solid fa-share-nodes"></i>
                   </button>
-                  <button 
+                  <button
                     className={`card-compare-btn ${isCompared ? 'active' : ''}`}
                     onClick={(e) => toggleCompare && toggleCompare(proj.id, e)}
                     title={isCompared ? "Remove from comparison matrix" : "Compare campaign side-by-side"}
@@ -2194,7 +2231,7 @@ function HomepageView({ projects, searchQuery, setSearchQuery, selectedCategory,
                   >
                     <i className="fa-solid fa-code-compare"></i>
                   </button>
-                  <button 
+                  <button
                     className={`card-bookmark-btn ${isSaved ? 'bookmarked' : ''}`}
                     onClick={(e) => toggleBookmark(proj.id, e)}
                     title={isSaved ? "Remove from bookmarks" : "Save campaign"}
@@ -2432,8 +2469,8 @@ function ProjectDetailView({ project, onBack, user, onPledge, onAddComment, onDe
         </span>
 
         <div className="detail-action-buttons-row">
-          <button 
-            type="button" 
+          <button
+            type="button"
             className="btn-secondary"
             onClick={() => onOpenHallOfFame && onOpenHallOfFame(project)}
             title="View Backer Leaderboard & Community Trophies"
@@ -2441,8 +2478,8 @@ function ProjectDetailView({ project, onBack, user, onPledge, onAddComment, onDe
             <i className="fa-solid fa-trophy" style={{ color: '#f59e0b' }}></i>
             <span>Hall of Fame</span>
           </button>
-          <button 
-            type="button" 
+          <button
+            type="button"
             className="btn-secondary"
             onClick={() => onOpenAnalytics && onOpenAnalytics(project)}
             title="Simulate funding velocity & stretch goals"
@@ -2450,8 +2487,8 @@ function ProjectDetailView({ project, onBack, user, onPledge, onAddComment, onDe
             <i className="fa-solid fa-chart-line" style={{ color: '#a855f7' }}></i>
             <span>Analytics</span>
           </button>
-          <button 
-            type="button" 
+          <button
+            type="button"
             className="btn-secondary"
             onClick={() => onOpenPitchReport && onOpenPitchReport(project)}
             title="Export Executive Pitch Summary (PDF/JSON)"
@@ -2459,8 +2496,8 @@ function ProjectDetailView({ project, onBack, user, onPledge, onAddComment, onDe
             <i className="fa-solid fa-file-contract" style={{ color: '#10b981' }}></i>
             <span>Pitch Report</span>
           </button>
-          <button 
-            type="button" 
+          <button
+            type="button"
             className={`btn-secondary ${isCompared ? 'active' : ''}`}
             onClick={(e) => toggleCompare && toggleCompare(project.id, e)}
             title="Compare side-by-side with other campaigns"
@@ -2468,17 +2505,17 @@ function ProjectDetailView({ project, onBack, user, onPledge, onAddComment, onDe
             <i className="fa-solid fa-code-compare"></i>
             <span>{isCompared ? "Comparing" : "Compare"}</span>
           </button>
-          <button 
-            type="button" 
-            className="btn-secondary detail-share-btn" 
+          <button
+            type="button"
+            className="btn-secondary detail-share-btn"
             onClick={() => onShare && onShare(project)}
             title="Share this campaign"
           >
             <i className="fa-solid fa-share-nodes"></i> Share
           </button>
-          <button 
-            type="button" 
-            className={`detail-bookmark-btn ${isSaved ? 'bookmarked' : ''}`} 
+          <button
+            type="button"
+            className={`detail-bookmark-btn ${isSaved ? 'bookmarked' : ''}`}
             onClick={(e) => toggleBookmark && toggleBookmark(project.id, e)}
             title={isSaved ? "Remove from bookmarks" : "Save campaign"}
           >
@@ -2846,7 +2883,7 @@ function ProjectDetailView({ project, onBack, user, onPledge, onAddComment, onDe
 function ProjectRoadmap({ project }) {
   const percent = Math.round((project.raisedAmount / project.goalAmount) * 100);
   const isFunded = percent >= 100;
-  
+
   const milestones = [
     {
       phase: "Phase 1",
@@ -2973,8 +3010,8 @@ function StretchGoalsMilestones({ project, currency }) {
           const remainingNeeded = targetAmount - raised;
 
           return (
-            <div 
-              key={idx} 
+            <div
+              key={idx}
               className={`stretch-tier-item ${isUnlocked ? 'unlocked' : isInProgress ? 'in-progress' : ''}`}
             >
               <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
@@ -3358,8 +3395,8 @@ function GoalCompletionCalculator({ project, currency, onPledge }) {
 function ShareModal({ project, onClose, showToast }) {
   const qrCanvasRef = useRef(null);
   const [copied, setCopied] = useState(false);
-  const shareUrl = typeof window !== 'undefined' 
-    ? `${window.location.origin}${window.location.pathname}?campaign=${project.id}` 
+  const shareUrl = typeof window !== 'undefined'
+    ? `${window.location.origin}${window.location.pathname}?campaign=${project.id}`
     : `https://vorynx.com/campaign/${project.id}`;
 
   useEffect(() => {
@@ -3417,34 +3454,34 @@ function ShareModal({ project, onClose, showToast }) {
 
           {/* Social Share Grid */}
           <div className="social-share-grid">
-            <a 
-              href={`https://api.whatsapp.com/send?text=${encodeURIComponent(shareText + ' ' + shareUrl)}`} 
-              target="_blank" 
-              rel="noopener noreferrer" 
+            <a
+              href={`https://api.whatsapp.com/send?text=${encodeURIComponent(shareText + ' ' + shareUrl)}`}
+              target="_blank"
+              rel="noopener noreferrer"
               className="social-share-btn whatsapp"
             >
               <i className="fa-brands fa-whatsapp"></i> WhatsApp
             </a>
-            <a 
-              href={`https://twitter.com/intent/tweet?text=${encodeURIComponent(shareText)}&url=${encodeURIComponent(shareUrl)}`} 
-              target="_blank" 
-              rel="noopener noreferrer" 
+            <a
+              href={`https://twitter.com/intent/tweet?text=${encodeURIComponent(shareText)}&url=${encodeURIComponent(shareUrl)}`}
+              target="_blank"
+              rel="noopener noreferrer"
               className="social-share-btn twitter"
             >
               <i className="fa-brands fa-x-twitter"></i> X / Twitter
             </a>
-            <a 
-              href={`https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(shareUrl)}`} 
-              target="_blank" 
-              rel="noopener noreferrer" 
+            <a
+              href={`https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(shareUrl)}`}
+              target="_blank"
+              rel="noopener noreferrer"
               className="social-share-btn linkedin"
             >
               <i className="fa-brands fa-linkedin"></i> LinkedIn
             </a>
-            <a 
-              href={`https://reddit.com/submit?url=${encodeURIComponent(shareUrl)}&title=${encodeURIComponent(project.title)}`} 
-              target="_blank" 
-              rel="noopener noreferrer" 
+            <a
+              href={`https://reddit.com/submit?url=${encodeURIComponent(shareUrl)}&title=${encodeURIComponent(project.title)}`}
+              target="_blank"
+              rel="noopener noreferrer"
               className="social-share-btn reddit"
             >
               <i className="fa-brands fa-reddit-alien"></i> Reddit
@@ -3470,7 +3507,7 @@ function ShareModal({ project, onClose, showToast }) {
 function UpiPaymentCard({ merchantName, upiId, canvasRef }) {
   const isBankRouting = upiId && upiId.includes('.ifsc.npci');
   let displayAddress = upiId || "merchant@upi";
-  
+
   if (isBankRouting) {
     const parts = upiId.split('@');
     if (parts.length === 2) {
@@ -3611,7 +3648,7 @@ function BackerCertificateModal({ certificate, onClose, currency = 'USD', showTo
     <div className="modal-overlay" onClick={onClose}>
       <div className="modal-content certificate-modal-content" onClick={(e) => e.stopPropagation()}>
         <button className="modal-close-btn" onClick={onClose} style={{ zIndex: 10, top: '1.25rem', right: '1.25rem' }}>&times;</button>
-        
+
         <div className="certificate-card-frame printable-certificate-area">
           <div className="certificate-watermark-seal">
             <i className="fa-solid fa-award"></i>
@@ -3701,13 +3738,13 @@ function BackerCertificateModal({ certificate, onClose, currency = 'USD', showTo
 // ============================================================================
 function BackerPortfolioModal({ donations = [], projects = [], onClose, onViewCertificate, currency = 'USD', user }) {
   const currentUsername = user?.displayName || user?.email?.split('@')[0] || "Anonymous Funder";
-  
+
   const userDonations = donations.length > 0
     ? donations
     : [
-        { id: "mock-d1", project_id: "keyboard", amount: 129, utr_id: "103488274910", username: currentUsername, status: "successful", created_at: "2026-08-27T10:00:00.000Z" },
-        { id: "mock-d2", project_id: "smarthub", amount: 99, utr_id: "103499281722", username: currentUsername, status: "successful", created_at: "2026-08-24T10:00:00.000Z" }
-      ];
+      { id: "mock-d1", project_id: "keyboard", amount: 129, utr_id: "103488274910", username: currentUsername, status: "successful", created_at: "2026-08-27T10:00:00.000Z" },
+      { id: "mock-d2", project_id: "smarthub", amount: 99, utr_id: "103499281722", username: currentUsername, status: "successful", created_at: "2026-08-24T10:00:00.000Z" }
+    ];
 
 
   const totalContributed = userDonations.reduce((sum, d) => sum + (Number(d.amount) || 0), 0);
@@ -3717,7 +3754,7 @@ function BackerPortfolioModal({ donations = [], projects = [], onClose, onViewCe
     <div className="modal-overlay" onClick={onClose}>
       <div className="modal-content portfolio-modal-content" onClick={(e) => e.stopPropagation()}>
         <button className="modal-close-btn" onClick={onClose}>&times;</button>
-        
+
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1.25rem' }}>
           <div style={{ width: '42px', height: '42px', borderRadius: '12px', background: 'rgba(16, 185, 129, 0.15)', color: 'var(--accent-success)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.2rem' }}>
             <i className="fa-solid fa-receipt"></i>
@@ -3940,7 +3977,7 @@ function CheckoutModal({ project, reward, onClose, onSubmit, currency = 'USD' })
                 min={reward.pledgeAmount}
                 required
               />
-              
+
               {/* Quick Boost Preset Chips */}
               <div className="pledge-preset-chips">
                 <span className="pledge-preset-label">Quick boost:</span>
@@ -4391,7 +4428,7 @@ function CreateProjectWizard({ onBack, onSubmit, user }) {
             {/* Destination Selection */}
             <div style={{ borderTop: '1px solid var(--border-standard)', paddingTop: '1.25rem', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
               <span style={{ fontSize: '0.85rem', fontWeight: 700, color: 'var(--text-primary)', display: 'block' }}>UPI Payout Destination</span>
-              
+
               {/* Bank details input fields (displayed first) */}
               <div style={{ background: 'var(--bg-main)', padding: '1.25rem', border: '1px solid var(--border-standard)', borderRadius: '16px' }}>
                 <span style={{ fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-primary)', display: 'block', marginBottom: '0.75rem' }}>Option A: Direct Bank Account & IFSC</span>
@@ -4474,7 +4511,7 @@ function CreateProjectWizard({ onBack, onSubmit, user }) {
             {/* Universal QR Code Preview Box with Customization and Downloads */}
             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', marginTop: '0.5rem', padding: '1.25rem', background: 'var(--bg-main)', border: '1px dashed var(--border-standard)', borderRadius: '16px' }}>
               <span style={{ fontSize: '0.85rem', color: 'var(--text-primary)', fontWeight: 700, textAlign: 'center', display: 'block' }}>Universal UPI QR Code Card</span>
-              
+
               <UpiPaymentCard
                 merchantName={payeeName || title || "Campaign Payout"}
                 upiId={payeeType === 'vpa' ? upiVpa : (bankAccount && bankIfsc ? `${bankAccount}@${bankIfsc}.ifsc.npci` : '')}
@@ -4862,10 +4899,10 @@ function CreatorDashboardView({ projects, donations, user, setView, currency, on
                   </div>
                   <div style={{ display: 'flex', gap: '0.8rem', alignItems: 'center', flexWrap: 'wrap' }}>
                     {projectDonations.length > 0 && (
-                      <button 
+                      <button
                         type="button"
-                        className="btn-secondary" 
-                        style={{ fontSize: '0.85rem' }} 
+                        className="btn-secondary"
+                        style={{ fontSize: '0.85rem' }}
                         onClick={() => exportDonationsToCSV(projectDonations, `${project.title.replace(/\s+/g, '_')}_backers`)}
                         title="Download backer list and transaction records as CSV"
                       >
@@ -5123,9 +5160,9 @@ function AdminPanelView({ projects, donations, setView, refreshData, showToast, 
               Pending UTR Receipts Queue
             </div>
             {pendingDonations.length > 0 && (
-              <button 
+              <button
                 type="button"
-                className="btn-secondary" 
+                className="btn-secondary"
                 style={{ fontSize: '0.8rem', padding: '0.4rem 0.8rem' }}
                 onClick={() => exportDonationsToCSV(pendingDonations, "vorynx_pending_receipts")}
                 title="Download pending UTR receipts as CSV"
@@ -5191,7 +5228,7 @@ function AdminPanelView({ projects, donations, setView, refreshData, showToast, 
 // ============================================================================
 function UpiQrGenerator({ setView }) {
   const [payeeType, setPayeeType] = useState("vpa"); // 'vpa' | 'bank'
-  
+
   // Form fields
   const [upiId, setUpiId] = useState("merchant@upi");
   const [accountNo, setAccountNo] = useState("");
@@ -5199,17 +5236,17 @@ function UpiQrGenerator({ setView }) {
   const [payeeName, setPayeeName] = useState("Alex Mercer");
   const [amount, setAmount] = useState("");
   const [note, setNote] = useState("Invoice Settlement");
-  
+
   // Customization (Internal defaults)
   const qrSize = "180";
   const fgColor = "#000000";
   const bgColor = "#ffffff";
-  
+
   const canvasRef = useRef(null);
 
   useEffect(() => {
     if (!canvasRef.current) return;
-    
+
     if (payeeType === "bank" && (!accountNo || !ifscCode)) {
       // Clear canvas or show message
       const ctx = canvasRef.current.getContext('2d');
@@ -5229,7 +5266,7 @@ function UpiQrGenerator({ setView }) {
     const nameParam = payeeName ? `&pn=${encodeURIComponent(payeeName)}` : "";
     const amountParam = amount ? `&am=${encodeURIComponent(amount)}` : "";
     const noteParam = note ? `&tn=${encodeURIComponent(note)}` : "";
-    
+
     // Standard UPI URI
     const upiUri = `upi://pay?pa=${payeeAddress}${nameParam}${amountParam}${noteParam}&cu=INR`;
 
@@ -5304,18 +5341,18 @@ function UpiQrGenerator({ setView }) {
       <div className="qr-generator-container">
         {/* Left Side Controls */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
-          
+
           <span style={{ fontSize: '0.875rem', fontWeight: 700, color: 'var(--text-primary)' }}>Select Destination Type</span>
           <div className="toggle-group-buttons">
-            <button 
-              type="button" 
+            <button
+              type="button"
               className={`toggle-btn ${payeeType === 'vpa' ? 'active' : ''}`}
               onClick={() => setPayeeType('vpa')}
             >
               <i className="fa-solid fa-at"></i> UPI ID (VPA)
             </button>
-            <button 
-              type="button" 
+            <button
+              type="button"
               className={`toggle-btn ${payeeType === 'bank' ? 'active' : ''}`}
               onClick={() => setPayeeType('bank')}
             >
@@ -5405,7 +5442,7 @@ function UpiQrGenerator({ setView }) {
         {/* Right Side Live Preview */}
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
           <h3 style={{ fontFamily: 'var(--font-heading)', fontSize: '1.25rem', fontWeight: 800, color: 'var(--text-primary)', marginBottom: '1.5rem', alignSelf: 'flex-start' }}>Real-time QR Preview</h3>
-          
+
           <UpiPaymentCard
             merchantName={payeeName || "Merchant Name"}
             upiId={payeeType === 'vpa' ? upiId : (accountNo && ifscCode ? `${accountNo}@${ifscCode}.ifsc.npci` : "")}
@@ -5413,8 +5450,8 @@ function UpiQrGenerator({ setView }) {
           />
 
           <div className="download-btn-group">
-            <button 
-              className="btn-primary" 
+            <button
+              className="btn-primary"
               onClick={handleDownloadPng}
               disabled={
                 payeeType === 'bank'
@@ -5424,8 +5461,8 @@ function UpiQrGenerator({ setView }) {
             >
               <i className="fa-solid fa-file-image"></i> Download PNG
             </button>
-            <button 
-              className="btn-secondary" 
+            <button
+              className="btn-secondary"
               onClick={handleDownloadSvg}
               disabled={
                 payeeType === 'bank'
@@ -5446,8 +5483,8 @@ function UpiQrGenerator({ setView }) {
 // ============================================================================
 // FLOATING CAMPAIGN COMPARISON DRAWER
 // ============================================================================
-function FloatingComparisonDrawer({ comparedProjects, onOpenModal, onRemove, onClear }) {
-  if (!comparedProjects || comparedProjects.length === 0) return null;
+function FloatingComparisonDrawer({ comparedprojects, onopenmodal, onremove, onclear }) {
+  if (!comparedprojects || comparedprojects.length === 0) return null;
 
   return (
     <div className="floating-comparison-drawer">
@@ -5471,7 +5508,7 @@ function FloatingComparisonDrawer({ comparedProjects, onOpenModal, onRemove, onC
             <div key={proj.id} className="comparison-project-chip">
               <img src={proj.image} alt={proj.title} />
               <span className="comparison-chip-title">{proj.title}</span>
-              <button 
+              <button
                 className="comparison-chip-remove"
                 onClick={() => onRemove(proj.id)}
                 title="Remove campaign"
@@ -5672,8 +5709,8 @@ function ComparisonModal({ comparedProjects, onClose, currency, onPledge, onSele
                 {comparedProjects.map((p) => (
                   <td key={p.id}>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                      <button 
-                        className="btn-primary" 
+                      <button
+                        className="btn-primary"
                         style={{ padding: '0.5rem 1rem', fontSize: '0.8rem', width: '100%' }}
                         onClick={() => {
                           onClose();
@@ -5682,8 +5719,8 @@ function ComparisonModal({ comparedProjects, onClose, currency, onPledge, onSele
                       >
                         View Details
                       </button>
-                      <button 
-                        className="btn-secondary" 
+                      <button
+                        className="btn-secondary"
                         style={{ padding: '0.5rem 1rem', fontSize: '0.8rem', width: '100%' }}
                         onClick={() => {
                           onClose();
@@ -5835,19 +5872,19 @@ function CommunityQnASection({ project, user, showToast }) {
       {/* Filter Chips */}
       <div className="qna-filter-bar">
         <div style={{ display: 'flex', gap: '0.4rem', flexWrap: 'wrap' }}>
-          <button 
+          <button
             className={`tag-chip ${filter === 'all' ? 'active' : ''}`}
             onClick={() => setFilter('all')}
           >
             All Questions ({questions.length})
           </button>
-          <button 
+          <button
             className={`tag-chip ${filter === 'answered' ? 'active' : ''}`}
             onClick={() => setFilter('answered')}
           >
             Answered ({questions.filter((q) => q.answer).length})
           </button>
-          <button 
+          <button
             className={`tag-chip ${filter === 'unanswered' ? 'active' : ''}`}
             onClick={() => setFilter('unanswered')}
           >
@@ -5866,7 +5903,7 @@ function CommunityQnASection({ project, user, showToast }) {
           filteredQuestions.map((q) => (
             <div key={q.id} className="qna-card">
               <div className="qna-card-top">
-                <button 
+                <button
                   className={`qna-upvote-btn ${q.userUpvoted ? 'upvoted' : ''}`}
                   onClick={() => handleToggleUpvote(q.id)}
                   title={q.userUpvoted ? "Remove upvote" : "Upvote question"}

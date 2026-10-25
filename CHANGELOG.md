@@ -7,6 +7,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [1.0.0] - 2026-10-25
+
+### 🚀 Added
+- **App Refinements (`App.jsx`)**:
+  - General stability improvements and code cleanup across core application layout.
+  - Improved component composition and state management patterns.
+
+### 🐛 Fixed
+- Minor UI consistency fixes across modal and card components.
+
+### 🔒 Security
+- Dependency audit pass; no vulnerabilities found.
+
+---
+
 ## [0.9.0] - 2026-10-21
 
 ### 🎬 Animations
