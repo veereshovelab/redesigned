@@ -1,5 +1,5 @@
 /**
- * Vorynx - Zero-Barrier Crowdfunding Platform (v0.4.0)
+ * Vorynx - Zero-Barrier Crowdfunding Platform (v0.4.1)
  * Main Application Component & Router Interface
  */
 
