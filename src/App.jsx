@@ -1789,10 +1789,7 @@ function HomepageView({ projects, searchQuery, setSearchQuery, selectedCategory,
             <span style={{ fontFamily: 'var(--font-heading)', fontSize: '1.4rem', fontWeight: 800, color: 'var(--accent-success)' }}>{totalBackers.toLocaleString()}</span>
             <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.5px', fontWeight: 700 }}>Global Backers</span>
           </div>
-          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-            <span style={{ fontFamily: 'var(--font-heading)', fontSize: '1.4rem', fontWeight: 800, color: '#a855f7' }}>98.6%</span>
-            <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.5px', fontWeight: 700 }}>Fulfillment Rate</span>
-          </div>
+
         </div>
 
         <div className="momentum-snapshot" aria-label="Community momentum snapshot">
@@ -2244,31 +2241,7 @@ function HomepageView({ projects, searchQuery, setSearchQuery, selectedCategory,
         </div>
       )}
 
-      {/* 5. PLATFORM STATISTICS */}
-      <section className="reveal-on-scroll" style={{ background: 'var(--bg-surface)', border: '1px solid var(--border-standard)', borderRadius: '24px', padding: '3rem 2rem', marginBottom: '4rem', boxShadow: 'var(--shadow-sm)' }}>
-        <div style={{ textAlign: 'center', marginBottom: '2.5rem' }}>
-          <h2 style={{ fontFamily: 'var(--font-heading)', fontSize: '1.75rem', fontWeight: 800, color: 'var(--text-primary)' }}>Vorynx by the Numbers</h2>
-          <p style={{ color: 'var(--text-secondary)', fontSize: '0.95rem', marginTop: '0.5rem' }}>Fast, reliable, and transparent fundraising supporting creative minds worldwide.</p>
-        </div>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '2rem', textAlign: 'center' }}>
-          <div>
-            <div style={{ fontSize: '2.5rem', fontWeight: 800, color: 'var(--accent-brand)', fontFamily: 'var(--font-heading)' }}>$18.4M+</div>
-            <div style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', fontWeight: 600, marginTop: '0.5rem' }}>Total Funds Pledged</div>
-          </div>
-          <div>
-            <div style={{ fontSize: '2.5rem', fontWeight: 800, color: 'var(--accent-brand)', fontFamily: 'var(--font-heading)' }}>120,000+</div>
-            <div style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', fontWeight: 600, marginTop: '0.5rem' }}>Global Backers</div>
-          </div>
-          <div>
-            <div style={{ fontSize: '2.5rem', fontWeight: 800, color: 'var(--accent-brand)', fontFamily: 'var(--font-heading)' }}>98.2%</div>
-            <div style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', fontWeight: 600, marginTop: '0.5rem' }}>Successful Project Delivery</div>
-          </div>
-          <div>
-            <div style={{ fontSize: '2.5rem', fontWeight: 800, color: 'var(--accent-brand)', fontFamily: 'var(--font-heading)' }}>0%</div>
-            <div style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', fontWeight: 600, marginTop: '0.5rem' }}>Platform Listing Fees</div>
-          </div>
-        </div>
-      </section>
+
 
       {/* 6. SUCCESS STORIES */}
       <section className="reveal-on-scroll" style={{ marginBottom: '4rem' }}>
@@ -2282,11 +2255,7 @@ function HomepageView({ projects, searchQuery, setSearchQuery, selectedCategory,
             <div style={{ padding: '1.5rem', flex: 1, display: 'flex', flexDirection: 'column' }}>
               <span style={{ color: 'var(--accent-success)', fontSize: '0.75rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '1px' }}>Technology</span>
               <h3 style={{ fontFamily: 'var(--font-heading)', fontSize: '1.25rem', fontWeight: 800, margin: '0.5rem 0' }}>Zenith Smart Watch</h3>
-              <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', lineHeight: 1.5, marginBottom: '1.5rem' }}>"Vorynx helped us raise 320% of our initial funding goal. Their creator support and all-or-nothing transparent payout structure gave our backers the absolute trust needed to fund our development phase."</p>
-              <div style={{ marginTop: 'auto', display: 'flex', justifyContent: 'space-between', fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-muted)' }}>
-                <span>Raised $148,200</span>
-                <span style={{ color: 'var(--accent-success)' }}>1,120 Backers</span>
-              </div>
+              <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', lineHeight: 1.5, marginBottom: '1.5rem' }}>"Vorynx helped us exceed our initial funding goal. Their creator support and all-or-nothing transparent payout structure gave our backers the trust needed to fund our development phase."</p>
             </div>
           </div>
 
@@ -2295,11 +2264,7 @@ function HomepageView({ projects, searchQuery, setSearchQuery, selectedCategory,
             <div style={{ padding: '1.5rem', flex: 1, display: 'flex', flexDirection: 'column' }}>
               <span style={{ color: 'var(--accent-success)', fontSize: '0.75rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '1px' }}>Design</span>
               <h3 style={{ fontFamily: 'var(--font-heading)', fontSize: '1.25rem', fontWeight: 800, margin: '0.5rem 0' }}>EchoWood Speakers</h3>
-              <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', lineHeight: 1.5, marginBottom: '1.5rem' }}>"We launched our eco-friendly studio monitors on Vorynx. The zero platform listing fee allowed us to direct all support into procuring local walnut timber, keeping prices highly affordable for our core users."</p>
-              <div style={{ marginTop: 'auto', display: 'flex', justifyContent: 'space-between', fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-muted)' }}>
-                <span>Raised $64,500</span>
-                <span style={{ color: 'var(--accent-success)' }}>480 Backers</span>
-              </div>
+              <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', lineHeight: 1.5, marginBottom: '1.5rem' }}>"We launched our eco-friendly studio monitors on Vorynx. No platform listing fee allowed us to direct all support into procuring local walnut timber, keeping prices highly affordable for our core users."</p>
             </div>
           </div>
         </div>
