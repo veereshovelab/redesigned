@@ -380,8 +380,6 @@ export default function App() {
   // App Dynamic Project Database State
   const [projects, setProjects] = useState([]);
 
-  // Sandbox Modes
-  const [simMode, setSimMode] = useState("funder"); // 'funder' | 'creator' | 'admin'
   const [donations, setDonations] = useState([]);
 
   // Alerts
@@ -967,18 +965,14 @@ export default function App() {
                   <i className="fa-solid fa-qrcode"></i>
                   <span>UPI QR Generator</span>
                 </button>
-                {(simMode === "creator" || simMode === "admin") && (
-                  <button className="nav-more-item nav-more-action" onClick={() => { protectAction(() => setView("creator-dashboard")); setNavMoreOpen(false); }}>
-                    <i className="fa-solid fa-chart-line"></i>
-                    <span>Creator Dashboard</span>
-                  </button>
-                )}
-                {simMode === "admin" && (
-                  <button className="nav-more-item nav-more-action" onClick={() => { setView("admin-panel"); setNavMoreOpen(false); }}>
-                    <i className="fa-solid fa-user-shield"></i>
-                    <span>Admin Panel</span>
-                  </button>
-                )}
+                <button className="nav-more-item nav-more-action" onClick={() => { protectAction(() => setView("creator-dashboard")); setNavMoreOpen(false); }}>
+                  <i className="fa-solid fa-chart-line"></i>
+                  <span>Creator Dashboard</span>
+                </button>
+                <button className="nav-more-item nav-more-action" onClick={() => { setView("admin-panel"); setNavMoreOpen(false); }}>
+                  <i className="fa-solid fa-user-shield"></i>
+                  <span>Admin Panel</span>
+                </button>
               </div>
             </div>
 
@@ -5417,8 +5411,8 @@ function UpiQrGenerator({ setView }) {
 // ============================================================================
 // FLOATING CAMPAIGN COMPARISON DRAWER
 // ============================================================================
-function FloatingComparisonDrawer({ comparedprojects, onopenmodal, onremove, onclear }) {
-  if (!comparedprojects || comparedprojects.length === 0) return null;
+function FloatingComparisonDrawer({ comparedProjects, onOpenModal, onRemove, onClear }) {
+  if (!comparedProjects || comparedProjects.length === 0) return null;
 
   return (
     <div className="floating-comparison-drawer">
