@@ -280,7 +280,7 @@ Verified via Vorynx Crowdfunding Leaderboard`;
                     </div>
                   </div>
                   <span style={{ fontSize: '0.7rem', color: '#10b981', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '4px' }}>
-                    <i className="fa-solid fa-[#10b981] fa-circle-check"></i> Verified
+                    <i className="fa-solid fa-circle-check" style={{ color: '#10b981' }}></i> Verified
                   </span>
                 </div>
               ))}
@@ -296,7 +296,7 @@ Verified via Vorynx Crowdfunding Leaderboard`;
             </div>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '1rem' }}>
               {[
-                { title: "First 100 Backers", desc: "100 early supporters joined the movement", unlocked: backerCount >= 50, icon: "fa-users text-purple" },
+                { title: "First 100 Backers", desc: "100 early supporters joined the movement", unlocked: backerCount >= 100, icon: "fa-users text-purple" },
                 { title: "50% Funding Threshold", desc: "Achieved half of total target goal", unlocked: (project.raisedAmount / project.goalAmount) >= 0.5, icon: "fa-chart-pie text-blue" },
                 { title: "100% Core Funded", desc: "Project is fully funded and moving to production!", unlocked: (project.raisedAmount / project.goalAmount) >= 1.0, icon: "fa-rocket text-green" },
                 { title: "Super Backer Club", desc: "Over 5 supporters contributed $300+", unlocked: actualBackers.filter(b => b.amount >= 300).length >= 1, icon: "fa-crown text-amber" }

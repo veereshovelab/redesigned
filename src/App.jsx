@@ -1,5 +1,5 @@
 /**
- * Vorynx - Zero-Barrier Crowdfunding Platform (v0.4.1)
+ * Vorynx - Zero-Barrier Crowdfunding Platform (v1.0.1)
  * Main Application Component & Router Interface
  */
 
@@ -5576,7 +5576,7 @@ function ComparisonModal({ comparedProjects, onClose, currency, onPledge, onSele
                   <i className="fa-solid fa-bolt text-amber"></i> Funding Velocity
                 </td>
                 {comparedProjects.map((p) => {
-                  const velocity = Math.round(p.raisedAmount / Math.max(1, (30 - p.daysLeft)));
+                  const velocity = Math.round(p.raisedAmount / Math.max(1, ((p.campaignDays || 30) - p.daysLeft)));
                   return (
                     <td key={p.id}>
                       <span className="velocity-badge" style={{ margin: 0, fontSize: '0.75rem' }}>

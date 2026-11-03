@@ -7,6 +7,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [1.0.1] - 2026-11-03
+
+### 🐛 Fixed
+- **Campaign Comparison Matrix (`App.jsx`)**:
+  - Fixed prop destructuring and calculation in `FloatingComparisonDrawer` and `ComparisonModal`.
+  - Improved velocity calculation in comparison matrix to account for campaign durations.
+- **Backer Hall of Fame (`BackerHallOfFameModal.jsx`)**:
+  - Corrected FontAwesome class name in verified backer badge (`style={{ color: '#10b981' }}`).
+  - Fixed milestone unlock threshold for "First 100 Backers" (`backerCount >= 100`).
+- **Navigation Controls (`App.jsx`)**:
+  - Restored direct access to Creator Dashboard and Admin Panel in navigation menu.
+
+---
+
 ## [1.0.0] - 2026-10-25
 
 ### 🚀 Added
