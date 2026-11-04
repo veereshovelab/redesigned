@@ -622,6 +622,10 @@ export default function App() {
         if (shortcutsOpen) setShortcutsOpen(false);
         if (authOpen) setAuthOpen(false);
         if (shareModalProject) setShareModalProject(null);
+        if (comparisonModalOpen) setComparisonModalOpen(false);
+        if (analyticsModalProject) setAnalyticsModalProject(null);
+        if (hallOfFameModalProject) setHallOfFameModalProject(null);
+        if (summaryModalProject) setSummaryModalProject(null);
         if (checkoutOpen) {
           setCheckoutOpen(false);
           setSelectedReward(null);
@@ -631,8 +635,11 @@ export default function App() {
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [authOpen, shareModalProject, checkoutOpen, shortcutsOpen, theme, commandPaletteOpen]);
+  }, [
+    authOpen, shareModalProject, checkoutOpen, shortcutsOpen, theme,
+    commandPaletteOpen, comparisonModalOpen, analyticsModalProject,
+    hallOfFameModalProject, summaryModalProject, portfolioOpen, activeCertificate
+  ]);
 
   // Scroll listener for floating scroll-to-top button
   useEffect(() => {
