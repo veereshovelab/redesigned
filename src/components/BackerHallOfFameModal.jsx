@@ -1,4 +1,5 @@
-import { useState } from 'react';
+import { useState, useRef, useLayoutEffect } from 'react';
+import { gsap } from 'gsap';
 
 /**
  * Backer Hall of Fame & Community Leaderboard Modal
@@ -23,7 +24,32 @@ const formatVal = (amount, currency = 'USD') => {
 
 export default function BackerHallOfFameModal({ project, donations = [], isOpen, onClose, currency = 'USD', showToast }) {
   const [activeTab, setActiveTab] = useState('leaderboard'); // 'leaderboard' | 'stream' | 'achievements'
+  const [searchQuery, setSearchQuery] = useState('');
+  const [selectedTier, setSelectedTier] = useState('All');
   const [copied, setCopied] = useState(false);
+
+  // GSAP refs
+  const modalCardRef = useRef(null);
+  const statCardsRef = useRef([]);
+
+  useLayoutEffect(() => {
+    if (!isOpen || !modalCardRef.current) return;
+    const ctx = gsap.context(() => {
+      gsap.fromTo(
+        modalCardRef.current,
+        { y: 50, opacity: 0, scale: 0.96 },
+        { y: 0,  opacity: 1, scale: 1, duration: 0.45, ease: 'power3.out' }
+      );
+      if (statCardsRef.current.length) {
+        gsap.fromTo(
+          statCardsRef.current.filter(Boolean),
+          { y: 25, opacity: 0 },
+          { y: 0,  opacity: 1, duration: 0.4, ease: 'power2.out', stagger: 0.08, delay: 0.15 }
+        );
+      }
+    });
+    return () => ctx.revert();
+  }, [isOpen]);
 
   if (!isOpen || !project) return null;
 
@@ -59,6 +85,17 @@ export default function BackerHallOfFameModal({ project, donations = [], isOpen,
   const backerCount = Math.max(project.backerCount || 0, actualBackers.length);
   const avgPledge = backerCount > 0 ? Math.round(totalRaised / backerCount) : 0;
 
+  const uniqueTiers = ['All', ...new Set(actualBackers.map(b => b.tier).filter(Boolean))];
+
+  const filteredBackers = actualBackers.filter(b => {
+    const q = searchQuery.trim().toLowerCase();
+    const matchesSearch = !q ||
+      b.name.toLowerCase().includes(q) ||
+      b.tier.toLowerCase().includes(q);
+    const matchesTier = selectedTier === 'All' || b.tier === selectedTier;
+    return matchesSearch && matchesTier;
+  });
+
   const handleCopyRoster = () => {
     const text = `🏆 ${project.title} - Backer Hall of Fame Roster
 Total Backers: ${backerCount.toLocaleString()} Supporters
@@ -82,6 +119,7 @@ Verified via Vorynx Crowdfunding Leaderboard`;
   return (
     <div className="modal-overlay" onClick={onClose} style={{ zIndex: 10600 }}>
       <div 
+        ref={modalCardRef}
         className="modal-card exec-summary-modal" 
         onClick={(e) => e.stopPropagation()}
         style={{
@@ -137,7 +175,7 @@ Verified via Vorynx Crowdfunding Leaderboard`;
 
         {/* Highlights Bar */}
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: '1rem', marginBottom: '1.5rem' }}>
-          <div style={{ background: 'var(--bg-main)', padding: '0.9rem', borderRadius: '14px', border: '1px solid var(--border-standard)' }}>
+          <div ref={(el) => (statCardsRef.current[0] = el)} style={{ background: 'var(--bg-main)', padding: '0.9rem', borderRadius: '14px', border: '1px solid var(--border-standard)' }}>
             <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>Top Supporter</div>
             <div style={{ fontSize: '1.25rem', fontWeight: 800, color: '#f59e0b', fontFamily: 'var(--font-heading)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
               {topBacker.name}
@@ -147,7 +185,7 @@ Verified via Vorynx Crowdfunding Leaderboard`;
             </div>
           </div>
 
-          <div style={{ background: 'var(--bg-main)', padding: '0.9rem', borderRadius: '14px', border: '1px solid var(--border-standard)' }}>
+          <div ref={(el) => (statCardsRef.current[1] = el)} style={{ background: 'var(--bg-main)', padding: '0.9rem', borderRadius: '14px', border: '1px solid var(--border-standard)' }}>
             <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>Total Backers</div>
             <div style={{ fontSize: '1.25rem', fontWeight: 800, color: 'var(--accent-brand)', fontFamily: 'var(--font-heading)' }}>
               {backerCount.toLocaleString()}
@@ -155,7 +193,7 @@ Verified via Vorynx Crowdfunding Leaderboard`;
             <div style={{ fontSize: '0.725rem', color: '#10b981', fontWeight: 600 }}>Verified Supporters</div>
           </div>
 
-          <div style={{ background: 'var(--bg-main)', padding: '0.9rem', borderRadius: '14px', border: '1px solid var(--border-standard)' }}>
+          <div ref={(el) => (statCardsRef.current[2] = el)} style={{ background: 'var(--bg-main)', padding: '0.9rem', borderRadius: '14px', border: '1px solid var(--border-standard)' }}>
             <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>Average Contribution</div>
             <div style={{ fontSize: '1.25rem', fontWeight: 800, color: 'var(--text-primary)', fontFamily: 'var(--font-heading)' }}>
               {formatVal(avgPledge, currency)}
@@ -163,7 +201,7 @@ Verified via Vorynx Crowdfunding Leaderboard`;
             <div style={{ fontSize: '0.725rem', color: 'var(--text-muted)' }}>Per Backer</div>
           </div>
 
-          <div style={{ background: 'var(--bg-main)', padding: '0.9rem', borderRadius: '14px', border: '1px solid var(--border-standard)' }}>
+          <div ref={(el) => (statCardsRef.current[3] = el)} style={{ background: 'var(--bg-main)', padding: '0.9rem', borderRadius: '14px', border: '1px solid var(--border-standard)' }}>
             <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>Community Status</div>
             <div style={{ fontSize: '1.25rem', fontWeight: 800, color: '#10b981', fontFamily: 'var(--font-heading)' }}>
               🔥 Active
@@ -197,94 +235,185 @@ Verified via Vorynx Crowdfunding Leaderboard`;
           </button>
         </div>
 
+        {/* Search & Tier Filter Bar */}
+        {(activeTab === 'leaderboard' || activeTab === 'stream') && (
+          <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center', marginBottom: '1.25rem', flexWrap: 'wrap' }}>
+            <div style={{ position: 'relative', flex: 1, minWidth: '220px' }}>
+              <i className="fa-solid fa-magnifying-glass" style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)', fontSize: '0.85rem' }}></i>
+              <input
+                type="text"
+                placeholder="Search backer name or tier..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                style={{
+                  width: '100%',
+                  padding: '0.55rem 2rem 0.55rem 2.25rem',
+                  borderRadius: '12px',
+                  background: 'var(--bg-main)',
+                  border: '1px solid var(--border-standard)',
+                  color: 'var(--text-primary)',
+                  fontSize: '0.85rem',
+                  outline: 'none',
+                  boxSizing: 'border-box'
+                }}
+              />
+              {searchQuery && (
+                <button
+                  type="button"
+                  onClick={() => setSearchQuery('')}
+                  style={{
+                    position: 'absolute',
+                    right: '10px',
+                    top: '50%',
+                    transform: 'translateY(-50%)',
+                    background: 'none',
+                    border: 'none',
+                    color: 'var(--text-muted)',
+                    cursor: 'pointer',
+                    fontSize: '0.8rem',
+                    padding: '2px'
+                  }}
+                  title="Clear search"
+                >
+                  <i className="fa-solid fa-xmark"></i>
+                </button>
+              )}
+            </div>
+
+            {/* Filter Chips */}
+            <div style={{ display: 'flex', gap: '0.35rem', flexWrap: 'wrap' }}>
+              {uniqueTiers.map((tier) => (
+                <button
+                  key={tier}
+                  type="button"
+                  className={`tag-chip ${selectedTier === tier ? 'active' : ''}`}
+                  onClick={() => setSelectedTier(tier)}
+                  style={{ fontSize: '0.75rem', padding: '0.25rem 0.65rem' }}
+                >
+                  {tier}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+
         {/* Tab Content 1: Leaderboard */}
         {activeTab === 'leaderboard' && (
           <div style={{ background: 'var(--bg-main)', border: '1px solid var(--border-standard)', borderRadius: '16px', overflow: 'hidden', marginBottom: '1.5rem' }}>
-            <div style={{ padding: '0.85rem 1.25rem', borderBottom: '1px solid var(--border-standard)', fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.8px' }}>
-              👑 Top Supporter Leaderboard
+            <div style={{ padding: '0.85rem 1.25rem', borderBottom: '1px solid var(--border-standard)', fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.8px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <span>👑 Top Supporter Leaderboard</span>
+              <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)', textTransform: 'none', fontWeight: 500 }}>
+                Showing {filteredBackers.length} of {actualBackers.length}
+              </span>
             </div>
-            <div style={{ display: 'flex', flexDirection: 'column' }}>
-              {actualBackers.map((backer) => (
-                <div 
-                  key={backer.id}
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'space-between',
-                    padding: '0.9rem 1.25rem',
-                    borderBottom: '1px solid var(--border-standard)',
-                    background: backer.rank === 1 ? 'rgba(245, 158, 11, 0.06)' : 'transparent'
-                  }}
-                >
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.85rem' }}>
-                    <div style={{
-                      width: '32px',
-                      height: '32px',
-                      borderRadius: '50%',
-                      background: backer.rank === 1 ? '#f59e0b' : backer.rank === 2 ? '#94a3b8' : backer.rank === 3 ? '#b45309' : 'var(--bg-surface)',
-                      color: backer.rank <= 3 ? '#ffffff' : 'var(--text-secondary)',
+            {filteredBackers.length === 0 ? (
+              <div style={{ textAlign: 'center', padding: '2.5rem 1rem', color: 'var(--text-muted)' }}>
+                <i className="fa-solid fa-user-slash" style={{ fontSize: '1.8rem', marginBottom: '0.5rem', opacity: 0.5, display: 'block' }}></i>
+                <div>No supporters match your search or filter.</div>
+                {(searchQuery || selectedTier !== 'All') && (
+                  <button
+                    type="button"
+                    className="btn-secondary"
+                    onClick={() => { setSearchQuery(''); setSelectedTier('All'); }}
+                    style={{ marginTop: '0.75rem', fontSize: '0.8rem', padding: '0.35rem 0.75rem' }}
+                  >
+                    Reset Filters
+                  </button>
+                )}
+              </div>
+            ) : (
+              <div style={{ display: 'flex', flexDirection: 'column' }}>
+                {filteredBackers.map((backer) => (
+                  <div 
+                    key={backer.id}
+                    style={{
                       display: 'flex',
                       alignItems: 'center',
-                      justifyContent: 'center',
-                      fontWeight: 800,
-                      fontSize: '0.85rem',
-                      border: '1px solid var(--border-standard)'
-                    }}>
-                      {backer.rank === 1 ? <i className="fa-solid fa-crown" style={{ fontSize: '0.8rem' }}></i> : `#${backer.rank}`}
+                      justifyContent: 'space-between',
+                      padding: '0.9rem 1.25rem',
+                      borderBottom: '1px solid var(--border-standard)',
+                      background: backer.rank === 1 ? 'rgba(245, 158, 11, 0.06)' : 'transparent'
+                    }}
+                  >
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.85rem' }}>
+                      <div style={{
+                        width: '32px',
+                        height: '32px',
+                        borderRadius: '50%',
+                        background: backer.rank === 1 ? '#f59e0b' : backer.rank === 2 ? '#94a3b8' : backer.rank === 3 ? '#b45309' : 'var(--bg-surface)',
+                        color: backer.rank <= 3 ? '#ffffff' : 'var(--text-secondary)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        fontWeight: 800,
+                        fontSize: '0.85rem',
+                        border: '1px solid var(--border-standard)'
+                      }}>
+                        {backer.rank === 1 ? <i className="fa-solid fa-crown" style={{ fontSize: '0.8rem' }}></i> : `#${backer.rank}`}
+                      </div>
+
+                      <div>
+                        <div style={{ fontWeight: 700, color: 'var(--text-primary)', fontSize: '0.925rem' }}>
+                          {backer.name}
+                        </div>
+                        <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+                          <span style={{ color: 'var(--accent-brand)', fontWeight: 600 }}>{backer.tier}</span> • {backer.date}
+                        </div>
+                      </div>
                     </div>
 
-                    <div>
-                      <div style={{ fontWeight: 700, color: 'var(--text-primary)', fontSize: '0.925rem' }}>
-                        {backer.name}
+                    <div style={{ textAlign: 'right' }}>
+                      <div style={{ fontSize: '1.1rem', fontWeight: 800, color: 'var(--accent-brand)', fontFamily: 'var(--font-heading)' }}>
+                        {formatVal(backer.amount, currency)}
                       </div>
-                      <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
-                        <span style={{ color: 'var(--accent-brand)', fontWeight: 600 }}>{backer.tier}</span> • {backer.date}
-                      </div>
+                      <span style={{ fontSize: '0.68rem', fontWeight: 700, padding: '0.1rem 0.45rem', borderRadius: '6px', background: 'rgba(16, 185, 129, 0.15)', color: '#10b981' }}>
+                        Verified Pledge
+                      </span>
                     </div>
                   </div>
-
-                  <div style={{ textAlign: 'right' }}>
-                    <div style={{ fontSize: '1.1rem', fontWeight: 800, color: 'var(--accent-brand)', fontFamily: 'var(--font-heading)' }}>
-                      {formatVal(backer.amount, currency)}
-                    </div>
-                    <span style={{ fontSize: '0.68rem', fontWeight: 700, padding: '0.1rem 0.45rem', borderRadius: '6px', background: 'rgba(16, 185, 129, 0.15)', color: '#10b981' }}>
-                      Verified Pledge
-                    </span>
-                  </div>
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
+            )}
           </div>
         )}
 
         {/* Tab Content 2: Recent Activity Stream */}
         {activeTab === 'stream' && (
           <div style={{ background: 'var(--bg-main)', border: '1px solid var(--border-standard)', borderRadius: '16px', padding: '1.25rem', marginBottom: '1.5rem' }}>
-            <div style={{ fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.8px', marginBottom: '1rem' }}>
-              ⚡ Live Backer Activity Feed
+            <div style={{ fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.8px', marginBottom: '1rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <span>⚡ Live Backer Activity Feed</span>
+              <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)', textTransform: 'none', fontWeight: 500 }}>
+                Showing {filteredBackers.length} of {actualBackers.length}
+              </span>
             </div>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-              {actualBackers.map((backer) => (
-                <div key={`stream_${backer.id}`} style={{ background: 'var(--bg-surface)', border: '1px solid var(--border-standard)', padding: '0.85rem 1rem', borderRadius: '12px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                    <div style={{ width: '36px', height: '36px', borderRadius: '50%', background: 'var(--accent-brand-light)', color: 'var(--accent-brand)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800 }}>
-                      {backer.avatar}
-                    </div>
-                    <div>
-                      <div style={{ fontSize: '0.875rem', fontWeight: 700, color: 'var(--text-primary)' }}>
-                        {backer.name} pledged <span style={{ color: 'var(--accent-brand)' }}>{formatVal(backer.amount, currency)}</span>
+            {filteredBackers.length === 0 ? (
+              <div style={{ textAlign: 'center', padding: '2rem 1rem', color: 'var(--text-muted)' }}>
+                No recent pledges match your search.
+              </div>
+            ) : (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                {filteredBackers.map((backer) => (
+                  <div key={`stream_${backer.id}`} style={{ background: 'var(--bg-surface)', border: '1px solid var(--border-standard)', padding: '0.85rem 1rem', borderRadius: '12px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                      <div style={{ width: '36px', height: '36px', borderRadius: '50%', background: 'var(--accent-brand-light)', color: 'var(--accent-brand)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800 }}>
+                        {backer.avatar}
                       </div>
-                      <div style={{ fontSize: '0.725rem', color: 'var(--text-muted)' }}>
-                        {backer.date} • {backer.tier}
+                      <div>
+                        <div style={{ fontSize: '0.875rem', fontWeight: 700, color: 'var(--text-primary)' }}>
+                          {backer.name} pledged <span style={{ color: 'var(--accent-brand)' }}>{formatVal(backer.amount, currency)}</span>
+                        </div>
+                        <div style={{ fontSize: '0.725rem', color: 'var(--text-muted)' }}>
+                          {backer.date} • {backer.tier}
+                        </div>
                       </div>
                     </div>
+                    <span style={{ fontSize: '0.7rem', color: '#10b981', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '4px' }}>
+                      <i className="fa-solid fa-circle-check" style={{ color: '#10b981' }}></i> Verified
+                    </span>
                   </div>
-                  <span style={{ fontSize: '0.7rem', color: '#10b981', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '4px' }}>
-                    <i className="fa-solid fa-circle-check" style={{ color: '#10b981' }}></i> Verified
-                  </span>
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
+            )}
           </div>
         )}
 

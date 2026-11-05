@@ -7,6 +7,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [1.0.2] - 2026-11-05
+
+### 🚀 Added
+- **Backer Hall of Fame Enhancements (`BackerHallOfFameModal.jsx`)**:
+  - **GSAP Animations**: Added smooth slide-up + scale modal entrance and staggered metric cards animation cascade using `gsap`.
+  - **Live Supporter Search**: Interactive real-time search input to filter backers by name or reward tier.
+  - **Tier Filter Chips**: One-click filter chips (`All`, `Founding Patron`, `VIP Supporter`, `Pioneer Backer`, etc.) across Leaderboard and Recent Pledges streams.
+  - **Count Badges & Empty States**: Dynamic backer counter (`Showing X of Y`) and friendly empty states with a one-click filter reset.
+
+- **Comparison Matrix Interactivity (`App.jsx`)**:
+  - **Direct Column Removal**: Added a quick remove button to each project column header in `ComparisonModal` to drop campaigns directly from the matrix.
+  - **Integrated Quick Actions**: Added 1-click **Forecast** and **Backers** shortcut buttons in comparison action rows to inspect velocity or top supporters for any compared project.
+  - **Comparison Capacity Badge**: Enhanced drawer badge to show current comparison count against limit (`X / 3`).
+
+---
+
 ## [1.0.1] - 2026-11-03
 
 ### 🐛 Fixed

@@ -1,5 +1,5 @@
 /**
- * Vorynx - Zero-Barrier Crowdfunding Platform (v1.0.1)
+ * Vorynx - Zero-Barrier Crowdfunding Platform (v1.0.2)
  * Main Application Component & Router Interface
  */
 
@@ -635,6 +635,7 @@ export default function App() {
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
     authOpen, shareModalProject, checkoutOpen, shortcutsOpen, theme,
     commandPaletteOpen, comparisonModalOpen, analyticsModalProject,
@@ -1573,6 +1574,9 @@ export default function App() {
               setCheckoutOpen(true);
             });
           }}
+          onRemove={(id) => toggleCompare(id)}
+          onOpenAnalytics={(p) => setAnalyticsModalProject(p)}
+          onOpenHallOfFame={(p) => setHallOfFameModalProject(p)}
         />
       )}
 
@@ -5430,7 +5434,7 @@ function FloatingComparisonDrawer({ comparedProjects, onOpenModal, onRemove, onC
           </div>
           <div>
             <div style={{ fontWeight: 800, fontSize: '0.9rem', color: '#fff' }}>
-              Comparing {comparedProjects.length} Campaign{comparedProjects.length > 1 ? 's' : ''}
+              Comparing {comparedProjects.length} / 3 Campaign{comparedProjects.length > 1 ? 's' : ''}
             </div>
             <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
               Side-by-side metrics & pledge velocity
@@ -5470,7 +5474,7 @@ function FloatingComparisonDrawer({ comparedProjects, onOpenModal, onRemove, onC
 // ============================================================================
 // SIDE-BY-SIDE CAMPAIGN COMPARISON MATRIX MODAL
 // ============================================================================
-function ComparisonModal({ comparedProjects, onClose, currency, onPledge, onSelectProject }) {
+function ComparisonModal({ comparedProjects, onClose, currency, onPledge, onSelectProject, onRemove, onOpenAnalytics, onOpenHallOfFame }) {
   if (!comparedProjects || comparedProjects.length === 0) return null;
 
   return (
@@ -5502,13 +5506,39 @@ function ComparisonModal({ comparedProjects, onClose, currency, onPledge, onSele
                 <th className="matrix-label-col">Metric / Feature</th>
                 {comparedProjects.map((p) => (
                   <th key={p.id} className="matrix-proj-col">
-                    <div className="matrix-proj-header">
+                    <div className="matrix-proj-header" style={{ position: 'relative' }}>
                       <img src={p.image} alt={p.title} className="matrix-proj-img" />
-                      <div className="matrix-proj-info">
+                      <div className="matrix-proj-info" style={{ flex: 1, minWidth: 0 }}>
                         <span className="badge-tag" style={{ fontSize: '0.7rem', padding: '0.15rem 0.5rem', margin: '0 0 0.3rem 0', display: 'inline-block' }}>{p.category}</span>
                         <h4 className="matrix-proj-title">{p.title}</h4>
                         <span className="matrix-proj-creator">by {p.creator.name}</span>
                       </div>
+                      {onRemove && (
+                        <button
+                          type="button"
+                          className="comparison-chip-remove"
+                          onClick={() => {
+                            onRemove(p.id);
+                            if (comparedProjects.length <= 1) onClose();
+                          }}
+                          title={`Remove ${p.title} from comparison`}
+                          style={{
+                            background: 'rgba(255, 255, 255, 0.08)',
+                            border: '1px solid rgba(255, 255, 255, 0.15)',
+                            borderRadius: '50%',
+                            width: '24px',
+                            height: '24px',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            color: 'var(--text-muted)',
+                            cursor: 'pointer',
+                            flexShrink: 0
+                          }}
+                        >
+                          <i className="fa-solid fa-xmark"></i>
+                        </button>
+                      )}
                     </div>
                   </th>
                 ))}
@@ -5666,6 +5696,36 @@ function ComparisonModal({ comparedProjects, onClose, currency, onPledge, onSele
                       >
                         Pledge
                       </button>
+                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.35rem', marginTop: '0.1rem' }}>
+                        {onOpenAnalytics && (
+                          <button
+                            type="button"
+                            className="btn-secondary"
+                            style={{ padding: '0.35rem', fontSize: '0.72rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px' }}
+                            onClick={() => {
+                              onClose();
+                              onOpenAnalytics(p);
+                            }}
+                            title="Forecast Velocity"
+                          >
+                            <i className="fa-solid fa-chart-line text-green"></i> Forecast
+                          </button>
+                        )}
+                        {onOpenHallOfFame && (
+                          <button
+                            type="button"
+                            className="btn-secondary"
+                            style={{ padding: '0.35rem', fontSize: '0.72rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px' }}
+                            onClick={() => {
+                              onClose();
+                              onOpenHallOfFame(p);
+                            }}
+                            title="Backer Hall of Fame"
+                          >
+                            <i className="fa-solid fa-trophy text-amber"></i> Backers
+                          </button>
+                        )}
+                      </div>
                     </div>
                   </td>
                 ))}
