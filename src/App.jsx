@@ -760,7 +760,7 @@ export default function App() {
   if (loading) {
     return (
       <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh', color: '#fff', background: '#0b0f19', flexDirection: 'column' }}>
-        <h2 style={{ fontFamily: 'Outfit', fontWeight: 800, letterSpacing: '1px', textShadow: '0 0 10px rgba(0, 245, 155, 0.3)' }} className="text-green">
+        <h2 style={{ fontFamily: 'Outfit', fontWeight: 800, letterSpacing: '1px' }} className="text-green">
           VORYNX
         </h2>
         <p style={{ marginTop: '10px', color: '#9ca3af', fontSize: '0.9rem' }}>Initializing Platform...</p>
@@ -770,11 +770,8 @@ export default function App() {
 
   return (
     <div className="vorynx-app">
-      {/* Ambient background glow blobs */}
-      <div className="ambient-glow-container">
-        <div className="ambient-glow-blob ambient-glow-blob-1"></div>
-        <div className="ambient-glow-blob ambient-glow-blob-2"></div>
-      </div>
+      {/* Aesthetic Subtle Background Grid & Vignette */}
+      <div className="aesthetic-backdrop" aria-hidden="true"></div>
 
 
       {/* Toast Alert Notification */}

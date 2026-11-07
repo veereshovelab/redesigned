@@ -108,12 +108,12 @@ export default function CampaignAnalyticsModal({ project, isOpen, onClose, curre
     : dailyBackerRate * avgPledgeAmount;
   const velocityRatio = requiredDailyRate > 0 ? currentDailyRate / requiredDailyRate : 2;
   const getVelocityScore = (ratio) => {
-    if (ratio >= 1.5) return { grade: 'A+', label: 'Blazing 🔥', color: '#10b981', glow: 'rgba(16,185,129,0.25)' };
-    if (ratio >= 1.0) return { grade: 'A',  label: 'On Track ✅', color: '#22c55e', glow: 'rgba(34,197,94,0.2)' };
-    if (ratio >= 0.75) return { grade: 'B', label: 'Good 👍',    color: '#84cc16', glow: 'rgba(132,204,22,0.2)' };
-    if (ratio >= 0.5) return { grade: 'C',  label: 'Steady ⚡',  color: '#f59e0b', glow: 'rgba(245,158,11,0.2)' };
-    if (ratio >= 0.25) return { grade: 'D', label: 'Lagging ⚠️', color: '#f97316', glow: 'rgba(249,115,22,0.2)' };
-    return { grade: 'F', label: 'Critical 🚨',                  color: '#ef4444', glow: 'rgba(239,68,68,0.25)' };
+    if (ratio >= 1.5) return { grade: 'A+', label: 'Blazing 🔥', color: '#10b981', bg: 'rgba(16,185,129,0.08)' };
+    if (ratio >= 1.0) return { grade: 'A',  label: 'On Track ✅', color: '#22c55e', bg: 'rgba(34,197,94,0.08)' };
+    if (ratio >= 0.75) return { grade: 'B', label: 'Good 👍',    color: '#84cc16', bg: 'rgba(132,204,22,0.08)' };
+    if (ratio >= 0.5) return { grade: 'C',  label: 'Steady ⚡',  color: '#f59e0b', bg: 'rgba(245,158,11,0.08)' };
+    if (ratio >= 0.25) return { grade: 'D', label: 'Lagging ⚠️', color: '#f97316', bg: 'rgba(249,115,22,0.08)' };
+    return { grade: 'F', label: 'Critical 🚨',                  color: '#ef4444', bg: 'rgba(239,68,68,0.08)' };
   };
   const velocityScore = getVelocityScore(velocityRatio);
 
@@ -173,7 +173,7 @@ Forecast Generated via Vorynx Crowdfunding Analytics`;
               <span className="badge-tag" style={{ background: 'var(--accent-brand-light)', color: 'var(--accent-brand)', fontWeight: 700 }}>
                 {project.category}
               </span>
-              <span className="badge-tag" style={{ background: 'rgba(99, 102, 241, 0.15)', color: 'var(--accent-brand)', border: '1px solid var(--border-glow)', fontWeight: 700 }}>
+              <span className="badge-tag" style={{ background: 'rgba(99, 102, 241, 0.12)', color: 'var(--accent-brand)', border: '1px solid var(--border-standard)', fontWeight: 700 }}>
                 <i className="fa-solid fa-chart-line"></i> Campaign Analytics & Simulator
               </span>
             </div>
@@ -245,11 +245,11 @@ Forecast Generated via Vorynx Crowdfunding Analytics`;
 
             {/* Velocity Score Card */}
             <div ref={el => statCardsRef.current[4] = el} style={{
-              background: velocityScore.glow,
+              background: velocityScore.bg,
               padding: '0.85rem',
               borderRadius: '12px',
-              border: `1px solid ${velocityScore.color}55`,
-              boxShadow: `0 0 14px ${velocityScore.glow}`,
+              border: `1px solid ${velocityScore.color}44`,
+              boxShadow: 'var(--shadow-sm)',
               display: 'flex',
               flexDirection: 'column',
               gap: '0.2rem'

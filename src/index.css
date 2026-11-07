@@ -1267,9 +1267,9 @@ body {
 }
 
 .project-card:hover {
-    transform: translateY(-7px) scale(1.01);
+    transform: translateY(-4px);
     border-color: var(--border-focus);
-    box-shadow: 0 14px 30px rgba(0, 0, 0, 0.15), 0 0 20px var(--border-glow);
+    box-shadow: 0 12px 28px -6px rgba(0, 0, 0, 0.25);
 }
 
 .card-media {
@@ -2955,42 +2955,32 @@ body {
     }
 }
 
-/* Ambient Glassmorphic Background Glow Blobs */
-.ambient-glow-container {
+/* Aesthetic Minimalist Background & Grid Pattern */
+.vorynx-app {
+    position: relative;
+    min-height: 100vh;
+    background-image: radial-gradient(rgba(255, 255, 255, 0.045) 1px, transparent 1px);
+    background-size: 26px 26px;
+}
+
+[data-theme="light"] .vorynx-app {
+    background-image: radial-gradient(rgba(15, 23, 42, 0.04) 1px, transparent 1px);
+}
+
+.aesthetic-backdrop {
     position: fixed;
     top: 0;
     left: 0;
     width: 100vw;
     height: 100vh;
-    overflow: hidden;
     pointer-events: none;
-    z-index: -1;
+    z-index: 0;
+    background: radial-gradient(circle 900px at 50% -150px, rgba(99, 102, 241, 0.05), transparent 70%);
 }
 
+.ambient-glow-container,
 .ambient-glow-blob {
-    position: absolute;
-    border-radius: 50%;
-    filter: blur(140px);
-    opacity: 0.08;
-    mix-blend-mode: screen;
-}
-
-.ambient-glow-blob-1 {
-    top: -10%;
-    left: -10%;
-    width: 50vw;
-    height: 50vw;
-    background: radial-gradient(circle, var(--accent-brand) 0%, rgba(79, 70, 229, 0) 70%);
-    animation: floatBlob1 25s infinite alternate ease-in-out;
-}
-
-.ambient-glow-blob-2 {
-    bottom: -10%;
-    right: -10%;
-    width: 60vw;
-    height: 60vw;
-    background: radial-gradient(circle, #00f59b 0%, rgba(0, 245, 155, 0) 70%);
-    animation: floatBlob2 30s infinite alternate ease-in-out;
+    display: none !important;
 }
 
 /* Scroll Reveal Infrastructure */
@@ -3164,7 +3154,8 @@ body {
 }
 
 .logo-section:hover .logo-icon {
-    animation: pulseGlow 1.2s infinite ease-in-out;
+    transform: scale(1.06);
+    transition: transform 0.25s var(--ease-out-expo);
 }
 
 /* ==========================================================================
@@ -3402,8 +3393,7 @@ body {
 .roadmap-step-item.in-progress .roadmap-node-circle {
     background: var(--accent-brand);
     color: #ffffff;
-    box-shadow: 0 0 0 4px var(--accent-brand-light);
-    animation: pulseGlow 2s infinite ease-in-out;
+    box-shadow: 0 0 0 3px var(--accent-brand-light);
 }
 
 .roadmap-step-item.upcoming .roadmap-node-circle {
@@ -3925,9 +3915,9 @@ body {
 }
 
 .discovery-list-card:hover {
-    transform: translateY(-3px);
+    transform: translateY(-2px);
     border-color: var(--accent-brand);
-    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12), 0 0 16px var(--border-glow);
+    box-shadow: 0 8px 20px -4px rgba(0, 0, 0, 0.25);
 }
 
 .list-card-media {

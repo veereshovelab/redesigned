@@ -958,7 +958,7 @@
     background: #a855f7;
     color: #ffffff;
     border-color: #a855f7;
-    box-shadow: 0 4px 12px rgba(168, 85, 247, 0.35);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
 }
 
 /* Comparison Matrix Modal */
@@ -1285,7 +1285,6 @@
     color: var(--accent-success);
     margin: 0.5rem 0;
     letter-spacing: -0.5px;
-    text-shadow: 0 0 20px rgba(16, 185, 129, 0.2);
 }
 
 .certificate-grid-details {
@@ -1946,14 +1945,14 @@
     background: var(--accent-brand-light, rgba(99, 102, 241, 0.15)) !important;
     border-color: var(--accent-brand, #6366f1) !important;
     color: var(--text-primary) !important;
-    box-shadow: 0 0 12px rgba(99, 102, 241, 0.25) !important;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2) !important;
 }
 
 .cmd-palette-nav-btn:hover {
     background: var(--accent-brand, #6366f1) !important;
     color: #ffffff !important;
-    transform: translateY(-1px) scale(1.03);
-    box-shadow: 0 4px 16px rgba(99, 102, 241, 0.4) !important;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25) !important;
 }
 
 .cmd-palette-backdrop {
@@ -2009,7 +2008,7 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    box-shadow: 0 0 8px rgba(239, 68, 68, 0.6);
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.3);
     animation: pulse 2s infinite;
 }
 
@@ -2288,62 +2287,51 @@
 }
 
 /* ==========================================
-   Glassmorphism & Neon Glow Visual Upgrades
+   Refined Minimalist Aesthetic & Clean Elevation
    ========================================== */
 .hero-spotlight {
     position: relative;
-    background: linear-gradient(135deg, rgba(15, 23, 42, 0.8) 0%, rgba(30, 27, 75, 0.75) 100%) !important;
-    backdrop-filter: blur(20px) !important;
-    -webkit-backdrop-filter: blur(20px) !important;
-    border: 1px solid rgba(99, 102, 241, 0.3) !important;
-    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.45), 0 0 35px rgba(99, 102, 241, 0.2) !important;
+    background: linear-gradient(145deg, rgba(17, 24, 39, 0.85) 0%, rgba(15, 23, 42, 0.95) 100%) !important;
+    backdrop-filter: blur(24px) !important;
+    -webkit-backdrop-filter: blur(24px) !important;
+    border: 1px solid rgba(255, 255, 255, 0.1) !important;
+    border-top: 1px solid rgba(255, 255, 255, 0.18) !important;
+    box-shadow: 0 20px 40px -15px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.08) !important;
     overflow: hidden;
 }
 
 .hero-spotlight::after {
-    content: '';
-    position: absolute;
-    top: -50%;
-    left: -50%;
-    width: 200%;
-    height: 200%;
-    background: radial-gradient(circle, rgba(99, 102, 241, 0.15) 0%, rgba(16, 185, 129, 0.08) 35%, transparent 70%);
-    animation: rotateAura 18s linear infinite;
-    pointer-events: none;
-    z-index: 0;
-}
-
-@keyframes rotateAura {
-    0% { transform: rotate(0deg); }
-    100% { transform: rotate(360deg); }
+    display: none !important;
 }
 
 .project-card {
-    background: rgba(15, 23, 42, 0.65) !important;
+    background: rgba(17, 24, 39, 0.75) !important;
     backdrop-filter: blur(16px) !important;
     -webkit-backdrop-filter: blur(16px) !important;
-    border: 1px solid rgba(255, 255, 255, 0.12) !important;
-    transition: all 0.35s cubic-bezier(0.16, 1, 0.3, 1) !important;
+    border: 1px solid rgba(255, 255, 255, 0.08) !important;
+    border-top: 1px solid rgba(255, 255, 255, 0.12) !important;
+    box-shadow: 0 4px 16px -4px rgba(0, 0, 0, 0.3) !important;
+    transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1) !important;
 }
 
 .project-card:hover {
-    transform: translateY(-8px) scale(1.015) !important;
-    border-color: rgba(99, 102, 241, 0.65) !important;
-    box-shadow: 0 22px 45px rgba(0, 0, 0, 0.45), 0 0 30px rgba(99, 102, 241, 0.4) !important;
+    transform: translateY(-4px) !important;
+    border-color: rgba(99, 102, 241, 0.45) !important;
+    box-shadow: 0 16px 32px -8px rgba(0, 0, 0, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.1) !important;
 }
 
 .card-badge {
-    background: rgba(15, 23, 42, 0.85) !important;
-    backdrop-filter: blur(10px) !important;
-    border: 1px solid rgba(99, 102, 241, 0.4) !important;
-    box-shadow: 0 0 12px rgba(99, 102, 241, 0.3) !important;
+    background: rgba(15, 23, 42, 0.9) !important;
+    backdrop-filter: blur(12px) !important;
+    border: 1px solid rgba(255, 255, 255, 0.12) !important;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25) !important;
 }
 
 .tag-chip.active {
-    box-shadow: 0 0 18px rgba(99, 102, 241, 0.45) !important;
-    border-color: rgba(99, 102, 241, 0.7) !important;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2) !important;
+    border-color: var(--accent-brand) !important;
 }
 
 .btn-primary:hover {
-    box-shadow: 0 0 25px rgba(99, 102, 241, 0.55), 0 6px 20px rgba(79, 70, 229, 0.4) !important;
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.25) !important;
 }
