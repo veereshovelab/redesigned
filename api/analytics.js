@@ -31,10 +31,10 @@ export default async function handler(req, res) {
 
     // Default fallback data if DB is empty
     const activeProjects = projects && projects.length > 0 ? projects : [
-      { id: 'keyboard', title: 'Helix-68 Keyboard', category: 'Design', goal_Amount: 15000, raised_amount: 12450, backer_count: 138, status: 'approved' },
-      { id: 'smarthub', title: 'Aura Hub Assistant', category: 'Tech', goal_amount: 45000, raised_amount: 49200, backer_count: 384, status: 'approved' },
-      { id: 'game', title: 'Cyberpunk RPG', category: 'Games', goal_amount: 20000, raised_amount: 8200, backer_count: 95, status: 'approved' },
-      { id: 'backpack', title: 'Nomad Pro Backpack', category: 'Design', goal_amount: 10000, raised_amount: 34200, backer_count: 280, status: 'approved' }
+      { id: 'keyboard', title: 'Helix-68 Keyboard', category: 'Design', goal_amount: 15000, raised_amount: 12450, backer_count: 138, days_left: 12, campaign_days: 30, status: 'approved' },
+      { id: 'smarthub', title: 'Aura Hub Assistant', category: 'Tech', goal_amount: 45000, raised_amount: 49200, backer_count: 384, days_left: 5, campaign_days: 30, status: 'approved' },
+      { id: 'game', title: 'Cyberpunk RPG', category: 'Games', goal_amount: 20000, raised_amount: 8200, backer_count: 95, days_left: 19, campaign_days: 30, status: 'approved' },
+      { id: 'backpack', title: 'Nomad Pro Backpack', category: 'Design', goal_amount: 10000, raised_amount: 34200, backer_count: 280, days_left: 2, campaign_days: 30, status: 'approved' }
     ];
 
     const allDonations = donations && donations.length > 0 ? donations : [
@@ -50,6 +50,15 @@ export default async function handler(req, res) {
     const averagePledgeAmount = allDonations.length > 0 
       ? Math.round(allDonations.reduce((sum, d) => sum + Number(d.amount || 0), 0) / allDonations.length) 
       : 45;
+
+    const fundedCampaignsCount = activeProjects.filter(p => {
+      const raised = Number(p.raised_amount || p.raisedAmount || 0);
+      const goal = Number(p.goal_amount || p.goalAmount || 0);
+      return goal > 0 && raised >= goal;
+    }).length;
+    const campaignSuccessRate = activeProjects.length > 0 
+      ? Math.round((fundedCampaignsCount / activeProjects.length) * 100) 
+      : 0;
 
     // Category distribution
     const categoryDistribution = activeProjects.reduce((acc, p) => {
@@ -68,6 +77,23 @@ export default async function handler(req, res) {
       const projRaised = Number(targetProj.raised_amount || targetProj.raisedAmount || 0);
       const projGoal = Number(targetProj.goal_amount || targetProj.goalAmount || 0);
       const percentFunded = projGoal > 0 ? Math.round((projRaised / projGoal) * 100) : 0;
+      const backerCount = Number(targetProj.backer_count || targetProj.backerCount || 0);
+      const daysLeft = Number(targetProj.days_left ?? targetProj.daysLeft ?? 14);
+      const campaignDays = Number(targetProj.campaign_days ?? targetProj.campaignDays ?? 30);
+      const elapsedDays = Math.max(1, campaignDays - daysLeft);
+      const dailyVelocity = Math.round(projRaised / elapsedDays);
+      const requiredDailyRate = daysLeft > 0 ? Math.max(0, Math.round((projGoal - projRaised) / daysLeft)) : 0;
+      const velocityRatio = requiredDailyRate > 0 ? (dailyVelocity / requiredDailyRate) : (percentFunded >= 100 ? 2.0 : 1.0);
+
+      const getVelocityGrade = (ratio) => {
+        if (ratio >= 1.5) return { grade: 'A+', label: 'Blazing 🔥' };
+        if (ratio >= 1.0) return { grade: 'A',  label: 'On Track ✅' };
+        if (ratio >= 0.75) return { grade: 'B', label: 'Good 👍' };
+        if (ratio >= 0.5) return { grade: 'C',  label: 'Steady ⚡' };
+        if (ratio >= 0.25) return { grade: 'D', label: 'Lagging ⚠️' };
+        return { grade: 'F', label: 'Critical 🚨' };
+      };
+      const velocityScore = getVelocityGrade(velocityRatio);
 
       return res.status(200).json({
         type: 'campaign_velocity',
@@ -79,8 +105,15 @@ export default async function handler(req, res) {
           goalAmount: projGoal,
           percentFunded,
           isFunded: percentFunded >= 100,
-          backerCount: Number(targetProj.backer_count || targetProj.backerCount || 0),
-          averagePledge: Math.round(projRaised / (Number(targetProj.backer_count || targetProj.backerCount) || 1)),
+          backerCount,
+          averagePledge: Math.round(projRaised / (backerCount || 1)),
+          daysLeft,
+          campaignDays,
+          elapsedDays,
+          dailyVelocity,
+          requiredDailyRate,
+          velocityGrade: velocityScore.grade,
+          velocityLabel: velocityScore.label,
           escrowHealthScore: '99.4%',
           fundingStatus: percentFunded >= 100 ? 'Goal Achieved' : 'Active Funding Phase'
         },
@@ -97,8 +130,10 @@ export default async function handler(req, res) {
         overallFundedRatio: `${totalGoalTarget > 0 ? Math.round((totalPlatformRaised / totalGoalTarget) * 100) : 0}%`,
         totalBackers,
         totalActiveCampaigns: activeProjects.length,
+        fundedCampaignsCount,
+        campaignSuccessRate: `${campaignSuccessRate}%`,
         averagePledgeAmount,
-        escrowEscrowCoverage: '100%'
+        escrowCoverage: '100%'
       },
       categoryDistribution,
       timestamp: new Date().toISOString()

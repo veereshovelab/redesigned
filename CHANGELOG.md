@@ -7,6 +7,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [1.0.3] - 2026-11-08
+
+### 🚀 Added
+- **Analytics & Velocity API (`api/analytics.js`)**:
+  - Implemented daily funding velocity calculation (`dailyVelocity` & `requiredDailyRate`) and velocity rating engine (`velocityGrade` A+ to F).
+  - Added campaign timeline metrics (`daysLeft`, `campaignDays`, and `elapsedDays`) to analytics response.
+  - Added platform-wide success rate calculation and funded campaign counters (`fundedCampaignsCount`, `campaignSuccessRate`).
+
+### 🐛 Fixed
+- **Analytics Serverless Handler (`api/analytics.js`)**:
+  - Corrected casing on `goal_Amount` property in fallback dataset to standard `goal_amount`.
+  - Corrected duplicate key naming `escrowEscrowCoverage` to `escrowCoverage`.
+
+---
+
 ## [1.0.2] - 2026-11-05
 
 ### 🚀 Added
