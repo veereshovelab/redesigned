@@ -7,6 +7,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [1.0.4] - 2026-11-09
+
+### 🚀 Added
+- **Command Palette UI/UX Upgrades (`src/components/CommandPalette.jsx`)**:
+  - **Category Filter Tabs**: Added one-click filter pills (`All`, `Navigation`, `Campaigns`, `Security`, `Reports`, `Preferences`) with dynamic live item counts.
+  - **Search Query Match Highlighter**: Text matching within titles and subtitles is now highlighted dynamically for instant visual clarity.
+  - **Quick Clear Control**: Added one-click clear button (`✕`) inside the search input box.
+  - **Expanded Currency Suite**: Added quick commands to set platform currency to EUR (`€`) and GBP (`£`) alongside USD (`$`) and INR (`₹`).
+  - **Campaign Matrix Command**: Added shortcut to trigger the side-by-side Campaign Comparison Matrix directly from the palette.
+
+### 🐛 Fixed
+- **Command Palette Mounting & Syntax Fix (`src/App.jsx`, `CommandPalette.jsx`)**:
+  - Fixed casing error in `useState` declaration inside `CommandPalette.jsx`.
+  - Removed duplicate `<CommandPalette>` instance in `src/App.jsx` that was creating overlapping modal instances in the DOM.
+
+---
+
 ## [1.0.3] - 2026-11-08
 
 ### 🚀 Added

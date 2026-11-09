@@ -16,11 +16,13 @@ export default function CommandPalette({
   onOpenPitchReport,
   onOpenAnalytics,
   onOpenHallOfFame,
+  onOpenComparison,
   showToast,
   protectAction
 }) {
   const [query, setQuery] = useState('');
   const [selectedIndex, setSelectedIndex] = useState(0);
+  const [activeCategory, setActiveCategory] = useState('All');
   const inputRef = useRef(null);
   const listRef = useRef(null);
 
@@ -31,6 +33,7 @@ export default function CommandPalette({
     const resetTimeout = setTimeout(() => {
       setQuery('');
       setSelectedIndex(0);
+      setActiveCategory('All');
       inputRef.current?.focus();
     }, 50);
 
@@ -96,6 +99,17 @@ export default function CommandPalette({
       iconColor: '#06b6d4',
       action: () => {
         setView('qr-generator');
+      }
+    },
+    {
+      id: 'nav-compare',
+      category: '⚡ Quick Navigation',
+      title: 'Campaign Comparison Matrix',
+      subtitle: 'Compare campaigns side-by-side with metrics and pledge velocity',
+      icon: 'fa-solid fa-code-compare',
+      iconColor: '#a855f7',
+      action: () => {
+        onOpenComparison?.();
       }
     },
 
@@ -213,6 +227,32 @@ export default function CommandPalette({
         setCurrency?.('INR');
         showToast?.('Currency updated to INR (₹)');
       }
+    },
+    {
+      id: 'pref-curr-eur',
+      category: '⚙️ Preferences',
+      title: 'Display Currency in EUR (€)',
+      subtitle: 'Set platform currency conversion to Euros',
+      icon: 'fa-solid fa-euro-sign',
+      iconColor: '#3b82f6',
+      badge: currency === 'EUR' ? 'Active' : null,
+      action: () => {
+        setCurrency?.('EUR');
+        showToast?.('Currency updated to EUR (€)');
+      }
+    },
+    {
+      id: 'pref-curr-gbp',
+      category: '⚙️ Preferences',
+      title: 'Display Currency in GBP (£)',
+      subtitle: 'Set platform currency conversion to British Pounds',
+      icon: 'fa-solid fa-sterling-sign',
+      iconColor: '#8b5cf6',
+      badge: currency === 'GBP' ? 'Active' : null,
+      action: () => {
+        setCurrency?.('GBP');
+        showToast?.('Currency updated to GBP (£)');
+      }
     }
   ];
 
@@ -236,15 +276,31 @@ export default function CommandPalette({
 
   const allItems = [...baseCommands, ...campaignCommands];
 
-  // Filter items matching query
+  // Filter items matching query and category
   const cleanQuery = query.toLowerCase().trim();
-  const filteredItems = cleanQuery
-    ? allItems.filter(item =>
-        item.title.toLowerCase().includes(cleanQuery) ||
-        item.subtitle.toLowerCase().includes(cleanQuery) ||
-        item.category.toLowerCase().includes(cleanQuery)
-      )
-    : allItems;
+  const filteredItems = allItems.filter(item => {
+    const matchesCategory = activeCategory === 'All' || item.category === activeCategory;
+    const matchesQuery = !cleanQuery ||
+      item.title.toLowerCase().includes(cleanQuery) ||
+      item.subtitle?.toLowerCase().includes(cleanQuery) ||
+      item.category.toLowerCase().includes(cleanQuery);
+    return matchesCategory && matchesQuery;
+  });
+
+  const renderHighlighted = (text, highlight) => {
+    if (!highlight || !text) return text;
+    const idx = text.toLowerCase().indexOf(highlight);
+    if (idx === -1) return text;
+    return (
+      <>
+        {text.slice(0, idx)}
+        <mark style={{ background: 'rgba(99, 102, 241, 0.35)', color: 'inherit', padding: '0 2px', borderRadius: '3px' }}>
+          {text.slice(idx, idx + highlight.length)}
+        </mark>
+        {text.slice(idx + highlight.length)}
+      </>
+    );
+  };
 
   // Key navigation handler
   const handleKeyDown = (e) => {
@@ -301,9 +357,9 @@ export default function CommandPalette({
           border: '1px solid var(--border-standard, rgba(255,255,255,0.15))',
           borderRadius: '20px',
           overflow: 'hidden',
-          boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.5), 0 0 30px rgba(99, 102, 241, 0.25)',
-          backdropFilter: 'blur(16px)',
-          WebkitBackdropFilter: 'blur(16px)'
+          boxShadow: '0 25px 60px -15px rgba(0, 0, 0, 0.7), 0 0 0 1px rgba(255, 255, 255, 0.1)',
+          backdropFilter: 'blur(20px)',
+          WebkitBackdropFilter: 'blur(20px)'
         }}
       >
         {/* Search Input Bar */}
@@ -330,6 +386,26 @@ export default function CommandPalette({
               fontFamily: 'var(--font-sans, inherit)'
             }}
           />
+          {query && (
+            <button
+              type="button"
+              onClick={() => { setQuery(''); setSelectedIndex(0); inputRef.current?.focus(); }}
+              style={{
+                background: 'transparent',
+                border: 'none',
+                color: 'var(--text-muted, #94a3b8)',
+                cursor: 'pointer',
+                padding: '0.2rem',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                fontSize: '0.9rem'
+              }}
+              title="Clear search"
+            >
+              <i className="fa-solid fa-circle-xmark"></i>
+            </button>
+          )}
           <kbd
             className="cmd-esc-badge"
             onClick={onClose}
@@ -347,20 +423,83 @@ export default function CommandPalette({
           </kbd>
         </div>
 
+        {/* Category Filter Chips Bar */}
+        <div
+          className="cmd-filter-tabs"
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '0.4rem',
+            padding: '0.55rem 1.25rem',
+            borderBottom: '1px solid var(--border-standard, rgba(255,255,255,0.08))',
+            overflowX: 'auto',
+            background: 'rgba(0,0,0,0.15)'
+          }}
+        >
+          {['All', 'Navigation', 'Campaigns', 'Security', 'Reports', 'Preferences'].map(cat => {
+            const fullCatName = cat === 'All' ? 'All' :
+              cat === 'Navigation' ? '⚡ Quick Navigation' :
+              cat === 'Campaigns' ? '🚀 Live Campaigns' :
+              cat === 'Security' ? '🔒 Account & Security' :
+              cat === 'Reports' ? '📄 Reports & Pitch Decks' : '⚙️ Preferences';
+            const count = cat === 'All' ? allItems.length : allItems.filter(i => i.category === fullCatName).length;
+            const isActive = activeCategory === fullCatName;
+
+            return (
+              <button
+                key={cat}
+                type="button"
+                onClick={() => {
+                  setActiveCategory(fullCatName);
+                  setSelectedIndex(0);
+                }}
+                style={{
+                  background: isActive ? 'var(--accent-brand, #6366f1)' : 'rgba(255,255,255,0.06)',
+                  color: isActive ? '#ffffff' : 'var(--text-muted, #94a3b8)',
+                  border: isActive ? '1px solid var(--accent-brand, #6366f1)' : '1px solid rgba(255,255,255,0.1)',
+                  borderRadius: '9999px',
+                  padding: '0.2rem 0.65rem',
+                  fontSize: '0.73rem',
+                  fontWeight: 600,
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.35rem',
+                  whiteSpace: 'nowrap',
+                  transition: 'all 0.15s ease'
+                }}
+              >
+                <span>{cat}</span>
+                <span style={{ opacity: 0.7, fontSize: '0.68rem' }}>{count}</span>
+              </button>
+            );
+          })}
+        </div>
+
         {/* Results List */}
         <div
           ref={listRef}
           className="cmd-results-container"
           style={{
-            maxHeight: '420px',
+            maxHeight: '400px',
             overflowY: 'auto',
             padding: '0.75rem 0.5rem'
           }}
         >
           {filteredItems.length === 0 ? (
             <div style={{ textAlign: 'center', padding: '3rem 1rem', color: 'var(--text-muted, #94a3b8)' }}>
-              <i className="fa-solid fa-ghost" style={{ fontSize: '2.5rem', marginBottom: '1rem', opacity: 0.5 }}></i>
-              <p style={{ margin: 0, fontSize: '0.95rem' }}>No matching commands or campaigns found for "{query}".</p>
+              <i className="fa-solid fa-ghost" style={{ fontSize: '2.5rem', marginBottom: '1rem', opacity: 0.5, display: 'block' }}></i>
+              <p style={{ margin: 0, fontSize: '0.95rem' }}>No matching commands found for "{query}".</p>
+              {(query || activeCategory !== 'All') && (
+                <button
+                  type="button"
+                  className="btn-secondary"
+                  onClick={() => { setQuery(''); setActiveCategory('All'); setSelectedIndex(0); }}
+                  style={{ marginTop: '0.75rem', fontSize: '0.8rem', padding: '0.35rem 0.75rem' }}
+                >
+                  Reset Search
+                </button>
+              )}
             </div>
           ) : (
             Object.keys(groupedCategories).map(catName => (
@@ -439,7 +578,7 @@ export default function CommandPalette({
                               textOverflow: 'ellipsis'
                             }}
                           >
-                            {item.title}
+                            {renderHighlighted(item.title, cleanQuery)}
                           </div>
                           {item.subtitle && (
                             <div
@@ -451,7 +590,7 @@ export default function CommandPalette({
                                 textOverflow: 'ellipsis'
                               }}
                             >
-                              {item.subtitle}
+                              {renderHighlighted(item.subtitle, cleanQuery)}
                             </div>
                           )}
                         </div>

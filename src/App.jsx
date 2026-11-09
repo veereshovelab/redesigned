@@ -1,5 +1,5 @@
 /**
- * Vorynx - Zero-Barrier Crowdfunding Platform (v1.0.3)
+ * Vorynx - Zero-Barrier Crowdfunding Platform (v1.0.4)
  * Main Application Component & Router Interface
  */
 
@@ -1345,30 +1345,6 @@ export default function App() {
         />
       )}
 
-      {/* Modal - Global Command Palette (Ctrl+K / Cmd+K) */}
-      <CommandPalette
-        isOpen={commandPaletteOpen}
-        onClose={() => setCommandPaletteOpen(false)}
-        projects={projects}
-        setView={setView}
-        onSelectProject={(id) => {
-          setSelectedProjectId(id);
-          setView("details");
-        }}
-        theme={theme}
-        toggleTheme={toggleTheme}
-        currency={currency}
-        setCurrency={(curr) => {
-          setCurrency(curr);
-          localStorage.setItem('vorynx_currency', curr);
-        }}
-        setTfaModalOpen={setTfaModalOpen}
-        setPortfolioOpen={setPortfolioOpen}
-        setShortcutsOpen={setShortcutsOpen}
-        showToast={showToast}
-        protectAction={protectAction}
-      />
-
       {/* Modal - 2FA Verification Login Challenge */}
       {tfaChallengeOpen && (
         <div className="modal-backdrop" style={{ zIndex: 9999 }}>
@@ -1597,6 +1573,7 @@ export default function App() {
         onOpenPitchReport={(proj) => setSummaryModalProject(proj)}
         onOpenAnalytics={(proj) => setAnalyticsModalProject(proj)}
         onOpenHallOfFame={(proj) => setHallOfFameModalProject(proj)}
+        onOpenComparison={() => setComparisonModalOpen(true)}
         showToast={showToast}
         protectAction={protectAction}
       />
