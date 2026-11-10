@@ -7,6 +7,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [1.0.5] - 2026-11-10
+
+### 🚀 Added
+- **Campaign Analytics Simulator Upgrades (`src/components/CampaignAnalyticsModal.jsx`)**:
+  - **Quick Scenario Presets**: Added 1-click preset pills (*Conservative*, *Steady Growth*, *Viral Surge*, *Baseline*) to jump between forecast scenarios and trigger live GSAP label animations.
+  - **Dual-Layer Forecast Progress Bar**: Added an interactive, animated stacked progress bar visualizing current funding progress alongside projected growth toward the goal.
+  - **Live Velocity Score Reactiveness**: Connected the Velocity Score grade (`A+` through `F`) and GSAP spring pop animation directly to the interactive slider values, plus live daily run-rate and required target pace metrics.
+
+### 🐛 Fixed
+- **Simulator Label Color Persistence (`CampaignAnalyticsModal.jsx`)**:
+  - Preserved target brand/green color styling after GSAP slider pulse animations.
+
+---
+
 ## [1.0.4] - 2026-11-09
 
 ### 🚀 Added

@@ -24,12 +24,21 @@ const formatCurrencyVal = (amount, currency = 'USD') => {
 };
 
 export default function CampaignAnalyticsModal({ project, isOpen, onClose, currency = 'USD', showToast }) {
-  const [dailyBackerRate, setDailyBackerRate] = useState(10);
-  const [avgPledgeAmount, setAvgPledgeAmount] = useState(() => {
+  const defaultBackerRate = (() => {
+    if (!project) return 10;
+    const elapsed = Math.max(1, (project.campaignDays || 30) - (project.daysLeft || 14));
+    const rate = Math.round((project.backerCount || 10) / elapsed);
+    return Math.max(1, Math.min(50, rate));
+  })();
+
+  const defaultAvgPledge = (() => {
     if (!project || !project.rewards || project.rewards.length === 0) return 45;
     const avg = project.rewards.reduce((acc, r) => acc + (r.pledgeAmount || 0), 0) / project.rewards.length;
-    return Math.max(10, Math.round(avg));
-  });
+    return Math.max(10, Math.round(avg / 5) * 5);
+  })();
+
+  const [dailyBackerRate, setDailyBackerRate] = useState(defaultBackerRate);
+  const [avgPledgeAmount, setAvgPledgeAmount] = useState(defaultAvgPledge);
   const [copied, setCopied] = useState(false);
 
   // GSAP refs
@@ -77,12 +86,12 @@ export default function CampaignAnalyticsModal({ project, isOpen, onClose, curre
   });
 
   // ── Slider label pulse on change ──────────────────────────────────────────
-  const pulseLabel = (ref) => {
+  const pulseLabel = (ref, baseColor = 'var(--accent-brand)') => {
     if (!ref.current) return;
     gsap.fromTo(
       ref.current,
       { scale: 1.22, color: '#a78bfa' },
-      { scale: 1,    color: 'var(--accent-brand)', duration: 0.35, ease: 'power2.out' }
+      { scale: 1,    color: baseColor, duration: 0.35, ease: 'power2.out' }
     );
   };
 
@@ -101,12 +110,10 @@ export default function CampaignAnalyticsModal({ project, isOpen, onClose, curre
   const totalProjectedBackers = (project.backerCount || 0) + projectedBackersAdded;
   const surplusDeficit = projectedTotalRaised - goal;
 
-  // Velocity Score (A+ → F) — measures current daily funding rate vs required rate
-  const requiredDailyRate = daysLeft > 0 ? (goal - currentRaised) / daysLeft : Infinity;
-  const currentDailyRate = project.backerCount && daysLeft
-    ? (currentRaised / Math.max(1, (project.campaignDays || 30) - daysLeft))
-    : dailyBackerRate * avgPledgeAmount;
-  const velocityRatio = requiredDailyRate > 0 ? currentDailyRate / requiredDailyRate : 2;
+  // Velocity Score (A+ → F) — compares simulated daily funding rate vs required rate
+  const requiredDailyRate = daysLeft > 0 ? Math.max(0, (goal - currentRaised) / daysLeft) : 0;
+  const simulatedDailyRate = dailyBackerRate * avgPledgeAmount;
+  const velocityRatio = requiredDailyRate > 0 ? simulatedDailyRate / requiredDailyRate : 2;
   const getVelocityScore = (ratio) => {
     if (ratio >= 1.5) return { grade: 'A+', label: 'Blazing 🔥', color: '#10b981', bg: 'rgba(16,185,129,0.08)' };
     if (ratio >= 1.0) return { grade: 'A',  label: 'On Track ✅', color: '#22c55e', bg: 'rgba(34,197,94,0.08)' };
@@ -278,13 +285,53 @@ Forecast Generated via Vorynx Crowdfunding Analytics`;
 
         {/* Interactive Funding Simulator */}
         <div style={{ background: 'var(--bg-main)', border: '1px solid var(--border-standard)', borderRadius: '16px', padding: '1.5rem', marginBottom: '1.5rem' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem', flexWrap: 'wrap', gap: '0.5rem' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.85rem', flexWrap: 'wrap', gap: '0.5rem' }}>
             <div style={{ fontSize: '0.85rem', fontWeight: 700, color: 'var(--text-primary)', textTransform: 'uppercase', letterSpacing: '0.8px', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
               <i className="fa-solid fa-sliders text-purple" style={{ color: '#a855f7' }}></i> Interactive Velocity Simulator
             </div>
             <span style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>
-              Adjust variables to forecast end of campaign results
+              Simulating <strong style={{ color: 'var(--text-primary)' }}>{formatCurrencyVal(simulatedDailyRate, currency)}/day</strong> pace
             </span>
+          </div>
+
+          {/* Quick Scenario Presets */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem', flexWrap: 'wrap', marginBottom: '1.25rem' }}>
+            <span style={{ fontSize: '0.72rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.6px', marginRight: '0.25rem' }}>
+              Scenarios:
+            </span>
+            {[
+              { label: '🐢 Conservative', backers: 4, pledge: 35 },
+              { label: '📈 Steady Growth', backers: 12, pledge: 65 },
+              { label: '🚀 Viral Surge', backers: 32, pledge: 110 },
+              { label: '↺ Baseline', backers: defaultBackerRate, pledge: defaultAvgPledge }
+            ].map((preset) => {
+              const isMatch = dailyBackerRate === preset.backers && avgPledgeAmount === preset.pledge;
+              return (
+                <button
+                  key={preset.label}
+                  type="button"
+                  onClick={() => {
+                    setDailyBackerRate(preset.backers);
+                    setAvgPledgeAmount(preset.pledge);
+                    pulseLabel(backerLabelRef, 'var(--accent-brand)');
+                    pulseLabel(pledgeLabelRef, '#10b981');
+                  }}
+                  style={{
+                    padding: '0.28rem 0.72rem',
+                    borderRadius: '9999px',
+                    fontSize: '0.75rem',
+                    fontWeight: 600,
+                    cursor: 'pointer',
+                    background: isMatch ? 'var(--accent-brand)' : 'rgba(255,255,255,0.05)',
+                    color: isMatch ? '#ffffff' : 'var(--text-secondary)',
+                    border: isMatch ? '1px solid var(--accent-brand)' : '1px solid var(--border-standard)',
+                    transition: 'all 0.15s ease'
+                  }}
+                >
+                  {preset.label}
+                </button>
+              );
+            })}
           </div>
 
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '1.5rem', marginBottom: '1.5rem' }}>
@@ -299,7 +346,7 @@ Forecast Generated via Vorynx Crowdfunding Analytics`;
                 min="1" 
                 max="50" 
                 value={dailyBackerRate} 
-                onChange={(e) => { setDailyBackerRate(Number(e.target.value)); pulseLabel(backerLabelRef); }}
+                onChange={(e) => { setDailyBackerRate(Number(e.target.value)); pulseLabel(backerLabelRef, 'var(--accent-brand)'); }}
                 style={{ width: '100%', accentColor: 'var(--accent-brand)', cursor: 'pointer' }}
               />
               <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.7rem', color: 'var(--text-muted)', marginTop: '0.25rem' }}>
@@ -321,7 +368,7 @@ Forecast Generated via Vorynx Crowdfunding Analytics`;
                 max="500" 
                 step="5"
                 value={avgPledgeAmount} 
-                onChange={(e) => { setAvgPledgeAmount(Number(e.target.value)); pulseLabel(pledgeLabelRef); }}
+                onChange={(e) => { setAvgPledgeAmount(Number(e.target.value)); pulseLabel(pledgeLabelRef, '#10b981'); }}
                 style={{ width: '100%', accentColor: '#10b981', cursor: 'pointer' }}
               />
               <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.7rem', color: 'var(--text-muted)', marginTop: '0.25rem' }}>
@@ -336,6 +383,53 @@ Forecast Generated via Vorynx Crowdfunding Analytics`;
           <div style={{ background: 'var(--bg-surface)', border: '1px solid var(--border-standard)', borderRadius: '14px', padding: '1.25rem' }}>
             <div style={{ fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.8px', marginBottom: '0.75rem' }}>
               🎯 Projected Campaign Outcome by Deadline
+            </div>
+
+            {/* Dual-Layer Forecast Progress Bar */}
+            <div style={{ marginBottom: '1.25rem' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '0.75rem', marginBottom: '0.4rem' }}>
+                <span style={{ color: 'var(--text-secondary)', fontWeight: 600 }}>
+                  Current ({Math.min(100, currentFundedPct)}%) + Forecast Growth (+{Math.max(0, projectedFundedPct - currentFundedPct)}%)
+                </span>
+                <span style={{ color: projectedTotalRaised >= goal ? '#10b981' : '#f59e0b', fontWeight: 700 }}>
+                  {projectedFundedPct}% Projected
+                </span>
+              </div>
+              <div style={{ position: 'relative', height: '10px', background: 'rgba(255,255,255,0.07)', borderRadius: '9999px', overflow: 'hidden' }}>
+                <div style={{
+                  position: 'absolute',
+                  top: 0,
+                  left: 0,
+                  height: '100%',
+                  width: `${Math.min(100, projectedFundedPct)}%`,
+                  background: projectedTotalRaised >= goal ? 'rgba(16, 185, 129, 0.45)' : 'rgba(245, 158, 11, 0.45)',
+                  borderRadius: '9999px',
+                  transition: 'width 0.3s ease, background 0.3s ease'
+                }} />
+                <div style={{
+                  position: 'absolute',
+                  top: 0,
+                  left: 0,
+                  height: '100%',
+                  width: `${Math.min(100, currentFundedPct)}%`,
+                  background: 'var(--accent-brand)',
+                  borderRadius: '9999px',
+                  transition: 'width 0.3s ease'
+                }} />
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.7rem', color: 'var(--text-muted)', marginTop: '0.35rem', flexWrap: 'wrap', gap: '0.3rem' }}>
+                <span>
+                  <span style={{ display: 'inline-block', width: '8px', height: '8px', borderRadius: '50%', background: 'var(--accent-brand)', marginRight: '4px' }}></span>
+                  Raised so far
+                  <span style={{ display: 'inline-block', width: '8px', height: '8px', borderRadius: '50%', background: projectedTotalRaised >= goal ? 'rgba(16, 185, 129, 0.65)' : 'rgba(245, 158, 11, 0.65)', margin: '0 4px 0 10px' }}></span>
+                  Projected forecast
+                </span>
+                <span>
+                  {requiredDailyRate > 0 && currentRaised < goal
+                    ? `Target pace needed: ${formatCurrencyVal(requiredDailyRate, currency)}/day`
+                    : '🎉 100% Goal already reached!'}
+                </span>
+              </div>
             </div>
 
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem', marginBottom: '1rem' }}>
